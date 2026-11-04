@@ -21,6 +21,8 @@ function titleForView(view: LibraryView): string {
       return fr.library.installedTitle;
     case 'favorites':
       return fr.library.favoritesTitle;
+    case 'hidden':
+      return fr.library.hiddenTitle;
     case 'status':
       return fr.status[view.value];
     case 'source':
@@ -135,6 +137,7 @@ export function LibraryPage() {
             ) : undefined
           }
         />
+        {view.kind === 'hidden' && <p className={styles.muted}>{fr.library.hiddenHint}</p>}
         <div className={styles.toolbar}>
           <label className={styles.search}>
             <Search size={16} aria-hidden="true" />

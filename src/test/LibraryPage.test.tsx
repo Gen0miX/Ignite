@@ -97,6 +97,7 @@ const counts = (all: number): LibraryCounts => ({
   all,
   installed: all,
   favorites: 0,
+  hidden: 0,
   status: { todo: all, playing: 0, done: 0, dropped: 0 },
   sources: all ? [{ kind: 'steam', count: all }] : [],
 });

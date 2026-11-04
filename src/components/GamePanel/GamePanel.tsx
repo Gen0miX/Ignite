@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, Star, X } from 'lucide-react';
+import { Eye, EyeOff, Play, Star, X } from 'lucide-react';
 import { artworkSrc, type GameDetail, type GameStatus } from '../../api/client';
 import { useAddTag, useGame, useLaunchGame, useRemoveTag, useUpdateGame } from '../../api/hooks';
 import { fr } from '../../i18n/fr';
@@ -75,6 +75,7 @@ function PanelContent({ game }: { game: GameDetail }) {
       </div>
 
       <div className={styles.body}>
+        {s.hidden && <p className={styles.notice}>{fr.panel.hiddenNotice}</p>}
         <div className={styles.row}>
           {s.sources.map((k) => (
             <SourceBadge key={k} kind={k} />
@@ -152,9 +153,24 @@ function PanelContent({ game }: { game: GameDetail }) {
 
         <Tags game={game} />
 
-        <Link to={`/game/${s.id}`} className={`${buttons.secondary} ${styles.sheetLink}`}>
-          {fr.panel.openSheet}
-        </Link>
+        <div className={styles.footerActions}>
+          <Link to={`/game/${s.id}`} className={buttons.secondary}>
+            {fr.panel.openSheet}
+          </Link>
+          <button
+            type="button"
+            className={buttons.secondary}
+            onClick={() => update.mutate({ hidden: !s.hidden })}
+            disabled={update.isPending}
+          >
+            {s.hidden ? (
+              <Eye size={16} aria-hidden="true" />
+            ) : (
+              <EyeOff size={16} aria-hidden="true" />
+            )}
+            {s.hidden ? fr.panel.unhide : fr.panel.hide}
+          </button>
+        </div>
       </div>
     </>
   );

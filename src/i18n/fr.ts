@@ -18,6 +18,7 @@ export const fr = {
     status: 'Statut',
     importGames: 'Importer des jeux',
     syncing: 'Synchronisation…',
+    hiddenGames: 'Jeux masqués',
   },
   status: {
     playing: 'En cours',
@@ -59,6 +60,9 @@ export const fr = {
     title: 'Tous les jeux',
     installedTitle: 'Installés',
     favoritesTitle: 'Favoris',
+    hiddenTitle: 'Jeux masqués',
+    hiddenHint:
+      'Playtests, bêtas, démos et jeux que tu as masqués. Ouvre un jeu pour le réafficher dans la bibliothèque.',
     count: (n: number) => `${n} ${n > 1 ? 'jeux' : 'jeu'}`,
     sourceCount: (n: number) => `${n} ${n > 1 ? 'sources' : 'source'}`,
     searchLabel: 'Rechercher un jeu',
@@ -112,6 +116,9 @@ export const fr = {
     removeTag: (name: string) => `Retirer le tag ${name}`,
     favoriteAdd: 'Ajouter aux favoris',
     favoriteRemove: 'Retirer des favoris',
+    hide: 'Masquer de la bibliothèque',
+    unhide: 'Réafficher dans la bibliothèque',
+    hiddenNotice: 'Ce jeu est masqué de la bibliothèque.',
     openSheet: 'Ouvrir la fiche',
     saved: 'Enregistré',
   },

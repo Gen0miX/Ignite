@@ -21,6 +21,7 @@ export const DEFAULT_SORT: SortKey = 'lastPlayed';
 export function parseView(raw: string | null): LibraryView {
   if (raw === 'installed') return { kind: 'installed' };
   if (raw === 'favorites') return { kind: 'favorites' };
+  if (raw === 'hidden') return { kind: 'hidden' };
   if (raw?.startsWith('status-')) {
     const s = raw.slice(7) as GameStatus;
     if (STATUSES.includes(s)) return { kind: 'status', value: s };
@@ -38,6 +39,7 @@ export function viewParam(view: LibraryView): string | null {
       return null;
     case 'installed':
     case 'favorites':
+    case 'hidden':
       return view.kind;
     case 'status':
       return `status-${view.value}`;

@@ -128,6 +128,7 @@ export type LibraryCounts = {
 	all: number,
 	installed: number,
 	favorites: number,
+	hidden: number,
 	status: StatusCounts,
 	sources: SourceCount[],
 };
@@ -146,7 +147,9 @@ export type LibraryQuery_Serialize = {
 	sort: SortKey,
 };
 
-export type LibraryView = { kind: "all" } | { kind: "installed" } | { kind: "favorites" } | { kind: "status"; value: GameStatus } | { kind: "source"; value: SourceKind };
+export type LibraryView = { kind: "all" } | { kind: "installed" } | { kind: "favorites" } | 
+/**  Hidden games only (playtests, betas, games hidden by the user). */
+{ kind: "hidden" } | { kind: "status"; value: GameStatus } | { kind: "source"; value: SourceKind };
 
 /**  Every secret the app knows about. */
 export type SecretKind = "steam_web_api_key" | "steamgriddb_api_key" | "igdb_client_id" | "igdb_client_secret" | "retroachievements_api_key";
@@ -287,6 +290,8 @@ export type SyncReport = {
 	updated: number,
 	/**  Games of this source no longer installed after this scan. */
 	uninstalled: number,
+	/**  New entries hidden because they look like playtests, betas, demos... */
+	hidden: number,
 	total: number,
 	warnings: string[],
 	/**  RFC 3339. */

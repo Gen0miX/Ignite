@@ -90,10 +90,17 @@ fn sync_inner(app: &AppHandle) -> AppResult<Vec<SyncReport>> {
         };
         tracing::info!(
             kind = ?report.kind, status = ?report.status, added = report.added,
-            updated = report.updated, uninstalled = report.uninstalled, "source synced"
+            updated = report.updated, uninstalled = report.uninstalled, hidden = report.hidden,
+            "source synced"
         );
         jobs.append(&mut source_jobs);
         reports.push(report);
+    }
+
+    match crate::library::non_games::hide_existing_once(&db.conn()) {
+        Ok(0) => {}
+        Ok(n) => tracing::info!(hidden = n, "existing playtests/betas/demos hidden"),
+        Err(e) => tracing::warn!(error = %e, "could not hide non-game entries"),
     }
 
     let misses = artwork::MissCache::load(&data_dir);

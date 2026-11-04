@@ -38,6 +38,8 @@ pub enum LibraryView {
     All,
     Installed,
     Favorites,
+    /// Hidden games only (playtests, betas, games hidden by the user).
+    Hidden,
     Status(GameStatus),
     Source(SourceKind),
 }
@@ -77,6 +79,7 @@ pub struct LibraryCounts {
     pub all: u32,
     pub installed: u32,
     pub favorites: u32,
+    pub hidden: u32,
     pub status: StatusCounts,
     pub sources: Vec<SourceCount>,
 }
@@ -154,11 +157,11 @@ fn fold(text: &str) -> String {
 }
 
 pub fn matches(game: &GameSummary, query: &LibraryQuery) -> bool {
-    if game.hidden {
+    if game.hidden != (query.view == LibraryView::Hidden) {
         return false;
     }
     let in_view = match query.view {
-        LibraryView::All => true,
+        LibraryView::All | LibraryView::Hidden => true,
         LibraryView::Installed => game.installed,
         LibraryView::Favorites => game.favorite,
         LibraryView::Status(s) => game.status == s,
@@ -208,6 +211,7 @@ pub fn filter_and_sort(mut list: Vec<GameSummary>, query: &LibraryQuery) -> Vec<
 pub fn counts(list: &[GameSummary]) -> LibraryCounts {
     let mut c = LibraryCounts::default();
     let mut by_source: HashMap<SourceKind, u32> = HashMap::new();
+    c.hidden = list.iter().filter(|g| g.hidden).count() as u32;
     for g in list.iter().filter(|g| !g.hidden) {
         c.all += 1;
         c.installed += g.installed as u32;
@@ -329,6 +333,12 @@ mod tests {
     }
 
     #[test]
+    fn hidden_view_lists_only_hidden_games() {
+        let list = filter_and_sort(sample(), &q(LibraryView::Hidden, None, SortKey::Name));
+        assert_eq!(titles(&list), ["Hidden demo"]);
+    }
+
+    #[test]
     fn text_search_ignores_case_accents_and_articles() {
         let all = sample();
         let find = |t: &str| {
@@ -374,6 +384,7 @@ mod tests {
         assert_eq!(c.all, 3);
         assert_eq!(c.installed, 1);
         assert_eq!(c.favorites, 1);
+        assert_eq!(c.hidden, 1);
         assert_eq!(
             c.status,
             StatusCounts {

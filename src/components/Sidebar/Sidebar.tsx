@@ -85,6 +85,14 @@ export function Sidebar() {
             {fr.sidebar.syncing}
           </p>
         )}
+        {(counts?.hidden ?? 0) > 0 && (
+          <NavItem
+            to="/library?view=hidden"
+            label={fr.sidebar.hiddenGames}
+            trailing={String(counts?.hidden)}
+            size="compact"
+          />
+        )}
         <Link to="/import" className={styles.secondaryLink}>
           {fr.sidebar.importGames}
         </Link>

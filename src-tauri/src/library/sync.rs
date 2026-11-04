@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use crate::db::repo::{artwork, game_sources, games};
 use crate::error::AppResult;
+use crate::library::non_games;
 use crate::models::SourceKind;
 use crate::sources::{ArtworkCandidate, ScanResult, SourceStatus};
 
@@ -19,6 +20,8 @@ pub struct SyncReport {
     pub updated: u32,
     /// Games of this source no longer installed after this scan.
     pub uninstalled: u32,
+    /// New entries hidden because they look like playtests, betas, demos...
+    pub hidden: u32,
     pub total: u32,
     pub warnings: Vec<String>,
     /// RFC 3339.
@@ -47,6 +50,7 @@ pub fn apply_scan(
         added: 0,
         updated: 0,
         uninstalled: 0,
+        hidden: 0,
         total: scan.games.len() as u32,
         warnings: scan.warnings.clone(),
         finished_at: crate::db::now_rfc3339(),
@@ -93,6 +97,14 @@ pub fn apply_scan(
                 let game = games::insert(&tx, &g.title)?;
                 game_sources::upsert(&tx, &game.id, scan.kind, &data)?;
                 report.added += 1;
+                if non_games::is_probably_not_a_game(&g.title) {
+                    let hide = games::GamePatch {
+                        hidden: Some(true),
+                        ..Default::default()
+                    };
+                    games::update(&tx, &game.id, &hide)?;
+                    report.hidden += 1;
+                }
                 game.id
             }
         };
@@ -196,6 +208,54 @@ mod tests {
         let src = game_sources::get(&conn, &a.id).unwrap();
         assert_eq!(src.source_playtime_minutes, Some(90));
         assert_eq!(games::list(&conn, true).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn new_playtests_are_imported_hidden() {
+        let db = Db::open_in_memory().unwrap();
+        let mut conn = db.conn();
+        let (report, _) = apply_scan(
+            &mut conn,
+            &scan(
+                vec![
+                    detected("1", "Arkheron Playtest", false, None),
+                    detected("2", "Hades", true, None),
+                ],
+                SourceStatus::Connected,
+            ),
+        )
+        .unwrap();
+        assert_eq!((report.added, report.hidden), (2, 1));
+        let visible: Vec<_> = games::list(&conn, false)
+            .unwrap()
+            .into_iter()
+            .map(|g| g.title)
+            .collect();
+        assert_eq!(visible, ["Hades"]);
+
+        // Shown again by the user: later syncs keep it visible.
+        let id = game_sources::find_by_external(&conn, SourceKind::Steam, "1")
+            .unwrap()
+            .unwrap()
+            .game_id;
+        games::update(
+            &conn,
+            &id,
+            &GamePatch {
+                hidden: Some(false),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        apply_scan(
+            &mut conn,
+            &scan(
+                vec![detected("1", "Arkheron Playtest", false, None)],
+                SourceStatus::Connected,
+            ),
+        )
+        .unwrap();
+        assert!(!games::get(&conn, &id).unwrap().hidden);
     }
 
     #[test]
