@@ -12,7 +12,7 @@ Lis dans cet ordre avant de coder :
 
 ## Stack (décidée)
 
-- **Tauri 2** (backend Rust) + **React 18 + TypeScript + Vite** (frontend)
+- **Tauri 2** (backend Rust) + **React 19 + TypeScript + Vite** (frontend)
 - **SQLite** via `rusqlite` (migrations embarquées dans `src-tauri/migrations/`, fichier `%APPDATA%\com.ludotheque.app\ludotheque.db`)
 - État frontend : **TanStack Query** pour les données backend, **Zustand** pour l'état UI
 - Style : CSS Modules + variables CSS de `design/tokens.css` (pas de Tailwind, pas de librairie de composants lourde)
