@@ -1,0 +1,22 @@
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.todo {
+  background: var(--status-todo);
+}
+
+.playing {
+  background: var(--status-playing);
+}
+
+.done {
+  background: var(--status-done);
+}
+
+.dropped {
+  background: var(--status-dropped);
+}

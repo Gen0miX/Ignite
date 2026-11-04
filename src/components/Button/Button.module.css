@@ -1,0 +1,37 @@
+.base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--h-control);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-md);
+  white-space: nowrap;
+  transition:
+    background var(--transition),
+    filter var(--transition);
+}
+
+.primary {
+  composes: base;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+}
+
+.primary:hover {
+  filter: brightness(1.08);
+}
+
+.secondary {
+  composes: base;
+  background: var(--color-field);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.secondary:hover {
+  background: var(--color-active);
+}
