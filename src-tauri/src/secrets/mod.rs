@@ -19,13 +19,15 @@ pub const SERVICE: &str = "ludotheque";
 const MAX_SECRET_LEN: usize = 2048;
 
 /// Every secret the app knows about.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum SecretKind {
     SteamWebApiKey,
+    #[serde(rename = "steamgriddb_api_key")]
     SteamGridDbApiKey,
     IgdbClientId,
     IgdbClientSecret,
+    #[serde(rename = "retroachievements_api_key")]
     RetroAchievementsApiKey,
 }
 
@@ -38,7 +40,7 @@ impl SecretKind {
         SecretKind::RetroAchievementsApiKey,
     ];
 
-    /// Account name used in the vault.
+    /// Account name used in the vault (same string as the serde name).
     pub fn account(self) -> &'static str {
         match self {
             SecretKind::SteamWebApiKey => "steam_web_api_key",
@@ -234,6 +236,16 @@ mod tests {
             Err(AppError::Invalid(_))
         ));
         assert!(!store.has(kind).unwrap());
+    }
+
+    #[test]
+    fn account_matches_serde_name() {
+        for k in SecretKind::ALL {
+            assert_eq!(
+                serde_json::to_string(k).unwrap(),
+                format!("\"{}\"", k.account())
+            );
+        }
     }
 
     #[test]
