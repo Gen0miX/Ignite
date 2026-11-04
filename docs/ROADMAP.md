@@ -26,11 +26,11 @@ Chaque tâche = une PR ou un commit, avec ses tests. Ne passe au jalon suivant q
 
 ## J2 — Suivi du temps & fiche jeu
 
-- [ ] `tracker` : surveillance des processus, heartbeat, délai de grâce, inactivité, session minimale (§ 4).
-- [ ] Événements `session-started` et `session-ended`, pastille « En jeu », minuteur en direct.
-- [ ] Règle de cumul sans double comptage (§ 4 Cumul), avec des tests unitaires.
-- [ ] Fiche jeu : temps sur 30 jours, journal des sessions (modifier, ajouter une session manuelle), objectifs perso, configuration de lancement.
-- [ ] Succès Steam : `GetPlayerAchievements` + `GetSchemaForGame`, mis en cache.
+- [x] `tracker` : surveillance des processus, heartbeat, délai de grâce, inactivité, session minimale (§ 4).
+- [x] Événements `session-started` et `session-ended`, pastille « En jeu », minuteur en direct.
+- [x] Règle de cumul sans double comptage (§ 4 Cumul), avec des tests unitaires.
+- [x] Fiche jeu : temps sur 30 jours, journal des sessions (modifier, ajouter une session manuelle), objectifs perso, configuration de lancement.
+- [x] Succès Steam : `GetPlayerAchievements` + `GetSchemaForGame`, mis en cache.
 
 **Fini quand** : lancer et quitter un jeu crée une session correcte, et la fiche l'affiche.
 
