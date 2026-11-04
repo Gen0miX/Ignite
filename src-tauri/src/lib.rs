@@ -47,6 +47,8 @@ pub fn run() {
 
             app.manage(AppPaths { data_dir, db_path });
             app.manage(commands::sources::SyncState::default());
+            app.manage(tracker::TrackerState::default());
+            tracker::spawn(app.handle().clone());
 
             // Initial sync in the background: the window opens immediately and
             // the library refreshes when the `library-changed` event fires.
@@ -58,6 +60,14 @@ pub fn run() {
             });
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running Ludothèque");
+        .build(tauri::generate_context!())
+        .expect("error while building Ludothèque")
+        .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                // Write sessions still open before quitting.
+                if let Some(state) = app.try_state::<tracker::TrackerState>() {
+                    state.shutdown();
+                }
+            }
+        });
 }

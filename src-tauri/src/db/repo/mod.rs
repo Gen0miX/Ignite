@@ -4,6 +4,7 @@
 pub mod artwork;
 pub mod game_sources;
 pub mod games;
+pub mod goals;
 pub mod sessions;
 pub mod settings;
 pub mod tags;
