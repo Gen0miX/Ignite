@@ -2,7 +2,9 @@
 //! TypeScript signature is generated into `src/api/bindings.ts`.
 
 pub mod app;
+pub mod library;
 pub mod secrets;
+pub mod sources;
 
 use serde::Serialize;
 
@@ -45,6 +47,17 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         secrets::secrets_status,
         secrets::secrets_set,
         secrets::secrets_clear,
+        library::library_list,
+        library::library_counts,
+        library::game_get,
+        library::game_update,
+        library::game_tag_add,
+        library::game_tag_remove,
+        library::launch_game,
+        sources::library_sync,
+        sources::sources_status,
+        sources::steam_settings_get,
+        sources::steam_settings_set,
     ])
 }
 

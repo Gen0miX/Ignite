@@ -11,6 +11,18 @@ export const commands = {
 	secretsStatus: () => typedError<SecretStatus[], CommandError>(__TAURI_INVOKE("secrets_status")),
 	secretsSet: (kind: SecretKind, value: string) => typedError<null, CommandError>(__TAURI_INVOKE("secrets_set", { kind, value })),
 	secretsClear: (kind: SecretKind) => typedError<null, CommandError>(__TAURI_INVOKE("secrets_clear", { kind })),
+	libraryList: (query: LibraryQuery_Deserialize) => typedError<GameSummary_Serialize[], CommandError>(__TAURI_INVOKE("library_list", { query })),
+	libraryCounts: () => typedError<LibraryCounts, CommandError>(__TAURI_INVOKE("library_counts")),
+	gameGet: (id: string) => typedError<GameDetail_Serialize, CommandError>(__TAURI_INVOKE("game_get", { id })),
+	gameUpdate: (id: string, update: GameUpdate_Deserialize) => typedError<GameDetail_Serialize, CommandError>(__TAURI_INVOKE("game_update", { id, update })),
+	gameTagAdd: (id: string, name: string) => typedError<Tag, CommandError>(__TAURI_INVOKE("game_tag_add", { id, name })),
+	gameTagRemove: (id: string, tagId: string) => typedError<null, CommandError>(__TAURI_INVOKE("game_tag_remove", { id, tagId })),
+	launchGame: (gameId: string) => typedError<null, CommandError>(__TAURI_INVOKE("launch_game", { gameId })),
+	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
+	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
+	steamSettingsGet: () => typedError<SteamSettings_Serialize, CommandError>(__TAURI_INVOKE("steam_settings_get")),
+	/**  Sets the SteamID64 to use; `None` goes back to automatic detection. */
+	steamSettingsSet: (steamId: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("steam_settings_set", { steamId })),
 };
 
 /* Types */
@@ -28,12 +40,262 @@ export type CommandError = {
 	message: string,
 };
 
+export type GameDetail = GameDetail_Serialize | GameDetail_Deserialize;
+
+export type GameDetail_Deserialize = {
+	summary: GameSummary_Deserialize,
+	notes?: string | null,
+	preferredSourceId?: string | null,
+	hero?: string | null,
+	logo?: string | null,
+	tags: Tag[],
+	sources: SourceInfo_Deserialize[],
+	timeBySource: SourceTime_Deserialize[],
+};
+
+export type GameDetail_Serialize = {
+	summary: GameSummary_Serialize,
+	notes: string | null,
+	preferredSourceId: string | null,
+	hero: string | null,
+	logo: string | null,
+	tags: Tag[],
+	sources: SourceInfo_Serialize[],
+	timeBySource: SourceTime_Serialize[],
+};
+
+/**  User-chosen progress status of a game. */
+export type GameStatus = "todo" | "playing" | "done" | "dropped";
+
+export type GameSummary = GameSummary_Serialize | GameSummary_Deserialize;
+
+export type GameSummary_Deserialize = {
+	id: string,
+	title: string,
+	status: GameStatus,
+	favorite: boolean,
+	hidden: boolean,
+	installed: boolean,
+	/**  Distinct platforms, sorted. */
+	sources: SourceKind[],
+	playtimeMinutes: number,
+	/**  RFC 3339. */
+	lastPlayed?: string | null,
+	addedAt: string,
+	/**  Absolute paths in the app's artwork cache (served via `asset:`). */
+	cover?: string | null,
+	header?: string | null,
+};
+
+export type GameSummary_Serialize = {
+	id: string,
+	title: string,
+	status: GameStatus,
+	favorite: boolean,
+	hidden: boolean,
+	installed: boolean,
+	/**  Distinct platforms, sorted. */
+	sources: SourceKind[],
+	playtimeMinutes: number,
+	/**  RFC 3339. */
+	lastPlayed: string | null,
+	addedAt: string,
+	/**  Absolute paths in the app's artwork cache (served via `asset:`). */
+	cover: string | null,
+	header: string | null,
+};
+
+/**  Fields editable from the game panel. An empty `notes` string clears the note. */
+export type GameUpdate = GameUpdate_Serialize | GameUpdate_Deserialize;
+
+/**  Fields editable from the game panel. An empty `notes` string clears the note. */
+export type GameUpdate_Deserialize = {
+	status?: GameStatus | null,
+	favorite?: boolean | null,
+	hidden?: boolean | null,
+	notes?: string | null,
+};
+
+/**  Fields editable from the game panel. An empty `notes` string clears the note. */
+export type GameUpdate_Serialize = {
+	status: GameStatus | null,
+	favorite: boolean | null,
+	hidden: boolean | null,
+	notes: string | null,
+};
+
+export type LibraryCounts = {
+	all: number,
+	installed: number,
+	favorites: number,
+	status: StatusCounts,
+	sources: SourceCount[],
+};
+
+export type LibraryQuery = LibraryQuery_Serialize | LibraryQuery_Deserialize;
+
+export type LibraryQuery_Deserialize = {
+	view: LibraryView,
+	text?: string | null,
+	sort: SortKey,
+};
+
+export type LibraryQuery_Serialize = {
+	view: LibraryView,
+	text: string | null,
+	sort: SortKey,
+};
+
+export type LibraryView = { kind: "all" } | { kind: "installed" } | { kind: "favorites" } | { kind: "status"; value: GameStatus } | { kind: "source"; value: SourceKind };
+
 /**  Every secret the app knows about. */
 export type SecretKind = "steam_web_api_key" | "steamgriddb_api_key" | "igdb_client_id" | "igdb_client_secret" | "retroachievements_api_key";
 
 export type SecretStatus = {
 	kind: SecretKind,
 	present: boolean,
+};
+
+export type SortKey = "lastPlayed" | "name" | "playtime" | "added";
+
+export type SourceCard = SourceCard_Serialize | SourceCard_Deserialize;
+
+export type SourceCard_Deserialize = {
+	kind: SourceKind,
+	status: SourceStatus,
+	/**  Where the launcher was found, when relevant. */
+	location?: string | null,
+	lastSync?: SyncReport | null,
+	syncing: boolean,
+};
+
+export type SourceCard_Serialize = {
+	kind: SourceKind,
+	status: SourceStatus,
+	/**  Where the launcher was found, when relevant. */
+	location: string | null,
+	lastSync: SyncReport | null,
+	syncing: boolean,
+};
+
+export type SourceCount = {
+	kind: SourceKind,
+	count: number,
+};
+
+export type SourceInfo = SourceInfo_Serialize | SourceInfo_Deserialize;
+
+export type SourceInfo_Deserialize = {
+	id: string,
+	kind: SourceKind,
+	externalId?: string | null,
+	installed: boolean,
+	installPath?: string | null,
+	sizeBytes?: number | null,
+	launchUri?: string | null,
+	playtimeMinutes?: number | null,
+	lastPlayed?: string | null,
+};
+
+export type SourceInfo_Serialize = {
+	id: string,
+	kind: SourceKind,
+	externalId: string | null,
+	installed: boolean,
+	installPath: string | null,
+	sizeBytes: number | null,
+	launchUri: string | null,
+	playtimeMinutes: number | null,
+	lastPlayed: string | null,
+};
+
+/**  Platform a copy of a game comes from. */
+export type SourceKind = "steam" | "epic" | "gog" | "battlenet" | "ea" | "ubisoft" | "xbox" | "riot" | "local" | "emulator";
+
+/**  Connection state shown in the sidebar and in Settings › Sources. */
+export type SourceStatus = 
+/**  Launcher found and readable. */
+{ state: "connected" } | 
+/**  Launcher not installed on this PC: not an error, the source is skipped. */
+{ state: "not_installed" } | 
+/**  Readable, but an account or key is needed for part of the data. */
+{ state: "needs_auth" } | 
+/**  Something went wrong (message for the logs / settings card). */
+{ state: "error"; detail: string };
+
+export type SourceTime = SourceTime_Serialize | SourceTime_Deserialize;
+
+export type SourceTime_Deserialize = {
+	sourceId?: string | null,
+	kind?: SourceKind | null,
+	minutes: number,
+	fromPlatform: boolean,
+};
+
+export type SourceTime_Serialize = {
+	sourceId: string | null,
+	kind: SourceKind | null,
+	minutes: number,
+	fromPlatform: boolean,
+};
+
+export type StatusCounts = {
+	todo: number,
+	playing: number,
+	done: number,
+	dropped: number,
+};
+
+export type SteamAccountInfo = SteamAccountInfo_Serialize | SteamAccountInfo_Deserialize;
+
+export type SteamAccountInfo_Deserialize = {
+	steamId: string,
+	personaName?: string | null,
+};
+
+export type SteamAccountInfo_Serialize = {
+	steamId: string,
+	personaName: string | null,
+};
+
+export type SteamSettings = SteamSettings_Serialize | SteamSettings_Deserialize;
+
+export type SteamSettings_Deserialize = {
+	steamPath?: string | null,
+	/**  SteamID64 in use (configured, or detected from loginusers.vdf). */
+	steamId?: string | null,
+	/**  True when the user chose the SteamID explicitly. */
+	steamIdConfigured: boolean,
+	accounts: SteamAccountInfo_Deserialize[],
+	apiKeyPresent: boolean,
+};
+
+export type SteamSettings_Serialize = {
+	steamPath: string | null,
+	/**  SteamID64 in use (configured, or detected from loginusers.vdf). */
+	steamId: string | null,
+	/**  True when the user chose the SteamID explicitly. */
+	steamIdConfigured: boolean,
+	accounts: SteamAccountInfo_Serialize[],
+	apiKeyPresent: boolean,
+};
+
+export type SyncReport = {
+	kind: SourceKind,
+	status: SourceStatus,
+	added: number,
+	updated: number,
+	/**  Games of this source no longer installed after this scan. */
+	uninstalled: number,
+	total: number,
+	warnings: string[],
+	/**  RFC 3339. */
+	finishedAt: string,
+};
+
+export type Tag = {
+	id: string,
+	name: string,
 };
 
 /* Tauri Specta runtime */

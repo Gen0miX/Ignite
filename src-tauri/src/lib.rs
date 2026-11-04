@@ -40,6 +40,16 @@ pub fn run() {
             app.manage(database);
             app.manage(secrets::default_store()?);
             app.manage(AppPaths { data_dir, db_path });
+            app.manage(commands::sources::SyncState::default());
+
+            // Initial sync in the background: the window opens immediately and
+            // the library refreshes when the `library-changed` event fires.
+            let handle = app.handle().clone();
+            std::thread::spawn(move || {
+                if let Err(e) = commands::sources::run_sync(&handle) {
+                    tracing::warn!(error = %e, "startup sync failed");
+                }
+            });
             Ok(())
         })
         .run(tauri::generate_context!())
