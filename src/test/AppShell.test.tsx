@@ -57,6 +57,6 @@ describe('app shell', () => {
 
   it('shows that the backend is unavailable outside Tauri', async () => {
     renderAt('/settings/sources');
-    expect(await screen.findByText(/Backend indisponible/)).toBeVisible();
+    expect((await screen.findAllByText(/Backend indisponible/))[0]).toBeVisible();
   });
 });

@@ -1,0 +1,30 @@
+.group {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--radius-lg);
+  background: var(--color-card);
+}
+
+.segment {
+  height: var(--h-control-sm);
+  padding: 0 6px;
+  border-radius: 7px;
+  font-size: var(--text-base);
+  color: var(--color-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.segment:hover:not(.checked) {
+  color: var(--color-text);
+}
+
+.checked {
+  background: var(--color-active);
+  color: var(--color-text);
+  font-weight: 600;
+}

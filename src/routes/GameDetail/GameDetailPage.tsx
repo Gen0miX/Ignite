@@ -1,3 +1,4 @@
+import { PageMain } from '../../app/AppShell';
 import { Link } from 'react-router-dom';
 import buttons from '../../components/Button/Button.module.css';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
@@ -6,7 +7,7 @@ import { fr } from '../../i18n/fr';
 
 export function GameDetailPage() {
   return (
-    <>
+    <PageMain>
       <PageHeader title={fr.game.title} />
       <EmptyState
         action={
@@ -15,8 +16,8 @@ export function GameDetailPage() {
           </Link>
         }
       >
-        {fr.game.notFound}
+        {fr.game.comingSoon}
       </EmptyState>
-    </>
+    </PageMain>
   );
 }

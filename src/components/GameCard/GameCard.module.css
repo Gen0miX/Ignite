@@ -1,0 +1,145 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  outline: none;
+}
+
+.card:focus-visible {
+  box-shadow: none;
+}
+
+.card:focus-visible .coverBox {
+  box-shadow: var(--focus-ring);
+}
+
+.coverBox {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-card);
+  transition: transform var(--transition);
+}
+
+.card:hover .coverBox {
+  transform: scale(1.02);
+}
+
+.selected .coverBox {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.image,
+.placeholder,
+.headerFallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.image {
+  object-fit: cover;
+}
+
+.placeholder {
+  display: flex;
+  align-items: flex-end;
+  padding: var(--space-3);
+}
+
+.headerFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--color-card);
+}
+
+.headerBlur {
+  position: absolute;
+  inset: -20px;
+  width: calc(100% + 40px);
+  height: calc(100% + 40px);
+  max-width: none;
+  object-fit: cover;
+  filter: blur(18px) brightness(0.55);
+}
+
+.headerImage {
+  position: relative;
+  width: 100%;
+  height: auto;
+}
+
+.placeholderTitle {
+  position: absolute;
+  left: var(--space-3);
+  right: var(--space-3);
+  bottom: var(--space-3);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--color-text);
+  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
+  overflow-wrap: anywhere;
+}
+
+.headerFallback .placeholderTitle {
+  font-size: var(--text-md);
+}
+
+.badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  display: flex;
+}
+
+.play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.9);
+  transition:
+    opacity var(--transition),
+    transform var(--transition);
+}
+
+.card:hover .play {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  margin-top: -4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

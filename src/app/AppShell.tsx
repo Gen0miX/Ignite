@@ -1,15 +1,25 @@
+import type { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
+import { useLibraryEvents } from '../api/hooks';
 import { Sidebar } from '../components/Sidebar/Sidebar';
 import styles from './AppShell.module.css';
 
-/** Fluid 3-column layout: sidebar, content, (later) selected-game panel. */
+/** Fluid 3-column layout: sidebar, content, and the page's optional side panel. */
 export function AppShell() {
+  useLibraryEvents();
   return (
     <div className={styles.shell}>
       <Sidebar />
-      <main className={styles.content} id="content">
-        <Outlet />
-      </main>
+      <Outlet />
     </div>
+  );
+}
+
+/** Scrollable main content column; pages may render a panel next to it. */
+export function PageMain({ children }: { children: ReactNode }) {
+  return (
+    <main className={styles.content} id="content">
+      {children}
+    </main>
   );
 }
