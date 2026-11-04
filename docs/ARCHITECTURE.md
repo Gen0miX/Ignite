@@ -57,6 +57,8 @@ Chaque source est **isolée** : une erreur dans une source est renvoyée comme `
 
 ## 3. Modèle de données (SQLite)
 
+> Implémenté dans `src-tauri/migrations/0001_initial.sql`, avec en plus : clés étrangères `ON DELETE CASCADE` sur `game_tags` et `collection_games`, contraintes `CHECK` sur les énumérations (`status`, `origin`, `mode`, `kind`), index sur `game_sources(game_id)`. Le champ de règle `added_at` (§ 6) correspond à `games.created_at`.
+
 ```sql
 CREATE TABLE games (
   id TEXT PRIMARY KEY,                 -- uuid

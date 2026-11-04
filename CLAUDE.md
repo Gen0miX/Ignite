@@ -13,7 +13,7 @@ Lis dans cet ordre avant de coder :
 ## Stack (décidée)
 
 - **Tauri 2** (backend Rust) + **React 18 + TypeScript + Vite** (frontend)
-- **SQLite** via `rusqlite` (migrations embarquées, fichier dans le dossier app-data)
+- **SQLite** via `rusqlite` (migrations embarquées dans `src-tauri/migrations/`, fichier `%APPDATA%\com.ludotheque.app\ludotheque.db`)
 - État frontend : **TanStack Query** pour les données backend, **Zustand** pour l'état UI
 - Style : CSS Modules + variables CSS de `design/tokens.css` (pas de Tailwind, pas de librairie de composants lourde)
 - Icônes : `lucide-react` (trait 2 px, cohérent avec les maquettes)
@@ -24,12 +24,21 @@ Lis dans cet ordre avant de coder :
 
 ```bash
 pnpm install
-pnpm tauri dev        # lancer l'app en dev
-pnpm test             # tests frontend
-cargo test --manifest-path src-tauri/Cargo.toml
+pnpm tauri dev        # lancer l'app en dev (régénère aussi src/api/bindings.ts)
+pnpm test             # tests frontend (Vitest)
+pnpm test:rust        # tests Rust (= cargo test --manifest-path src-tauri/Cargo.toml)
+pnpm bindings         # régénérer les types TS des commandes Tauri sans lancer l'app
 pnpm lint && pnpm typecheck
-pnpm tauri build      # build installeur
+pnpm format           # Prettier ; côté Rust : cargo fmt / cargo clippy --all-targets -- -D warnings
+pnpm tauri build      # build installeur (NSIS)
 ```
+
+Test touchant le vrai Credential Manager (ignoré par défaut) :
+`cargo test --manifest-path src-tauri/Cargo.toml secrets -- --ignored`
+
+Versions épinglées à connaître : `specta`/`tauri-specta` `=2.0.0-rc.26` et `specta-typescript` `=0.0.13` (Tauri Specta encore en RC) ;
+`rusqlite` 0.40 (contrainte de `rusqlite_migration` 2.6) ; TypeScript 6.0 (typescript-eslint ne supporte pas TS 7) ;
+secrets via `keyring-core` + `windows-native-keyring-store` (recommandé par keyring 4 pour une app).
 
 (Mets à jour cette section si tu changes l'outillage.)
 
