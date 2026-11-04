@@ -107,13 +107,71 @@ pub fn library_folders(root: &Path) -> (Vec<PathBuf>, Vec<PathBuf>) {
     all.into_iter().partition(|p| p.join("steamapps").is_dir())
 }
 
+/// `appid → library` according to the `"apps"` block of each library in
+/// `libraryfolders.vdf`. This is Steam's own view of where a game lives and
+/// settles stale manifests left in another library.
+pub fn library_app_owners(root: &Path) -> HashMap<u64, PathBuf> {
+    match read_vdf(&root.join("steamapps").join("libraryfolders.vdf")) {
+        Ok(doc) => parse_library_app_owners(&doc),
+        Err(_) => HashMap::new(),
+    }
+}
+
+pub fn parse_library_app_owners(doc: &Vdf) -> HashMap<u64, PathBuf> {
+    let folders = doc.get("libraryfolders").unwrap_or(doc);
+    let mut owners = HashMap::new();
+    for (_, entry) in folders.entries() {
+        let Some(path) = entry.get_str("path") else {
+            continue;
+        };
+        for (appid, _) in entry.get("apps").map(Vdf::entries).unwrap_or_default() {
+            if let Ok(id) = appid.parse() {
+                owners.insert(id, PathBuf::from(path));
+            }
+        }
+    }
+    owners
+}
+
+/// One manifest per appid when a game has manifests in several libraries
+/// (an old copy left behind after moving the game). Preference: the library
+/// Steam lists the game in, then fully installed, then most recently updated.
+pub fn dedupe_manifests(
+    manifests: Vec<AppManifest>,
+    owners: &HashMap<u64, PathBuf>,
+) -> Vec<AppManifest> {
+    let mut best: HashMap<u64, AppManifest> = HashMap::new();
+    let rank = |m: &AppManifest| {
+        let owned = owners
+            .get(&m.appid)
+            .is_some_and(|lib| same_path(lib, &m.library));
+        (owned, m.fully_installed, m.last_updated.unwrap_or(0))
+    };
+    for m in manifests {
+        match best.get(&m.appid) {
+            Some(current) if rank(current) >= rank(&m) => {
+                tracing::info!(appid = m.appid, ignored = %m.library.display(), "duplicate Steam manifest ignored");
+            }
+            _ => {
+                best.insert(m.appid, m);
+            }
+        }
+    }
+    let mut list: Vec<_> = best.into_values().collect();
+    list.sort_by_key(|m| m.appid);
+    list
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct AppManifest {
     pub appid: u64,
     pub name: String,
     pub install_path: PathBuf,
+    /// Library folder the manifest was read from.
+    pub library: PathBuf,
     pub size_bytes: Option<u64>,
     pub last_played: Option<u64>,
+    pub last_updated: Option<u64>,
     pub fully_installed: bool,
 }
 
@@ -144,6 +202,8 @@ pub fn parse_manifest(text: &str, library: &Path) -> AppResult<Option<AppManifes
         appid,
         name: name.trim().to_string(),
         install_path: library.join("steamapps").join("common").join(installdir),
+        library: library.to_path_buf(),
+        last_updated: state.get_u64("LastUpdated").filter(|t| *t > 0),
         size_bytes: state.get_u64("SizeOnDisk").filter(|s| *s > 0),
         last_played: state.get_u64("LastPlayed").filter(|t| *t > 0),
         fully_installed: state.get_u64("StateFlags").unwrap_or(0) & STATE_FULLY_INSTALLED != 0,
@@ -406,6 +466,61 @@ mod tests {
         assert_eq!(apps.len(), 1);
         assert_eq!(apps[0].appid, 1086940);
         assert!(installed_apps(&root).is_empty());
+    }
+
+    fn m(appid: u64, lib: &str, full: bool, updated: Option<u64>) -> AppManifest {
+        AppManifest {
+            appid,
+            name: "X".into(),
+            install_path: PathBuf::from(lib)
+                .join("steamapps")
+                .join("common")
+                .join("X"),
+            library: PathBuf::from(lib),
+            size_bytes: None,
+            last_played: None,
+            last_updated: updated,
+            fully_installed: full,
+        }
+    }
+
+    #[test]
+    fn duplicate_manifests_prefer_steams_library_then_state_then_date() {
+        // Real case: Satisfactory listed under C: with a stale copy on E:.
+        let doc = vdf::parse(
+            r#""libraryfolders" {
+                "0" { "path" "C:\\Steam" "apps" { "526870" "1" } }
+                "1" { "path" "E:\\SteamLibrary" "apps" { "1" "1" } }
+            }"#,
+        )
+        .unwrap();
+        let owners = parse_library_app_owners(&doc);
+        assert_eq!(owners[&526870], PathBuf::from(r"C:\Steam"));
+
+        let list = dedupe_manifests(
+            vec![
+                m(526870, r"C:\Steam", true, Some(10)),
+                m(526870, r"E:\SteamLibrary", true, Some(99)),
+                // Not in any "apps" block: fully installed wins, then newest.
+                m(2, r"C:\Steam", false, Some(50)),
+                m(2, r"E:\SteamLibrary", true, None),
+                m(3, r"C:\Steam", true, Some(1)),
+                m(3, r"E:\SteamLibrary", true, Some(2)),
+            ],
+            &owners,
+        );
+        let libs: Vec<_> = list
+            .iter()
+            .map(|x| (x.appid, x.library.display().to_string()))
+            .collect();
+        assert_eq!(
+            libs,
+            vec![
+                (2, r"E:\SteamLibrary".to_string()),
+                (3, r"E:\SteamLibrary".to_string()),
+                (526870, r"C:\Steam".to_string()),
+            ]
+        );
     }
 
     #[test]

@@ -72,9 +72,11 @@ impl Source for SteamSource {
             for lib in missing {
                 warnings.push(format!("Steam library not reachable: {}", lib.display()));
             }
+            let mut manifests = Vec::new();
             for lib in &libraries {
-                installed.extend(local::installed_apps(lib));
+                manifests.extend(local::installed_apps(lib));
             }
+            installed = local::dedupe_manifests(manifests, &local::library_app_owners(root));
             if let Some(account) = self
                 .config
                 .steam_id
@@ -207,8 +209,10 @@ mod tests {
             appid,
             name: name.into(),
             install_path: PathBuf::from(format!(r"C:\Steam\steamapps\common\{name}")),
+            library: PathBuf::from(r"C:\Steam"),
             size_bytes: Some(1000),
             last_played: Some(1_600_000_000),
+            last_updated: None,
             fully_installed: true,
         }
     }
