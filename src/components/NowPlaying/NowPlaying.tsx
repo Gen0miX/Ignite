@@ -1,0 +1,60 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useLibraryCounts, useTrackerActive } from '../../api/hooks';
+import { useQueryClient } from '@tanstack/react-query';
+import type { ActiveGame, GameSummary } from '../../api/client';
+import { fr } from '../../i18n/fr';
+import { formatClock } from '../../lib/sessions';
+import styles from './NowPlaying.module.css';
+
+/** Seconds played: last value from the backend plus time since it was read. */
+function useLiveSeconds(game: ActiveGame, fetchedAt: number): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return game.activeSeconds + Math.max(0, (now - fetchedAt) / 1000);
+}
+
+function titleOf(client: ReturnType<typeof useQueryClient>, gameId: string): string | undefined {
+  // Look the title up in any cached library list (no extra request).
+  for (const [, data] of client.getQueriesData<GameSummary[]>({ queryKey: ['library'] })) {
+    const hit = data?.find((g) => g.id === gameId);
+    if (hit) return hit.title;
+  }
+  return undefined;
+}
+
+function Row({ game, fetchedAt }: { game: ActiveGame; fetchedAt: number }) {
+  const client = useQueryClient();
+  const seconds = useLiveSeconds(game, fetchedAt);
+  const title = titleOf(client, game.gameId) ?? fr.tracking.nowPlaying;
+  return (
+    <Link to={`/game/${game.gameId}`} className={styles.row}>
+      <span className={styles.dot} aria-hidden="true" />
+      <span className={styles.title}>{title}</span>
+      <span
+        className={styles.clock}
+        aria-label={`${fr.tracking.nowPlaying} depuis ${formatClock(seconds)}`}
+      >
+        {formatClock(seconds)}
+      </span>
+    </Link>
+  );
+}
+
+/** Live timer at the bottom of the sidebar while a game is running. */
+export function NowPlaying() {
+  const { data, dataUpdatedAt } = useTrackerActive();
+  useLibraryCounts(); // keep library data warm for titles
+  if (!data || data.length === 0) return null;
+  return (
+    <section className={styles.box} aria-label={fr.tracking.nowPlaying} role="status">
+      <span className="section-label">{fr.tracking.nowPlaying}</span>
+      {data.map((g) => (
+        <Row key={g.sessionId} game={g} fetchedAt={dataUpdatedAt} />
+      ))}
+    </section>
+  );
+}

@@ -113,7 +113,16 @@ function PanelContent({ game }: { game: GameDetail }) {
 
         <div className={styles.tiles}>
           <StatTile label={fr.panel.totalTime} value={formatPlaytimeLong(total)} />
-          <StatTile label={fr.panel.achievements} value="—" />
+          {s.achievements && s.achievements.total > 0 ? (
+            <StatTile
+              label={fr.panel.achievements}
+              value={`${s.achievements.done}/${s.achievements.total}`}
+            />
+          ) : s.goals && s.goals.total > 0 ? (
+            <StatTile label={fr.panel.goals} value={`${s.goals.done}/${s.goals.total}`} />
+          ) : (
+            <StatTile label={fr.panel.achievements} value="—" />
+          )}
           <StatTile label={fr.panel.lastSession} value={formatLastPlayed(s.lastPlayed)} />
         </div>
 

@@ -22,6 +22,14 @@ export type SteamSettings = b.SteamSettings;
 export type SecretKind = b.SecretKind;
 export type SecretStatus = b.SecretStatus;
 export type Tag = b.Tag;
+export type PlaySession = b.PlaySession_Serialize;
+export type SessionInput = b.SessionInput_Deserialize;
+export type SessionOrigin = b.SessionOrigin;
+export type Goal = b.Goal_Serialize;
+export type AchievementsView = b.AchievementsView_Serialize;
+export type AchievementItem = b.AchievementItem_Serialize;
+export type ActiveGame = b.ActiveGame;
+export type Progress = b.Progress;
 
 export class BackendError extends Error {
   readonly kind: string;

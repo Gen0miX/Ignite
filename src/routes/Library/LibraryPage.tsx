@@ -2,7 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { RefreshCw, Search } from 'lucide-react';
 import { isTauri, type LibraryView, type SortKey } from '../../api/client';
-import { useLaunchGame, useLibraryCounts, useLibraryList, useSync } from '../../api/hooks';
+import {
+  useLaunchGame,
+  useLibraryCounts,
+  useLibraryList,
+  useSync,
+  useTrackerActive,
+} from '../../api/hooks';
 import { PageMain } from '../../app/AppShell';
 import buttons from '../../components/Button/Button.module.css';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
@@ -58,6 +64,8 @@ export function LibraryPage() {
   const counts = useLibraryCounts();
   const sync = useSync();
   const launch = useLaunchGame();
+  const active = useTrackerActive();
+  const playingIds = useMemo(() => new Set(active.data?.map((a) => a.gameId)), [active.data]);
   const games = list.data ?? [];
 
   const select = useCallback(
@@ -107,6 +115,7 @@ export function LibraryPage() {
       <GameGrid
         games={games}
         selectedId={selected}
+        playingIds={playingIds}
         onSelect={(id) => id !== selected && select(id)}
         onLaunch={(id) => launch.mutate(id)}
       />

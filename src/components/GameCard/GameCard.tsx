@@ -3,6 +3,7 @@ import { Play } from 'lucide-react';
 import type { GameSummary } from '../../api/client';
 import { fr } from '../../i18n/fr';
 import { formatPlaytimeShort } from '../../lib/format';
+import { progressLabel } from '../../lib/sessions';
 import { SourceBadge } from '../SourceBadge/SourceBadge';
 import { Cover } from './Cover';
 import styles from './GameCard.module.css';
@@ -10,6 +11,7 @@ import styles from './GameCard.module.css';
 interface GameCardProps {
   game: GameSummary;
   selected: boolean;
+  playing?: boolean;
   tabIndex: number;
   onSelect: () => void;
   onLaunch: () => void;
@@ -18,11 +20,13 @@ interface GameCardProps {
 
 /** Cover card: click selects, double-click / Enter launches. */
 export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameCard(
-  { game, selected, tabIndex, onSelect, onLaunch, onKeyDown },
+  { game, selected, playing = false, tabIndex, onSelect, onLaunch, onKeyDown },
   ref,
 ) {
   const meta = [formatPlaytimeShort(game.playtimeMinutes)];
-  if (game.installed) meta.push(fr.library.installedBadge);
+  const progress = progressLabel(game.achievements, game.goals);
+  if (progress) meta.push(progress);
+  else if (game.installed) meta.push(fr.library.installedBadge);
 
   return (
     <div
@@ -40,6 +44,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
     >
       <div className={styles.coverBox}>
         <Cover title={game.title} cover={game.cover} header={game.header} />
+        {playing && <span className={styles.playing}>{fr.tracking.inGame}</span>}
         {game.sources[0] && (
           <span className={styles.badge}>
             <SourceBadge kind={game.sources[0]} overlay />

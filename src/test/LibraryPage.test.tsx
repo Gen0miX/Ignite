@@ -19,6 +19,8 @@ const game = (id: string, title: string, extra: Partial<GameSummary> = {}): Game
   addedAt: '2026-01-01T00:00:00Z',
   cover: null,
   header: null,
+  achievements: null,
+  goals: null,
   ...extra,
 });
 

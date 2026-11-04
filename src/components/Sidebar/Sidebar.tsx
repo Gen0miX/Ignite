@@ -5,6 +5,7 @@ import { fr } from '../../i18n/fr';
 import { AppLogo } from '../AppLogo/AppLogo';
 import { SourceChip } from '../SourceBadge/SourceBadge';
 import { StatusDot } from '../StatusDot/StatusDot';
+import { NowPlaying } from '../NowPlaying/NowPlaying';
 import { NavItem } from './NavItem';
 import styles from './Sidebar.module.css';
 
@@ -80,6 +81,7 @@ export function Sidebar() {
       </section>
 
       <div className={styles.footer}>
+        <NowPlaying />
         {syncing && (
           <p className={styles.hint} role="status">
             {fr.sidebar.syncing}

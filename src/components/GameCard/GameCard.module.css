@@ -143,3 +143,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.playing {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}

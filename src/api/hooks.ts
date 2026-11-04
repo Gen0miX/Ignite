@@ -8,6 +8,7 @@ import {
   type GameUpdate,
   type LibraryQuery,
   type SecretKind,
+  type SessionInput,
 } from './client';
 
 export const keys = {
@@ -17,10 +18,14 @@ export const keys = {
   sources: ['sources'] as const,
   steamSettings: ['steam-settings'] as const,
   secrets: ['secrets'] as const,
+  tracker: ['tracker'] as const,
+  sessions: (gameId: string) => ['sessions', gameId] as const,
+  goals: (gameId: string) => ['goals', gameId] as const,
+  achievements: (gameId: string) => ['achievements', gameId] as const,
 };
 
 /** Everything derived from the library must refresh after a change. */
-const LIBRARY_KEYS = [['library'], ['counts'], ['game'], ['sources']];
+const LIBRARY_KEYS = [['library'], ['counts'], ['game'], ['sources'], ['sessions'], ['goals']];
 
 export function useLibraryList(query: LibraryQuery) {
   return useQuery({
@@ -145,22 +150,119 @@ export function useClearSecret() {
   });
 }
 
-/** Refreshes library data whenever the backend reports a change (sync, artwork). */
+/** Refreshes data whenever the backend reports a change (sync, artwork, sessions). */
 export function useLibraryEvents() {
   const client = useQueryClient();
   useEffect(() => {
     if (!isTauri()) return;
-    let unlisten: (() => void) | undefined;
+    const unlisteners: (() => void)[] = [];
     let cancelled = false;
-    void listen('library-changed', () => {
+    const refreshLibrary = () => {
       for (const queryKey of LIBRARY_KEYS) void client.invalidateQueries({ queryKey });
-    }).then((fn) => {
-      if (cancelled) fn();
-      else unlisten = fn;
-    });
+    };
+    const refreshTracker = () => {
+      void client.invalidateQueries({ queryKey: keys.tracker });
+      refreshLibrary();
+    };
+    const subscriptions: [string, () => void][] = [
+      ['library-changed', refreshLibrary],
+      ['session-started', refreshTracker],
+      ['session-ended', refreshTracker],
+    ];
+    for (const [event, handler] of subscriptions) {
+      void listen(event, handler).then((fn) => {
+        if (cancelled) fn();
+        else unlisteners.push(fn);
+      });
+    }
     return () => {
       cancelled = true;
-      unlisten?.();
+      unlisteners.forEach((fn) => fn());
     };
   }, [client]);
+}
+
+/** Games being played now; polled while a session is active. */
+export function useTrackerActive() {
+  return useQuery({
+    queryKey: keys.tracker,
+    queryFn: () => commands.trackerActive(),
+    enabled: isTauri(),
+    refetchInterval: (q) => ((q.state.data?.length ?? 0) > 0 ? 15_000 : 60_000),
+  });
+}
+
+export function useSessions(gameId: string) {
+  return useQuery({
+    queryKey: keys.sessions(gameId),
+    queryFn: () => unwrap(commands.sessionsList(gameId)),
+    enabled: isTauri(),
+  });
+}
+
+export function useSaveSession() {
+  const invalidate = useInvalidateLibrary();
+  return useMutation({
+    mutationFn: (input: SessionInput) => unwrap(commands.sessionSave(input)),
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useDeleteSession() {
+  const invalidate = useInvalidateLibrary();
+  return useMutation({
+    mutationFn: (id: string) => unwrap(commands.sessionDelete(id)),
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useGoals(gameId: string) {
+  return useQuery({
+    queryKey: keys.goals(gameId),
+    queryFn: () => unwrap(commands.goalsList(gameId)),
+    enabled: isTauri(),
+  });
+}
+
+export function useGoalMutations(gameId: string) {
+  const invalidate = useInvalidateLibrary();
+  const opts = { onSuccess: () => invalidate() };
+  return {
+    add: useMutation({
+      mutationFn: (title: string) => unwrap(commands.goalAdd(gameId, title)),
+      ...opts,
+    }),
+    toggle: useMutation({
+      mutationFn: ({ id, done }: { id: string; done: boolean }) =>
+        unwrap(commands.goalToggle(id, done)),
+      ...opts,
+    }),
+    rename: useMutation({
+      mutationFn: ({ id, title }: { id: string; title: string }) =>
+        unwrap(commands.goalRename(id, title)),
+      ...opts,
+    }),
+    remove: useMutation({ mutationFn: (id: string) => unwrap(commands.goalDelete(id)), ...opts }),
+  };
+}
+
+export function useAchievements(gameId: string, enabled = true) {
+  return useQuery({
+    queryKey: keys.achievements(gameId),
+    queryFn: () => unwrap(commands.achievementsGet(gameId, false)),
+    enabled: isTauri() && enabled,
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useRefreshAchievements(gameId: string) {
+  const client = useQueryClient();
+  const invalidate = useInvalidateLibrary();
+  return useMutation({
+    mutationFn: () => unwrap(commands.achievementsGet(gameId, true)),
+    onSuccess: (data) => {
+      client.setQueryData(keys.achievements(gameId), data);
+      void invalidate();
+    },
+  });
 }

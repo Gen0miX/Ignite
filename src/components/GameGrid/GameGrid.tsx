@@ -8,12 +8,13 @@ import styles from './GameGrid.module.css';
 interface GameGridProps {
   games: GameSummary[];
   selectedId: string | null;
+  playingIds?: Set<string>;
   onSelect: (id: string) => void;
   onLaunch: (id: string) => void;
 }
 
 /** Cover grid with roving focus: arrows move, Enter launches, Home/End jump. */
-export function GameGrid({ games, selectedId, onSelect, onLaunch }: GameGridProps) {
+export function GameGrid({ games, selectedId, playingIds, onSelect, onLaunch }: GameGridProps) {
   const refs = useRef<(HTMLDivElement | null)[]>([]);
   const selectedIndex = games.findIndex((g) => g.id === selectedId);
   const focusIndex = selectedIndex >= 0 ? selectedIndex : 0;
@@ -46,6 +47,7 @@ export function GameGrid({ games, selectedId, onSelect, onLaunch }: GameGridProp
             }}
             game={game}
             selected={game.id === selectedId}
+            playing={playingIds?.has(game.id) ?? false}
             tabIndex={i === focusIndex ? 0 : -1}
             onSelect={() => onSelect(game.id)}
             onLaunch={() => onLaunch(game.id)}
