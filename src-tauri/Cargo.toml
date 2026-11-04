@@ -23,6 +23,7 @@ rusqlite = { version = "0.40.2", features = ["bundled"] }
 rusqlite_migration = "2.6.0"
 uuid = { version = "1.29.0", features = ["v4"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
+keyring-core = "1.0.1"
 
 [profile.dev]
 incremental = true
@@ -32,3 +33,6 @@ codegen-units = 1
 lto = true
 opt-level = "s"
 strip = true
+
+[target.'cfg(windows)'.dependencies]
+windows-native-keyring-store = { version = "1.1.0", default-features = false }
