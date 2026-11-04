@@ -1,8 +1,7 @@
 /* Ludothèque — thème « Braise » (direction B · Atelier)
    Source de vérité des couleurs, typo, espacements. Importer une seule fois dans src/styles/global.css. */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-/* En production, embarquer les polices localement (dossier src/assets/fonts) plutôt que Google Fonts. */
+/* Polices embarquées localement via @fontsource (voir src/styles/fonts.ts) : pas d'appel à Google Fonts. */
 
 :root {
   /* Surfaces */
