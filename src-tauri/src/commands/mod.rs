@@ -23,6 +23,7 @@ impl From<AppError> for CommandError {
             AppError::Db(_) | AppError::Migration(_) => "database",
             AppError::Json(_) => "serialization",
             AppError::Io(_) => "io",
+            AppError::Network { .. } => "network",
             AppError::Secret(_) => "secret_store",
             AppError::NotFound(_) => "not_found",
             AppError::Invalid(_) => "invalid",

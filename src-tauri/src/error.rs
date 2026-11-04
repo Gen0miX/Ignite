@@ -11,6 +11,11 @@ pub enum AppError {
     Json(#[from] serde_json::Error),
     #[error("i/o error: {0}")]
     Io(#[from] std::io::Error),
+    #[error("network error: {message}")]
+    Network {
+        status: Option<u16>,
+        message: String,
+    },
     #[error("secret store error: {0}")]
     Secret(String),
     #[error("not found: {0}")]
