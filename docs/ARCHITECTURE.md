@@ -157,6 +157,14 @@ CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL); -- JSON
 3. **Fin de la session** : tous les processus correspondants ont disparu depuis plus de 10 s (délai de grâce pour les launchers qui relancent un processus enfant). On enregistre `duration_seconds = durée totale − idle_seconds`. On supprime la session si elle est sous le minimum (2 min par défaut).
 4. Les événements `session-started` et `session-ended` sont émis vers le frontend (badge « En jeu », mise à jour en direct).
 
+Implémentation (J2) :
+
+- polling `sysinfo` toutes les 3 s (pas de WMI : `Win32_ProcessStartTrace` demande les droits administrateur) ; la liste des jeux surveillés et les réglages sont relus toutes les 30 s ;
+- `process_matchers` au format `[{"exe_path": …} | {"path_prefix": …} | {"exe": …}]` ; par défaut, préfixe = dossier d'installation (Steam : `steamapps\common\<installdir>`). Un processus dont le chemin est illisible (processus élevé) ne peut correspondre qu'à un matcher `exe` ;
+- **inactivité** : quand la durée sans entrée dépasse le seuil, c'est **toute la période d'inactivité** qui est retirée (pas seulement ce qui dépasse le seuil). Manette : XInput (`dwPacketNumber`), car `GetLastInputInfo` ne voit pas les manettes ;
+- à la fermeture de l'app, les sessions ouvertes sont écrites ; en cas de crash, la dernière écriture (heartbeat) fait foi ;
+- les sessions saisies à la main sur un jeu à source unique sont rattachées à cette source. Pour une source qui a son propre compteur (Steam), elles servent donc à l'historique, pas au total (règle de cumul ci-dessous) : l'écran le signale.
+
 Cas particuliers :
 
 - **Launchers intermédiaires** (Minecraft, Battle.net, EA) : on suit le processus du jeu, pas celui du launcher. On le choisit à l'ajout, avec une détection automatique du processus enfant le plus long.

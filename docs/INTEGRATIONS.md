@@ -18,7 +18,8 @@
 - `IPlayerService/GetRecentlyPlayedGames/v1` : les jeux joués récemment.
 - `ISteamUserStats/GetPlayerAchievements/v1?appid=&steamid=&l=french` : les succès débloqués.
 - `ISteamUserStats/GetSchemaForGame/v2?appid=&l=french` : les noms et icônes des succès.
-- `ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2?gameid=` : la rareté des succès.
+- `ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2?gameid=` : la rareté des succès (`percent` peut être un nombre ou une chaîne selon les jeux : on accepte les deux).
+- Succès (J2) : un jeu sans succès répond **HTTP 400** (`"Requested app has no stats"`), un profil privé **HTTP 403**. Le cache SQLite est valable 6 h ; `game_sources.achievements_total = 0` mémorise « pas de succès ». Les icônes (CDN Steam) ne sont pas encore affichées : pas de hotlinking, elles seront mises en cache plus tard.
 - `ISteamUser/GetPlayerSummaries/v2` et `GetFriendList/v1` : les amis (pour plus tard).
 - `ISteamNews/GetNewsForApp/v2` : les actus de chaque jeu (à filtrer, voir SPEC § 4).
 - Le SteamID64 vient de `config\loginusers.vdf`, ou bien l'utilisateur le saisit.
