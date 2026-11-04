@@ -19,6 +19,10 @@ serde_json = "1"
 thiserror = "2.0.21"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+rusqlite = { version = "0.40.2", features = ["bundled"] }
+rusqlite_migration = "2.6.0"
+uuid = { version = "1.29.0", features = ["v4"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
 
 [profile.dev]
 incremental = true
