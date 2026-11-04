@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 macro_rules! string_enum {
     ($(#[$meta:meta])* $name:ident { $($variant:ident => $text:literal),+ $(,)? }) => {
         $(#[$meta])*
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, specta::Type)]
         #[serde(rename_all = "lowercase")]
         pub enum $name { $($variant),+ }
 

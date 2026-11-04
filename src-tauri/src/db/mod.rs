@@ -13,9 +13,10 @@ use crate::error::AppResult;
 pub const DB_FILE_NAME: &str = "ludotheque.db";
 
 fn migrations() -> Migrations<'static> {
-    Migrations::new(vec![M::up(include_str!(
-        "../../migrations/0001_initial.sql"
-    ))])
+    Migrations::new(vec![
+        M::up(include_str!("../../migrations/0001_initial.sql")),
+        M::up(include_str!("../../migrations/0002_artwork_header.sql")),
+    ])
 }
 
 fn configure(conn: &Connection) -> AppResult<()> {
@@ -121,7 +122,7 @@ mod tests {
             .conn()
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .unwrap();
-        assert_eq!(version, 1);
+        assert_eq!(version, 2);
         drop(db);
         let _ = std::fs::remove_dir_all(dir);
     }

@@ -1,1 +1,3 @@
-//! Artwork and metadata providers (Steam cache, SteamGridDB, IGDB). Implemented from J1.
+//! Artwork and metadata providers (Steam cache, SteamGridDB, IGDB).
+
+pub mod artwork;

@@ -127,6 +127,30 @@ pub fn upsert(
     get(conn, &id)
 }
 
+pub fn list_all(conn: &Connection) -> AppResult<Vec<GameSource>> {
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {COLUMNS} FROM game_sources ORDER BY kind, id"
+    ))?;
+    let rows = stmt.query_map([], from_row)?;
+    Ok(rows.collect::<Result<_, _>>()?)
+}
+
+pub fn list_by_kind(conn: &Connection, kind: SourceKind) -> AppResult<Vec<GameSource>> {
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {COLUMNS} FROM game_sources WHERE kind = ?1 ORDER BY id"
+    ))?;
+    let rows = stmt.query_map([kind], from_row)?;
+    Ok(rows.collect::<Result<_, _>>()?)
+}
+
+pub fn set_installed(conn: &Connection, id: &str, installed: bool) -> AppResult<()> {
+    conn.execute(
+        "UPDATE game_sources SET installed = ?2 WHERE id = ?1",
+        params![id, installed],
+    )?;
+    Ok(())
+}
+
 pub fn list_for_game(conn: &Connection, game_id: &str) -> AppResult<Vec<GameSource>> {
     let mut stmt = conn.prepare(&format!(
         "SELECT {COLUMNS} FROM game_sources WHERE game_id = ?1 ORDER BY kind, id"

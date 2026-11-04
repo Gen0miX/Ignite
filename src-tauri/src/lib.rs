@@ -3,6 +3,7 @@ pub mod db;
 pub mod error;
 pub mod http;
 pub mod launcher;
+pub mod library;
 pub mod metadata;
 pub mod models;
 pub mod secrets;
