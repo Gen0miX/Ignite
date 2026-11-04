@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Bibliothèque unifiée</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{text-decoration:none}a:hover{opacity:0.85}
+</style>
+</helmet>
+<div style="min-height: 1080px; background: {{p.bg}}; color: {{p.text}}; font-family: 'Inter Tight', system-ui, sans-serif; display: flex; flex-wrap: wrap; box-sizing: border-box">
+
+  <aside style="flex: 1 1 232px; max-width: 260px; border-right: 1px solid {{p.line}}; padding: 20px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px; font-weight: 700; font-size: 17px">
+      <span style="width: 26px; height: 26px; border-radius: 6px; background: {{p.accent}}; color: {{p.onAccent}}; display: inline-flex; align-items: center; justify-content: center">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+      </span>
+      Ludothèque
+    </div>
+    <nav aria-label="Bibliothèque" style="display: flex; flex-direction: column; gap: 2px">
+      <a href="#" style="display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 10px; border-radius: 8px; font-size: 14px; background: {{p.active}}; color: {{p.text}}"><span>Tous les jeux</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: {{p.muted}}">206</span></a>
+      <a href="#" style="display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 10px; border-radius: 8px; font-size: 14px; color: {{p.text}}"><span>Installés</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: {{p.muted}}">38</span></a>
+      <a href="#" style="display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 10px; border-radius: 8px; font-size: 14px; color: {{p.text}}"><span>Favoris</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: {{p.muted}}">31</span></a>
+      <a href="Multi-Stats.dc.html" style="display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 10px; border-radius: 8px; font-size: 14px; color: {{p.text}}"><span>Statistiques</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: {{p.muted}}">→</span></a>
+    </nav>
+    <div>
+      <div style="padding: 0 10px 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{p.muted}}">Sources</div>
+      <sc-for list="{{sources}}" as="s" hint-placeholder-count="7">
+        <a href="#" style="display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px; border-radius: 8px; font-size: 14px; color: {{p.text}}">
+          <span style="width: 22px; height: 22px; border-radius: 6px; background: {{s.c}}; color: #101214; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">{{s.ab}}</span>
+          <span style="flex: 1">{{s.label}}</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: {{p.muted}}">{{s.count}}</span>
+        </a>
+      </sc-for>
+      <a href="Multi-Sources.dc.html" style="display: flex; align-items: center; height: 38px; padding: 0 10px; font-size: 13px; color: {{p.text2}}">Gérer les sources</a>
+    </div>
+    <div>
+      <div style="padding: 0 10px 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{p.muted}}">Statut</div>
+      <sc-for list="{{statusNav}}" as="s" hint-placeholder-count="4">
+        <a href="#" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 8px; font-size: 14px; color: {{p.text}}">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: {{s.c}}"></span>
+          <span style="flex: 1">{{s.label}}</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: {{p.muted}}">{{s.count}}</span>
+        </a>
+      </sc-for>
+    </div>
+  </aside>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+      <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em">Tous les jeux</h1>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: {{p.muted}}">206 jeux · 7 sources</span>
+      <label style="margin-left: auto; flex: 0 1 300px; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border-radius: 8px; background: {{p.field}}; border: 1px solid {{p.border}}; box-sizing: border-box; color: {{p.muted}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" aria-label="Filtrer la bibliothèque" placeholder="source:gog  heures:&gt;20" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: {{p.text}}; font: 13px 'JetBrains Mono', monospace">
+      </label>
+      <a href="Multi-Ajouter.dc.html" style="height: 40px; padding: 0 16px; border-radius: 8px; background: {{p.accent}}; color: {{p.onAccent}}; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Ajouter un jeu
+      </a>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+      <button style="height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid {{p.accentInk}}; background: {{p.soft}}; color: {{p.accentInk}}; font: 600 13px 'Inter Tight', sans-serif">Source : toutes ▾</button>
+      <button style="height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid {{p.border}}; background: {{p.field}}; color: {{p.text}}; font: 500 13px 'Inter Tight', sans-serif">Installés</button>
+      <button style="height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid {{p.border}}; background: {{p.field}}; color: {{p.text}}; font: 500 13px 'Inter Tight', sans-serif">Genre ▾</button>
+      <button style="height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid {{p.border}}; background: {{p.field}}; color: {{p.text}}; font: 500 13px 'Inter Tight', sans-serif">Doublons multi-plateformes</button>
+      <button style="margin-left: auto; height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid {{p.border}}; background: {{p.field}}; color: {{p.text}}; font: 500 13px 'Inter Tight', sans-serif">Trier : Dernière session ▾</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px 14px">
+      <sc-for list="{{games}}" as="g" hint-placeholder-count="18">
+        <a href="#" style="display: flex; flex-direction: column; gap: 6px; color: {{p.text}}">
+          <div style="position: relative; border-radius: 8px; outline: {{g.outline}}; outline-offset: 3px">
+            <sc-if value="{{g.hasImg}}" hint-placeholder-val="{{ true }}">
+              <img src="{{g.img}}" alt="{{g.name}}" style="width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 8px; display: block; background: {{p.field}}">
+            </sc-if>
+            <sc-if value="{{g.noImg}}" hint-placeholder-val="{{ false }}">
+              <div style="width: 100%; aspect-ratio: 2 / 3; border-radius: 8px; background: {{g.tint}}; color: #F2F2EE; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px; box-sizing: border-box; gap: 6px">
+                <span style="font-size: 18px; font-weight: 700; line-height: 1.1">{{g.name}}</span>
+                <span style="font-size: 10px; color: #C9CEC6; font-family: 'JetBrains Mono', monospace">[JAQUETTE SteamGridDB]</span>
+              </div>
+            </sc-if>
+            <span style="position: absolute; left: 6px; bottom: 6px; font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 5px; background: rgba(16,18,20,0.88); color: {{g.sc}}">{{g.src}}</span>
+          </div>
+          <span style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{g.name}}</span>
+          <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{p.muted}}">
+            <span>{{g.h}}</span><span>{{g.ach}}</span>
+          </div>
+        </a>
+      </sc-for>
+    </div>
+  </main>
+
+  <aside aria-label="Jeu sélectionné" style="flex: 1 1 340px; max-width: 380px; border-left: 1px solid {{p.line}}; background: {{p.panel}}; box-sizing: border-box; display: flex; flex-direction: column">
+    <div style="height: 200px; background: #3A2A1E; color: #F2F2EE; display: flex; align-items: flex-end; padding: 20px; box-sizing: border-box">
+      <div>
+        <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #D9CBB8">[BANNIÈRE SteamGridDB]</div>
+        <div style="font-size: 26px; font-weight: 700; margin-top: 6px">The Witcher 3</div>
+      </div>
+    </div>
+    <div style="padding: 16px 20px 24px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: {{p.text2}}">
+        <span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; background: #23272B; color: #C9A6FF">GOG</span>
+        Aussi possédé sur <span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; background: #23272B; color: #7CC4FF">Steam</span>
+      </div>
+      <div style="display: flex; gap: 8px">
+        <a href="Multi-Fiche.dc.html" style="flex: 1; height: 48px; border-radius: 10px; background: {{p.accent}}; color: {{p.onAccent}}; font-size: 16px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>Jouer
+        </a>
+        <button style="height: 48px; padding: 0 14px; border-radius: 10px; border: 1px solid {{p.border}}; background: {{p.card}}; color: {{p.text}}; font: 500 13px 'Inter Tight', sans-serif">Via GOG Galaxy ▾</button>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+        <div style="padding: 10px; border-radius: 8px; background: {{p.card}}"><div style="font-family: 'JetBrains Mono', monospace; font-size: 16px">142 h</div><div style="font-size: 11px; color: {{p.muted}}; margin-top: 2px">toutes sources</div></div>
+        <div style="padding: 10px; border-radius: 8px; background: {{p.card}}"><div style="font-family: 'JetBrains Mono', monospace; font-size: 16px">52/78</div><div style="font-size: 11px; color: {{p.muted}}; margin-top: 2px">succès GOG</div></div>
+        <div style="padding: 10px; border-radius: 8px; background: {{p.card}}"><div style="font-family: 'JetBrains Mono', monospace; font-size: 16px">12 j</div><div style="font-size: 11px; color: {{p.muted}}; margin-top: 2px">dernière fois</div></div>
+      </div>
+      <div style="padding: 12px; border-radius: 10px; background: {{p.card}}; display: flex; flex-direction: column; gap: 8px; font-size: 13px">
+        <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{p.muted}}">Origine du temps de jeu</div>
+        <div style="display: flex; height: 8px; border-radius: 4px; overflow: hidden">
+          <div style="width: 48%; background: #A985F0"></div><div style="width: 30%; background: #5BA8FF"></div><div style="width: 22%; background: {{p.accent}}"></div>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px 14px; color: {{p.text2}}">
+          <span>GOG 68 h</span><span>Steam 43 h</span><span>Suivi local 31 h</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px">
+        <div style="display: flex; justify-content: space-between"><span style="color: {{p.muted}}">Exécutable</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">…\witcher3.exe</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: {{p.muted}}">Suivi</span><span style="color: {{p.ok}}">Processus détecté auto.</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: {{p.muted}}">Jaquette</span><a href="#" style="color: {{p.accentInk}}">changer</a></div>
+      </div>
+    </div>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Lime&quot;,&quot;Polaire&quot;,&quot;Braise&quot;,&quot;Améthyste&quot;,&quot;Menthe&quot;,&quot;Craie&quot;],&quot;default&quot;:&quot;Braise&quot;},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1080}}">
+class Component extends DCLogic {
+  renderVals() {
+    const P = {
+      'Lime':      { bg: '#101214', panel: '#14171A', card: '#1B1F23', field: '#171A1D', active: '#1E2226', line: '#22262A', border: '#2A2F34', text: '#E8EAE6', text2: '#B4BAB0', muted: '#8B9196', accent: '#C6F24E', accentInk: '#C6F24E', onAccent: '#101214', soft: 'rgba(198,242,78,0.12)', ok: '#5BD68A' },
+      'Polaire':   { bg: '#0D1320', panel: '#121A2A', card: '#182235', field: '#141C2C', active: '#1C2740', line: '#1F2A3F', border: '#28354F', text: '#E6ECF5', text2: '#B3BFD2', muted: '#8896AE', accent: '#6EA8FF', accentInk: '#8DBBFF', onAccent: '#0A1020', soft: 'rgba(110,168,255,0.14)', ok: '#5BD6A4' },
+      'Braise':    { bg: '#14100E', panel: '#1A1512', card: '#241D19', field: '#1D1714', active: '#2A211C', line: '#2C231E', border: '#3A2E27', text: '#F3EAE4', text2: '#CDBDB3', muted: '#A39187', accent: '#FF7A45', accentInk: '#FF9466', onAccent: '#1A0F08', soft: 'rgba(255,122,69,0.14)', ok: '#7CD68A' },
+      'Améthyste': { bg: '#110E19', panel: '#171322', card: '#201A2F', field: '#191526', active: '#251E37', line: '#262038', border: '#332A4A', text: '#EEE9F8', text2: '#C5BCD9', muted: '#9A90B2', accent: '#B794FF', accentInk: '#C6AAFF', onAccent: '#140D24', soft: 'rgba(183,148,255,0.15)', ok: '#6FD6A8' },
+      'Menthe':    { bg: '#0E1412', panel: '#131B18', card: '#1A2420', field: '#151E1B', active: '#1D2924', line: '#1F2A26', border: '#2A3832', text: '#E4EFEA', text2: '#B2C4BC', muted: '#88A096', accent: '#4FD1A5', accentInk: '#6FDDB7', onAccent: '#06140F', soft: 'rgba(79,209,165,0.14)', ok: '#4FD1A5' },
+      'Craie':     { bg: '#F3F4F1', panel: '#FFFFFF', card: '#EEF0EC', field: '#FFFFFF', active: '#E4E7E1', line: '#DEE1DA', border: '#D3D7CF', text: '#15181A', text2: '#3F464C', muted: '#5D646B', accent: '#2F62F5', accentInk: '#2452D6', onAccent: '#FFFFFF', soft: 'rgba(47,98,245,0.09)', ok: '#1E8A50' }
+    };
+    const p = P[this.props.palette] || P.Braise;
+    const S = { Steam: '#7CC4FF', Epic: '#E8EAE6', GOG: '#C9A6FF', 'Battle.net': '#5BA8FF', Riot: '#FF8A7A', Local: '#C6F24E', 'Émulateur': '#F2B33D' };
+    const raw = [
+      ['The Witcher 3', null, 'GOG', '142 h', '67%', '#3A2A1E'],
+      ['ELDEN RING', '87684a3b4efe565f897b7bd7374bfb7f', 'Steam', '186 h', '90%'],
+      ['Diablo IV', null, 'Battle.net', '64 h', '—', '#3A1C1C'],
+      ['DARK SOULS III', '9080dacdd3a8f19ae3a8231b6577b8b7', 'Steam', '240 h', '79%'],
+      ['Fortnite', null, 'Epic', '31 h', '—', '#1E2A44'],
+      ['Total War: WARHAMMER III', 'e46ffe7d25d32e8d9c0e53894834bd8c', 'Steam', '96 h', '34%'],
+      ['League of Legends', null, 'Riot', '410 h', '—', '#1C2E2E'],
+      ["Baldur's Gate 3", '48e105bddc7c669e6ced940e27980ec6', 'Steam', '132 h', '61%'],
+      ['Minecraft', null, 'Local', '88 h', 'objectifs 6/10', '#22361E'],
+      ['Slay the Spire 2', 'd3a351600c39eacc05e337d5688a8398', 'Steam', '22 h', '40%'],
+      ['[JEU PS2 via PCSX2]', null, 'Émulateur', '17 h', 'RA 12/40', '#2E2A1A'],
+      ['Clair Obscur: Expedition 33', '0550b6624f2407f62b610c6d5af9b431', 'Steam', '0 h', '0%'],
+      ['Cyberpunk 2077', null, 'GOG', '58 h', '44%', '#3A3A1A'],
+      ['Street Fighter 6', '598318fe973801cffa20eab3e5fb189a', 'Steam', '41 h', '28%'],
+      ['Alan Wake 2', null, 'Epic', '14 h', '—', '#2A2433'],
+      ['Wartales', '6717be9786514e32c9ff460f3dd2eea5', 'Steam', '27 h', '30%'],
+      ['Bellwright', 'ab493eb33acaa45f411ae457c7af0870', 'Steam', '18 h', '22%'],
+      ['ARC Raiders', 'd2d1258d13f686ff6077362f42d14c86', 'Steam', '12 h', '15%']
+    ];
+    return {
+      p,
+      sources: [
+        { label: 'Steam', ab: 'ST', c: S.Steam, count: '127' },
+        { label: 'Epic Games', ab: 'EP', c: S.Epic, count: '18' },
+        { label: 'GOG', ab: 'GG', c: S.GOG, count: '9' },
+        { label: 'Battle.net', ab: 'BN', c: S['Battle.net'], count: '3' },
+        { label: 'Riot', ab: 'RI', c: S.Riot, count: '1' },
+        { label: 'Exécutables', ab: 'EX', c: S.Local, count: '6' },
+        { label: 'Émulateurs', ab: 'EM', c: S['Émulateur'], count: '42' }
+      ],
+      statusNav: [
+        { label: 'En cours', count: '11', c: '#5BA8FF' },
+        { label: 'Terminés', count: '34', c: '#4CC27E' },
+        { label: 'À faire', count: '58', c: '#8B9196' },
+        { label: 'Abandonnés', count: '9', c: '#E0703A' }
+      ],
+      games: raw.map((r, i) => ({
+        name: r[0], img: r[1] ? '/_blob/' + r[1] : '', hasImg: !!r[1], noImg: !r[1], tint: r[5] || '#1B1F23',
+        src: r[2], sc: S[r[2]], h: r[3], ach: r[4], outline: i === 0 ? '2px solid ' + p.accent : '0'
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

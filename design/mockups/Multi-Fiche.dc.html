@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fiche jeu non-Steam — Minecraft</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101214}
+a{color:#E8EAE6;text-decoration:none}a:hover{color:#C6F24E}
+</style>
+</helmet>
+<div style="min-height: 1150px; background: #101214; color: #E8EAE6; font-family: 'Inter Tight', system-ui, sans-serif; padding-bottom: 40px; box-sizing: border-box">
+  <section style="position: relative; height: 260px; background: #22361E; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 32px 24px; box-sizing: border-box">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <a href="Multi-Bibliotheque.dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 8px; background: rgba(16,18,20,0.6); font-size: 14px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Bibliothèque
+      </a>
+      <span style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #C9D6C2">[BANNIÈRE SteamGridDB] · changer</span>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px">
+      <div>
+        <div style="display: flex; gap: 8px; margin-bottom: 8px">
+          <span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; background: rgba(16,18,20,0.8); color: #C6F24E">Exécutable local</span>
+          <span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; background: rgba(16,18,20,0.8); color: #E8EAE6">Sandbox · Survie</span>
+        </div>
+        <h1 style="margin: 0; font-size: 44px; font-weight: 700; letter-spacing: -0.02em">Minecraft</h1>
+      </div>
+      <div style="margin-left: auto; display: flex; gap: 8px">
+        <button style="height: 52px; padding: 0 28px; border-radius: 10px; border: 0; background: {{accent}}; color: #101214; font: 700 16px 'Inter Tight', sans-serif; display: inline-flex; align-items: center; gap: 8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>Jouer
+        </button>
+        <button style="height: 52px; padding: 0 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.25); background: rgba(16,18,20,0.6); color: #E8EAE6; font: 500 14px 'Inter Tight', sans-serif">Profil : Modpack ▾</button>
+      </div>
+    </div>
+  </section>
+
+  <div style="padding: 20px 32px 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+    <div style="padding: 14px; border-radius: 10px; background: #171A1D"><div style="font-size: 12px; color: #8B9196">Temps total</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 22px; margin-top: 4px">88 h</div><div style="font-size: 12px; color: #8B9196; margin-top: 4px">dont 80 h estimées à l’ajout</div></div>
+    <div style="padding: 14px; border-radius: 10px; background: #171A1D"><div style="font-size: 12px; color: #8B9196">Sessions suivies</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 22px; margin-top: 4px">6</div><div style="font-size: 12px; color: #8B9196; margin-top: 4px">moyenne 1 h 20</div></div>
+    <div style="padding: 14px; border-radius: 10px; background: #171A1D"><div style="font-size: 12px; color: #8B9196">Objectifs perso</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 22px; margin-top: 4px">6 / 10</div><div style="height: 4px; border-radius: 2px; background: #262B30; margin-top: 10px"><div style="width: 60%; height: 100%; border-radius: 2px; background: {{accent}}"></div></div></div>
+    <div style="padding: 14px; border-radius: 10px; background: #171A1D"><div style="font-size: 12px; color: #8B9196">Statut</div><div style="font-size: 22px; font-weight: 700; margin-top: 4px; color: #5BA8FF">En cours</div></div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 20px; padding: 20px 32px 0">
+    <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+      <section aria-labelledby="sess" style="padding: 20px; border-radius: 12px; background: #14171A; border: 1px solid #22262A">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px">
+          <h2 id="sess" style="margin: 0; font-size: 16px; font-weight: 700">Temps de jeu · 30 derniers jours</h2>
+          <span style="font-size: 12px; color: #8B9196">suivi par détection du processus javaw.exe</span>
+        </div>
+        <div style="display: flex; align-items: flex-end; gap: 4px; height: 120px; margin-top: 16px">
+          <sc-for list="{{days}}" as="d" hint-placeholder-count="30">
+            <div style="flex: 1; border-radius: 3px; background: {{d.c}}; height: {{d.h}}"></div>
+          </sc-for>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #8B9196; margin-top: 6px; font-family: 'JetBrains Mono', monospace"><span>5 oct.</span><span>aujourd’hui</span></div>
+      </section>
+
+      <section aria-labelledby="journal" style="border-radius: 12px; background: #14171A; border: 1px solid #22262A; overflow: hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px">
+          <h2 id="journal" style="margin: 0; font-size: 16px; font-weight: 700">Journal des sessions</h2>
+          <button style="height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #2A2F34; background: #1B1F23; color: #E8EAE6; font: 500 13px 'Inter Tight', sans-serif">+ Session manuelle</button>
+        </div>
+        <div style="overflow-x: auto">
+          <table style="width: 100%; min-width: 560px; border-collapse: collapse; font-size: 13px">
+            <thead>
+              <tr style="text-align: left; color: #8B9196; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em">
+                <th scope="col" style="padding: 8px 20px">Date</th><th scope="col" style="padding: 8px">Horaire</th><th scope="col" style="padding: 8px">Durée</th><th scope="col" style="padding: 8px">Origine</th><th scope="col" style="padding: 8px 20px"><span style="position: absolute; left: -9999px">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{log}}" as="l" hint-placeholder-count="6">
+                <tr style="border-top: 1px solid #22262A">
+                  <td style="padding: 10px 20px">{{l.d}}</td>
+                  <td style="padding: 10px 8px; font-family: 'JetBrains Mono', monospace; color: #B4BAB0">{{l.t}}</td>
+                  <td style="padding: 10px 8px; font-family: 'JetBrains Mono', monospace">{{l.dur}}</td>
+                  <td style="padding: 10px 8px; color: {{l.oc}}">{{l.o}}</td>
+                  <td style="padding: 10px 20px; text-align: right"><a href="#" style="color: #8B9196">Modifier</a></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div style="flex: 1 1 340px; display: flex; flex-direction: column; gap: 20px">
+      <section aria-labelledby="obj" style="padding: 20px; border-radius: 12px; background: #14171A; border: 1px solid #22262A">
+        <h2 id="obj" style="margin: 0 0 4px; font-size: 16px; font-weight: 700">Objectifs perso</h2>
+        <p style="margin: 0 0 14px; font-size: 12px; color: #8B9196">Remplacent les succès quand la plateforme n’en fournit pas.</p>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <sc-for list="{{goals}}" as="g" hint-placeholder-count="6">
+            <label style="display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 8px; border-radius: 8px; font-size: 14px; color: {{g.fg}}">
+              <input type="checkbox" checked="{{g.done}}" style="width: 18px; height: 18px; accent-color: #C6F24E">
+              {{g.t}}
+            </label>
+          </sc-for>
+        </div>
+        <button style="margin-top: 8px; width: 100%; height: 40px; border-radius: 8px; border: 1px dashed #343A40; background: transparent; color: #B4BAB0; font: 500 13px 'Inter Tight', sans-serif">+ Ajouter un objectif</button>
+      </section>
+
+      <section aria-labelledby="cfg" style="padding: 20px; border-radius: 12px; background: #14171A; border: 1px solid #22262A; display: flex; flex-direction: column; gap: 10px; font-size: 13px">
+        <h2 id="cfg" style="margin: 0 0 4px; font-size: 16px; font-weight: 700">Lancement</h2>
+        <div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #8B9196">Fichier</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; text-align: right">C:\Games\Minecraft\MinecraftLauncher.exe</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #8B9196">Arguments</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">—</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #8B9196">Processus suivi</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">javaw.exe</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #8B9196">Avant le lancement</span><span>Fermer Discord overlay</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #8B9196">Overlay Ludothèque</span><span style="color: #5BD68A">Activé (Maj+Tab)</span></div>
+        <button style="margin-top: 6px; height: 40px; border-radius: 8px; border: 1px solid #2A2F34; background: #1B1F23; color: #E8EAE6; font: 500 13px 'Inter Tight', sans-serif">Modifier la configuration</button>
+      </section>
+
+      <section aria-labelledby="meta" style="padding: 20px; border-radius: 12px; background: #14171A; border: 1px solid #22262A; display: flex; flex-direction: column; gap: 10px; font-size: 13px">
+        <h2 id="meta" style="margin: 0 0 4px; font-size: 16px; font-weight: 700">Métadonnées</h2>
+        <div style="display: flex; justify-content: space-between"><span style="color: #8B9196">Infos &amp; genres</span><span>IGDB · associé</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #8B9196">Images</span><span>SteamGridDB · 4 choisies</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #8B9196">Durée pour finir</span><span>HowLongToBeat · n/a</span></div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#C6F24E","options":["#C6F24E","#7CC4FF","#FF7A1A"]},"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#C6F24E';
+    const v = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1.5,0,0,2.2,0,0.8,0,1.1,0,2.4];
+    const done = [true, true, true, true, true, true, false, false, false, false];
+    const goals = ['Construire une base','Trouver des diamants','Entrer dans le Nether','Enchanter une armure','Domestiquer un loup','Trouver une forteresse','Vaincre l’Ender Dragon','Récupérer l’Élytre','Vaincre le Wither','Finir le modpack'];
+    return {
+      accent,
+      days: v.map(x => ({ h: Math.max(3, Math.round(x / 2.4 * 110)) + 'px', c: x ? accent : '#262B30' })),
+      log: [
+        { d: "Aujourd’hui", t: '19:12 → 21:36', dur: '2 h 24', o: 'Auto · processus', oc: '#B4BAB0' },
+        { d: '2 nov.', t: '20:05 → 21:11', dur: '1 h 06', o: 'Auto · processus', oc: '#B4BAB0' },
+        { d: '31 oct.', t: '18:40 → 19:28', dur: '0 h 48', o: 'Auto · processus', oc: '#B4BAB0' },
+        { d: '28 oct.', t: '21:00 → 23:12', dur: '2 h 12', o: 'Auto · processus', oc: '#B4BAB0' },
+        { d: '25 oct.', t: '14:00 → 15:30', dur: '1 h 30', o: 'Manuelle', oc: '#F2B33D' },
+        { d: '22 oct.', t: '—', dur: '80 h', o: 'Estimation à l’ajout', oc: '#8B9196' }
+      ],
+      goals: goals.map((t, i) => ({ t, done: done[i], fg: done[i] ? '#8B9196' : '#E8EAE6' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

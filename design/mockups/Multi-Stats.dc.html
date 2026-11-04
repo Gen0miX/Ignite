@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Statistiques toutes sources</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101214}
+a{color:#E8EAE6;text-decoration:none}a:hover{color:#C6F24E}
+</style>
+</helmet>
+<div style="min-height: 1100px; background: #101214; color: #E8EAE6; font-family: 'Inter Tight', system-ui, sans-serif; padding: 24px 32px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+    <a href="Multi-Bibliotheque.dc.html" style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #B4BAB0">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Bibliothèque
+    </a>
+    <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em">Statistiques</h1>
+    <div role="group" aria-label="Période" style="margin-left: auto; display: flex; gap: 4px; padding: 4px; border-radius: 10px; background: #171A1D">
+      <button style="height: 36px; padding: 0 14px; border: 0; border-radius: 7px; background: transparent; color: #B4BAB0; font: 500 13px 'Inter Tight', sans-serif">Semaine</button>
+      <button style="height: 36px; padding: 0 14px; border: 0; border-radius: 7px; background: transparent; color: #B4BAB0; font: 500 13px 'Inter Tight', sans-serif">Mois</button>
+      <button style="height: 36px; padding: 0 14px; border: 0; border-radius: 7px; background: #2C3238; color: #E8EAE6; font: 600 13px 'Inter Tight', sans-serif">2026</button>
+      <button style="height: 36px; padding: 0 14px; border: 0; border-radius: 7px; background: transparent; color: #B4BAB0; font: 500 13px 'Inter Tight', sans-serif">Depuis toujours</button>
+    </div>
+    <button style="height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid #2A2F34; background: #171A1D; color: #E8EAE6; font: 500 13px 'Inter Tight', sans-serif">Sources : toutes ▾</button>
+  </header>
+
+  <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px">
+    <sc-for list="{{kpis}}" as="k" hint-placeholder-count="5">
+      <div style="padding: 16px; border-radius: 12px; background: #171A1D">
+        <div style="font-size: 12px; color: #8B9196">{{k.l}}</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 26px; margin-top: 6px">{{k.v}}</div>
+        <div style="font-size: 12px; color: #B4BAB0; margin-top: 4px">{{k.s}}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <section aria-labelledby="cal" style="padding: 20px; border-radius: 12px; background: #14171A; border: 1px solid #22262A">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 14px">
+      <h2 id="cal" style="margin: 0; font-size: 16px; font-weight: 700">Calendrier de jeu</h2>
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #8B9196">
+        moins
+        <span style="width: 12px; height: 12px; border-radius: 3px; background: #22272C"></span>
+        <span style="width: 12px; height: 12px; border-radius: 3px; background: #4A5A2A"></span>
+        <span style="width: 12px; height: 12px; border-radius: 3px; background: #7E9E36"></span>
+        <span style="width: 12px; height: 12px; border-radius: 3px; background: #C6F24E"></span>
+        plus
+      </div>
+    </div>
+    <div style="overflow-x: auto">
+      <div style="display: grid; grid-template-rows: repeat(7, 14px); grid-auto-flow: column; grid-auto-columns: 14px; gap: 4px; min-width: 900px">
+        <sc-for list="{{cells}}" as="c" hint-placeholder-count="60">
+          <span style="border-radius: 3px; background: {{c}}"></span>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #8B9196; margin-top: 8px; font-family: 'JetBrains Mono', monospace; min-width: 0"><span>janv.</span><span>avr.</span><span>juil.</span><span>oct.</span></div>
+  </section>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 20px">
+    <section aria-labelledby="top" style="flex: 999 1 560px; min-width: 0; padding: 20px; border-radius: 12px; background: #14171A; border: 1px solid #22262A">
+      <h2 id="top" style="margin: 0 0 14px; font-size: 16px; font-weight: 700">Jeux les plus joués en 2026</h2>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <sc-for list="{{top}}" as="t" hint-placeholder-count="8">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <span style="width: 18px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #8B9196">{{t.r}}</span>
+            <sc-if value="{{t.hasImg}}" hint-placeholder-val="{{ true }}">
+              <img src="{{t.img}}" alt="" style="width: 30px; height: 45px; object-fit: cover; border-radius: 4px">
+            </sc-if>
+            <sc-if value="{{t.noImg}}" hint-placeholder-val="{{ false }}">
+              <span style="width: 30px; height: 45px; border-radius: 4px; background: {{t.tint}}"></span>
+            </sc-if>
+            <div style="flex: 1; min-width: 0">
+              <div style="display: flex; justify-content: space-between; gap: 8px; font-size: 13px">
+                <span style="font-weight: 600">{{t.n}} <span style="font-size: 11px; font-weight: 700; color: {{t.sc}}; margin-left: 6px">{{t.src}}</span></span>
+                <span style="font-family: 'JetBrains Mono', monospace">{{t.h}}</span>
+              </div>
+              <div style="height: 6px; border-radius: 3px; background: #22272C; margin-top: 6px"><div style="height: 100%; border-radius: 3px; background: {{t.sc}}; width: {{t.w}}"></div></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <div style="flex: 1 1 340px; display: flex; flex-direction: column; gap: 20px">
+      <section aria-labelledby="plat" style="padding: 20px; border-radius: 12px; background: #14171A; border: 1px solid #22262A">
+        <h2 id="plat" style="margin: 0 0 14px; font-size: 16px; font-weight: 700">Par source</h2>
+        <div style="display: flex; height: 12px; border-radius: 6px; overflow: hidden; gap: 2px">
+          <sc-for list="{{plat}}" as="p" hint-placeholder-count="6">
+            <div style="background: {{p.c}}; width: {{p.w}}"></div>
+          </sc-for>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px; font-size: 13px">
+          <sc-for list="{{plat}}" as="p" hint-placeholder-count="6">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: {{p.c}}"></span>
+              <span style="flex: 1">{{p.n}}</span>
+              <span style="font-family: 'JetBrains Mono', monospace; color: #B4BAB0">{{p.h}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section aria-labelledby="fin" style="padding: 20px; border-radius: 12px; background: #14171A; border: 1px solid #22262A">
+        <h2 id="fin" style="margin: 0 0 14px; font-size: 16px; font-weight: 700">Ta bibliothèque</h2>
+        <div style="display: flex; height: 12px; border-radius: 6px; overflow: hidden; gap: 2px">
+          <div style="width: 17%; background: #5BD68A"></div><div style="width: 5%; background: #5BA8FF"></div><div style="width: 4%; background: #E0703A"></div><div style="width: 74%; background: #3A4046"></div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; font-size: 13px; color: #B4BAB0">
+          <span>34 terminés</span><span>11 en cours</span><span>9 abandonnés</span><span>152 jamais finis</span>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#C6F24E","options":["#C6F24E","#7CC4FF","#FF7A1A"]},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#C6F24E';
+    const S = { Steam: '#7CC4FF', Epic: '#E8EAE6', GOG: '#C9A6FF', 'Battle.net': '#5BA8FF', Riot: '#FF8A7A', Local: '#C6F24E', 'Émulateur': '#F2B33D' };
+    const shades = ['#22272C', '#4A5A2A', '#7E9E36', '#C6F24E'];
+    const cells = [];
+    for (let i = 0; i < 53 * 7; i++) {
+      const w = Math.floor(i / 7);
+      const s = (Math.sin(i * 12.9898) * 43758.5453) % 1;
+      const r = Math.abs(s);
+      const lvl = w > 44 ? 0 : (r > 0.82 ? 3 : r > 0.62 ? 2 : r > 0.42 ? 1 : 0);
+      cells.push(shades[lvl]);
+    }
+    const top = [
+      ['League of Legends', null, 'Riot', 92, '#1C2E2E'],
+      ['DARK SOULS III', '9080dacdd3a8f19ae3a8231b6577b8b7', 'Steam', 64],
+      ['ELDEN RING', '87684a3b4efe565f897b7bd7374bfb7f', 'Steam', 58],
+      ['Satisfactory', null, 'Steam', 51, '#3A3320'],
+      ['The Witcher 3', null, 'GOG', 38, '#3A2A1E'],
+      ['Total War: WARHAMMER III', 'e46ffe7d25d32e8d9c0e53894834bd8c', 'Steam', 33],
+      ['Diablo IV', null, 'Battle.net', 27, '#3A1C1C'],
+      ['Minecraft', null, 'Local', 8, '#22361E']
+    ];
+    const plat = [['Steam', 288], ['Riot', 92], ['GOG', 46], ['Battle.net', 27], ['Épic', 22], ['Exécutables', 8]];
+    const pc = ['#7CC4FF', '#FF8A7A', '#C9A6FF', '#5BA8FF', '#E8EAE6', '#C6F24E'];
+    const tot = plat.reduce((a, p) => a + p[1], 0);
+    return {
+      accent,
+      kpis: [
+        { l: 'Temps joué en 2026', v: '483 h', s: '≈ 1 h 35 / jour' },
+        { l: 'Jeux lancés', v: '41', s: 'sur 206 possédés' },
+        { l: 'Jeux terminés', v: '7', s: '+3 vs 2025' },
+        { l: 'Succès débloqués', v: '612', s: 'Steam + GOG + RA' },
+        { l: 'Plus longue série', v: '19 j', s: 'en mars' }
+      ],
+      cells,
+      top: top.map((t, i) => ({ r: String(i + 1), n: t[0], img: t[1] ? '/_blob/' + t[1] : '', hasImg: !!t[1], noImg: !t[1], tint: t[4] || '#1B1F23', src: t[2], sc: S[t[2]], h: t[3] + ' h', w: Math.round(t[3] / 92 * 100) + '%' })),
+      plat: plat.map((p, i) => ({ n: p[0] === 'Épic' ? 'Epic Games' : p[0], h: p[1] + ' h', c: pc[i], w: (p[1] / tot * 100).toFixed(1) + '%' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

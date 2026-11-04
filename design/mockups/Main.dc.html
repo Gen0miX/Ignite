@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Accueil — direction Cinéma</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0A0C}
+a{color:#F4F1EC;text-decoration:none}a:hover{color:#FFB070}
+</style>
+</helmet>
+<div style="min-height: 1260px; background: #0A0A0C; color: #F4F1EC; font-family: Sora, system-ui, sans-serif; padding-bottom: 48px; box-sizing: border-box">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px; padding: 20px 40px">
+    <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; letter-spacing: -0.02em">
+      <span style="width: 28px; height: 28px; border-radius: 8px; background: {{accent}}; display: inline-flex; align-items: center; justify-content: center; color: #0A0A0C">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+      </span>
+      Ludothèque
+    </div>
+    <nav aria-label="Principale" style="display: flex; gap: 4px; flex-wrap: wrap">
+      <a href="#" style="padding: 10px 16px; border-radius: 999px; background: #1C1C21; font-size: 14px; font-weight: 600">Accueil</a>
+      <a href="Bibliotheque.dc.html" style="padding: 10px 16px; border-radius: 999px; font-size: 14px; color: #A9A6A0">Bibliothèque</a>
+      <a href="#" style="padding: 10px 16px; border-radius: 999px; font-size: 14px; color: #A9A6A0">Collections</a>
+      <a href="#" style="padding: 10px 16px; border-radius: 999px; font-size: 14px; color: #A9A6A0">Amis</a>
+    </nav>
+    <label style="flex: 1 1 280px; max-width: 460px; display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px; border-radius: 12px; background: #16161A; border: 1px solid #26262C; color: #A9A6A0; font-size: 14px; box-sizing: border-box">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" placeholder="Rechercher un jeu, un tag, un ami…" aria-label="Rechercher" style="flex: 1; background: transparent; border: 0; color: #F4F1EC; font: inherit; outline: none; min-width: 0">
+      <span style="font-size: 12px; border: 1px solid #33333A; border-radius: 6px; padding: 2px 6px">Ctrl K</span>
+    </label>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 12px">
+      <button aria-label="Téléchargements" style="width: 44px; height: 44px; border-radius: 12px; background: #16161A; border: 1px solid #26262C; color: #F4F1EC; display: inline-flex; align-items: center; justify-content: center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
+      </button>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 4px 14px 4px 4px; border-radius: 999px; background: #16161A; border: 1px solid #26262C">
+        <span style="width: 36px; height: 36px; border-radius: 50%; background: #2A2A31; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">G</span>
+        <span style="font-size: 14px; font-weight: 600">GenomiX</span>
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #5BD68A" aria-label="En ligne"></span>
+      </div>
+    </div>
+  </header>
+
+  <section aria-label="Reprendre" style="position: relative; margin: 8px 24px 0; height: 540px; border-radius: 24px; overflow: hidden; background: #15151A">
+    <img src="/_blob/9e412962429367489ee175d1c7c770f1" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover">
+    <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10,10,12,0.92) 0%, rgba(10,10,12,0.55) 45%, rgba(10,10,12,0) 75%), linear-gradient(0deg, rgba(10,10,12,0.9) 0%, rgba(10,10,12,0) 45%)"></div>
+    <div style="position: relative; height: 100%; box-sizing: border-box; padding: 48px 56px; display: flex; flex-direction: column; justify-content: flex-end; gap: 20px; max-width: 640px">
+      <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{accent}}">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: {{accent}}"></span>
+        Reprendre · joué il y a 2 h
+      </div>
+      <img src="/_blob/4bc69ce890664562fbfedbab3ded8afd" alt="Satisfactory" style="max-width: 420px; max-height: 130px; object-fit: contain; object-position: left">
+      <p style="margin: 0; font-size: 16px; line-height: 1.55; color: #D8D4CC">Ta dernière session s’est arrêtée sur l’usine à pétrole, palier 7. Sauvegarde cloud synchronisée.</p>
+      <div style="display: flex; gap: 28px; flex-wrap: wrap; font-size: 14px; color: #A9A6A0">
+        <div><div style="font-size: 22px; font-weight: 700; color: #F4F1EC">312 h</div>temps de jeu</div>
+        <div><div style="font-size: 22px; font-weight: 700; color: #F4F1EC">2 h 40</div>session moyenne</div>
+        <div><div style="font-size: 22px; font-weight: 700; color: #F4F1EC">41 / 60</div>succès</div>
+      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap">
+        <button style="height: 56px; padding: 0 32px; border-radius: 14px; border: 0; background: {{accent}}; color: #0A0A0C; font: 700 17px Sora, sans-serif; display: inline-flex; align-items: center; gap: 10px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+          Jouer
+        </button>
+        <button style="height: 56px; padding: 0 24px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.08); color: #F4F1EC; font: 600 15px Sora, sans-serif">Fiche du jeu</button>
+        <button aria-label="Options de lancement" style="width: 56px; height: 56px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.08); color: #F4F1EC; display: inline-flex; align-items: center; justify-content: center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+        </button>
+      </div>
+    </div>
+    <div style="position: absolute; right: 32px; bottom: 32px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end">
+      <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #D8D4CC">Ensuite</span>
+      <div style="display: flex; gap: 10px">
+        <img src="/_blob/7e7a411b0298c6389b93ac4a6adc9c2d" alt="Valheim" style="width: 150px; height: 84px; object-fit: cover; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2)">
+        <img src="/_blob/5e01b22fb06d063bcea3346a3ce61784" alt="Total War: WARHAMMER III" style="width: 150px; height: 84px; object-fit: cover; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2)">
+        <img src="/_blob/514a59ad744b3a6dbc29e4907770808c" alt="ELDEN RING" style="width: 150px; height: 84px; object-fit: cover; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2)">
+      </div>
+    </div>
+  </section>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 40px 40px 0">
+    <section aria-labelledby="cont" style="flex: 999 1 560px; min-width: 0">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px">
+        <h2 id="cont" style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em">Récemment joués</h2>
+        <a href="#" style="font-size: 14px; color: #A9A6A0">Tout voir</a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px">
+        <sc-for list="{{recent}}" as="g" hint-placeholder-count="6">
+          <a href="#" style="display: flex; flex-direction: column; gap: 8px">
+            <img src="{{g.img}}" alt="{{g.name}}" style="width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 12px; background: #16161A">
+            <span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{g.name}}</span>
+            <span style="font-size: 12px; color: #A9A6A0">{{g.meta}}</span>
+          </a>
+        </sc-for>
+      </div>
+    </section>
+
+    <section aria-labelledby="soir" style="flex: 1 1 340px; background: #141418; border: 1px solid #24242A; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px; box-sizing: border-box">
+      <div>
+        <h2 id="soir" style="margin: 0 0 4px; font-size: 20px; font-weight: 700">Ce soir, j’ai…</h2>
+        <p style="margin: 0; font-size: 13px; color: #A9A6A0">Suggestions selon le temps dispo et ton historique.</p>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <button style="height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #33333A; background: transparent; color: #F4F1EC; font: 500 13px Sora, sans-serif">30 min</button>
+        <button style="height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid {{accent}}; background: rgba(255,122,26,0.14); color: #FFB070; font: 600 13px Sora, sans-serif">1 heure</button>
+        <button style="height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #33333A; background: transparent; color: #F4F1EC; font: 500 13px Sora, sans-serif">Toute la soirée</button>
+        <button style="height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #33333A; background: transparent; color: #F4F1EC; font: 500 13px Sora, sans-serif">En coop</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <sc-for list="{{tonight}}" as="t" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 14px; padding: 8px; border-radius: 14px; background: #1A1A1F">
+            <img src="{{t.img}}" alt="" style="width: 44px; height: 66px; object-fit: cover; border-radius: 8px">
+            <div style="flex: 1; min-width: 0">
+              <div style="font-size: 14px; font-weight: 600">{{t.name}}</div>
+              <div style="font-size: 12px; color: #A9A6A0; margin-top: 2px">{{t.why}}</div>
+            </div>
+            <button aria-label="Lancer {{t.name}}" style="width: 44px; height: 44px; border-radius: 12px; border: 0; background: #26262C; color: #F4F1EC; display: inline-flex; align-items: center; justify-content: center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+            </button>
+          </div>
+        </sc-for>
+      </div>
+      <button style="height: 48px; border-radius: 14px; border: 1px dashed #3A3A42; background: transparent; color: #F4F1EC; font: 600 14px Sora, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 8px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+        Surprends-moi
+      </button>
+    </section>
+  </div>
+
+  <section aria-labelledby="pile" style="padding: 40px 40px 0">
+    <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; flex-wrap: wrap">
+      <h2 id="pile" style="margin: 0; font-size: 22px; font-weight: 700">Ta pile à finir</h2>
+      <span style="font-size: 13px; color: #A9A6A0">Jamais lancés ou abandonnés · durée estimée via HowLongToBeat</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px; margin-top: 16px">
+      <sc-for list="{{backlog}}" as="b" hint-placeholder-count="8">
+        <a href="#" style="display: flex; flex-direction: column; gap: 8px">
+          <div style="position: relative">
+            <img src="{{b.img}}" alt="{{b.name}}" style="width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 12px; display: block">
+            <span style="position: absolute; left: 8px; top: 8px; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 999px; background: rgba(10,10,12,0.8); color: #F4F1EC">{{b.tag}}</span>
+          </div>
+          <span style="font-size: 12px; color: #A9A6A0">{{b.hltb}}</span>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 40px 40px 0">
+    <section aria-labelledby="actu" style="flex: 999 1 560px; min-width: 0">
+      <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; flex-wrap: wrap">
+        <h2 id="actu" style="margin: 0; font-size: 22px; font-weight: 700">Actus qui te concernent</h2>
+        <span style="font-size: 13px; color: #A9A6A0">Uniquement les jeux joués ces 30 derniers jours</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+        <article style="background: #141418; border: 1px solid #24242A; border-radius: 16px; overflow: hidden">
+          <img src="/_blob/5e01b22fb06d063bcea3346a3ce61784" alt="" style="width: 100%; height: 120px; object-fit: cover; display: block">
+          <div style="padding: 14px 16px">
+            <div style="font-size: 12px; color: {{accent}}; font-weight: 600">PATCH · hier</div>
+            <div style="font-size: 15px; font-weight: 600; margin-top: 4px">Total War: WARHAMMER III — Patch 9.0.5</div>
+          </div>
+        </article>
+        <article style="background: #141418; border: 1px solid #24242A; border-radius: 16px; overflow: hidden">
+          <img src="/_blob/02cd5753e08c273be3cd09b7d1da502e" alt="" style="width: 100%; height: 120px; object-fit: cover; display: block">
+          <div style="padding: 14px 16px">
+            <div style="font-size: 12px; color: {{accent}}; font-weight: 600">MISE À JOUR · cette semaine</div>
+            <div style="font-size: 15px; font-weight: 600; margin-top: 4px">Clair Obscur: Expedition 33 — [TITRE DE L’ACTU]</div>
+          </div>
+        </article>
+        <article style="background: #141418; border: 1px dashed #33333A; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: center; gap: 8px">
+          <div style="font-size: 28px; font-weight: 700">14</div>
+          <div style="font-size: 14px; color: #D8D4CC">actus masquées : promos, DLC et jeux non lancés depuis 6 mois.</div>
+          <a href="#" style="font-size: 13px; color: #FFB070; font-weight: 600">Afficher quand même</a>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="sem" style="flex: 1 1 340px; background: #141418; border: 1px solid #24242A; border-radius: 20px; padding: 24px; box-sizing: border-box">
+      <h2 id="sem" style="margin: 0 0 16px; font-size: 20px; font-weight: 700">Ta semaine</h2>
+      <div style="display: flex; align-items: flex-end; gap: 8px; height: 110px">
+        <sc-for list="{{week}}" as="d" hint-placeholder-count="7">
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end">
+            <div style="width: 100%; border-radius: 6px; background: {{d.color}}; height: {{d.h}}"></div>
+            <span style="font-size: 11px; color: #A9A6A0">{{d.l}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 24px; margin-top: 18px; font-size: 13px; color: #A9A6A0">
+        <div><div style="font-size: 20px; font-weight: 700; color: #F4F1EC">14 h 20</div>jouées</div>
+        <div><div style="font-size: 20px; font-weight: 700; color: #F4F1EC">5</div>jeux lancés</div>
+        <div><div style="font-size: 20px; font-weight: 700; color: #F4F1EC">6 j</div>de suite</div>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#FF7A1A","options":["#FF7A1A","#F2B33D","#5BD68A","#7CC4FF"]},"$preview":{"width":1440,"height":1260}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#FF7A1A';
+    const vals = [2.2, 1.1, 0, 3.4, 2.6, 4.1, 0.9];
+    const max = 4.1;
+    return {
+      accent,
+      recent: [
+        { name: 'Bellwright', img: '/_blob/ab493eb33acaa45f411ae457c7af0870', meta: 'hier · 18 h' },
+        { name: 'Total War: WARHAMMER III', img: '/_blob/e46ffe7d25d32e8d9c0e53894834bd8c', meta: 'il y a 2 j · 96 h' },
+        { name: 'ELDEN RING', img: '/_blob/87684a3b4efe565f897b7bd7374bfb7f', meta: 'il y a 4 j · 186 h' },
+        { name: 'DARK SOULS III', img: '/_blob/9080dacdd3a8f19ae3a8231b6577b8b7', meta: '20 oct. · 240 h' },
+        { name: 'Slay the Spire 2', img: '/_blob/d3a351600c39eacc05e337d5688a8398', meta: '18 oct. · 22 h' },
+        { name: 'Street Fighter 6', img: '/_blob/598318fe973801cffa20eab3e5fb189a', meta: '15 oct. · 41 h' }
+      ],
+      tonight: [
+        { name: 'Slay the Spire 2', img: '/_blob/d3a351600c39eacc05e337d5688a8398', why: 'Une run ≈ 50 min · tu en es à l’acte 3' },
+        { name: 'Street Fighter 6', img: '/_blob/598318fe973801cffa20eab3e5fb189a', why: 'Sessions courtes · 3 amis en ligne' },
+        { name: 'Wartales', img: '/_blob/6717be9786514e32c9ff460f3dd2eea5', why: 'Sauvegarde à mi-chapitre' }
+      ],
+      backlog: [
+        { name: 'Clair Obscur: Expedition 33', img: '/_blob/0550b6624f2407f62b610c6d5af9b431', tag: 'Jamais lancé', hltb: '≈ 30 h' },
+        { name: 'Kingdom Come: Deliverance II', img: '/_blob/5156af110b880f30d6cb7bc76e47e826', tag: 'Jamais lancé', hltb: '≈ 60 h' },
+        { name: 'Monster Hunter Wilds', img: '/_blob/aeab29148ea8ffc7e6b6d5937c97d9bc', tag: '3 h jouées', hltb: '≈ 22 h restantes' },
+        { name: 'Persona 5 Royal', img: '/_blob/e7735286afcc7bda2f55220340858249', tag: 'Abandonné', hltb: '≈ 90 h' },
+        { name: 'A Way Out', img: '/_blob/be48b3b4d695407a13401fa8d12c78da', tag: 'Coop', hltb: '≈ 7 h à deux' },
+        { name: 'Wasteland 3', img: '/_blob/e748d2559d4acf000dc5d70c9167f936', tag: 'Jamais lancé', hltb: '≈ 55 h' },
+        { name: 'ENDLESS Space 2', img: '/_blob/01b2b2e19d5efed9c25a4e4fbc2fbbb4', tag: '1 h jouée', hltb: 'partie ≈ 8 h' },
+        { name: 'Hotline Miami', img: '/_blob/4062aa63a08bf7ebddf0a2a4192fda36', tag: 'Jamais lancé', hltb: '≈ 5 h' }
+      ],
+      week: ['L','M','M','J','V','S','D'].map((l, i) => ({ l, h: Math.max(4, Math.round(vals[i] / max * 90)) + 'px', color: i === 5 ? accent : '#33333A' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

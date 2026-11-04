@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Ajouter un jeu</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0C0E}
+a{color:#E8EAE6;text-decoration:none}a:hover{color:#C6F24E}
+</style>
+</helmet>
+<div style="position: relative; min-height: 900px; background: #0B0C0E; color: #E8EAE6; font-family: 'Inter Tight', system-ui, sans-serif; display: flex; justify-content: center; align-items: flex-start; padding: 48px 16px; box-sizing: border-box">
+  <div aria-hidden="true" style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 14px; padding: 24px; opacity: 0.18; overflow: hidden">
+    <sc-for list="{{bg}}" as="b" hint-placeholder-count="20">
+      <img src="{{b}}" alt="" style="width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 8px">
+    </sc-for>
+  </div>
+
+  <div role="dialog" aria-labelledby="dlg" style="position: relative; width: 100%; max-width: 900px; background: #14171A; border: 1px solid #2A2F34; border-radius: 16px; box-shadow: 0 30px 80px rgba(0,0,0,0.6); overflow: hidden">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #22262A">
+      <h1 id="dlg" style="margin: 0; font-size: 20px; font-weight: 700">Ajouter un jeu</h1>
+      <a href="Multi-Bibliotheque.dc.html" aria-label="Fermer" style="width: 40px; height: 40px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: #1B1F23">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </a>
+    </div>
+
+    <div style="padding: 20px 24px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+      <a href="Multi-Import.dc.html" style="padding: 14px; border-radius: 12px; border: 1px solid #2A2F34; background: #1B1F23; display: flex; flex-direction: column; gap: 8px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        <span style="font-size: 14px; font-weight: 600">Depuis un launcher</span>
+        <span style="font-size: 12px; color: #8B9196; line-height: 1.4">Epic, GOG, Battle.net, EA, Ubisoft, Xbox</span>
+      </a>
+      <a href="Multi-Import.dc.html" style="padding: 14px; border-radius: 12px; border: 1px solid #2A2F34; background: #1B1F23; display: flex; flex-direction: column; gap: 8px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M8 11h6"/></svg>
+        <span style="font-size: 14px; font-weight: 600">Scanner ce PC</span>
+        <span style="font-size: 12px; color: #8B9196; line-height: 1.4">Cherche les jeux dans tes disques</span>
+      </a>
+      <div style="padding: 14px; border-radius: 12px; border: 2px solid {{accent}}; background: rgba(198,242,78,0.08); display: flex; flex-direction: column; gap: 8px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+        <span style="font-size: 14px; font-weight: 600">Exécutable</span>
+        <span style="font-size: 12px; color: #B4BAB0; line-height: 1.4">.exe, raccourci .lnk ou lien .url</span>
+      </div>
+      <div style="padding: 14px; border-radius: 12px; border: 1px solid #2A2F34; background: #1B1F23; display: flex; flex-direction: column; gap: 8px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3M15 12h.01M18 13h.01"/></svg>
+        <span style="font-size: 14px; font-weight: 600">Émulateur / ROMs</span>
+        <span style="font-size: 12px; color: #8B9196; line-height: 1.4">Un dossier de ROMs + un émulateur</span>
+      </div>
+    </div>
+
+    <form style="padding: 4px 24px 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px">
+      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px">
+        <label for="exe" style="font-size: 12px; font-weight: 600; color: #B4BAB0">Fichier du jeu</label>
+        <div style="display: flex; gap: 8px">
+          <input id="exe" value="C:\Games\Minecraft\MinecraftLauncher.exe" style="flex: 1; min-width: 0; height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid #2A2F34; background: #0F1113; color: #E8EAE6; font: 13px 'JetBrains Mono', monospace">
+          <button type="button" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #2A2F34; background: #1B1F23; color: #E8EAE6; font: 500 13px 'Inter Tight', sans-serif">Parcourir…</button>
+        </div>
+        <span style="font-size: 12px; color: #8B9196">Tu peux aussi glisser-déposer un fichier ici.</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="nom" style="font-size: 12px; font-weight: 600; color: #B4BAB0">Nom affiché</label>
+        <input id="nom" value="Minecraft" style="height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid #2A2F34; background: #0F1113; color: #E8EAE6; font: 14px 'Inter Tight', sans-serif">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="args" style="font-size: 12px; font-weight: 600; color: #B4BAB0">Arguments de lancement</label>
+        <input id="args" placeholder="-fullscreen" style="height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid #2A2F34; background: #0F1113; color: #E8EAE6; font: 13px 'JetBrains Mono', monospace">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="proc" style="font-size: 12px; font-weight: 600; color: #B4BAB0">Processus à suivre pour le temps de jeu</label>
+        <select id="proc" style="height: 44px; padding: 0 10px; border-radius: 8px; border: 1px solid #2A2F34; background: #0F1113; color: #E8EAE6; font: 14px 'Inter Tight', sans-serif">
+          <option>Automatique — javaw.exe (lancé par le launcher)</option>
+          <option>Le fichier choisi</option>
+          <option>Autre processus…</option>
+        </select>
+        <span style="font-size: 12px; color: #8B9196">Le chrono s’arrête quand ce processus se ferme.</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="prev" style="font-size: 12px; font-weight: 600; color: #B4BAB0">Temps déjà joué (facultatif)</label>
+        <input id="prev" placeholder="ex. 80 h" style="height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid #2A2F34; background: #0F1113; color: #E8EAE6; font: 14px 'Inter Tight', sans-serif">
+        <span style="font-size: 12px; color: #8B9196">Ajouté à ton total, marqué comme « estimé ».</span>
+      </div>
+
+      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; justify-content: space-between; align-items: baseline">
+          <span style="font-size: 12px; font-weight: 600; color: #B4BAB0">Jaquette — résultats SteamGridDB pour « Minecraft »</span>
+          <a href="#" style="font-size: 12px; color: {{accent}}">Importer une image</a>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px">
+          <sc-for list="{{arts}}" as="a" hint-placeholder-count="6">
+            <button type="button" aria-label="Choisir la jaquette {{a.n}}" style="padding: 0; border-radius: 8px; border: {{a.border}}; background: {{a.c}}; aspect-ratio: 2 / 3; color: #C9CEC6; font: 11px 'JetBrains Mono', monospace">[JAQUETTE {{a.n}}]</button>
+          </sc-for>
+        </div>
+      </div>
+    </form>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 24px; border-top: 1px solid #22262A; background: #121417">
+      <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #B4BAB0">
+        <input type="checkbox" checked="checked" style="width: 18px; height: 18px; accent-color: #C6F24E">
+        Ajouter aux collections intelligentes correspondantes
+      </label>
+      <div style="margin-left: auto; display: flex; gap: 8px">
+        <a href="Multi-Bibliotheque.dc.html" style="height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid #2A2F34; display: inline-flex; align-items: center; font-size: 14px">Annuler</a>
+        <a href="Multi-Fiche.dc.html" style="height: 44px; padding: 0 20px; border-radius: 8px; background: {{accent}}; color: #101214; display: inline-flex; align-items: center; font-size: 14px; font-weight: 700">Ajouter à la bibliothèque</a>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#C6F24E","options":["#C6F24E","#7CC4FF","#FF7A1A"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#C6F24E';
+    const ids = ['87684a3b4efe565f897b7bd7374bfb7f','9080dacdd3a8f19ae3a8231b6577b8b7','e46ffe7d25d32e8d9c0e53894834bd8c','48e105bddc7c669e6ced940e27980ec6','d3a351600c39eacc05e337d5688a8398','598318fe973801cffa20eab3e5fb189a','6717be9786514e32c9ff460f3dd2eea5','ab493eb33acaa45f411ae457c7af0870','0550b6624f2407f62b610c6d5af9b431','d2d1258d13f686ff6077362f42d14c86'];
+    const tints = ['#22361E','#1E2A1A','#2A3A22','#1A2433','#33301E','#2A1E1E'];
+    return {
+      accent,
+      bg: ids.concat(ids).map(i => '/_blob/' + i),
+      arts: tints.map((c, i) => ({ n: String(i + 1), c, border: i === 0 ? '2px solid ' + accent : '1px solid #2A2F34' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

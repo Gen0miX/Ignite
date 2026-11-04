@@ -1,0 +1,99 @@
+/* Ludothèque — thème « Braise » (direction B · Atelier)
+   Source de vérité des couleurs, typo, espacements. Importer une seule fois dans src/styles/global.css. */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+/* En production, embarquer les polices localement (dossier src/assets/fonts) plutôt que Google Fonts. */
+
+:root {
+  /* Surfaces */
+  --color-bg: #14100e; /* fond de l'app */
+  --color-panel: #1a1512; /* panneau latéral droit, en-têtes de modale */
+  --color-card: #241d19; /* tuiles de stats, cartes, segmented control */
+  --color-field: #1d1714; /* champs, pastilles de filtre, boutons secondaires */
+  --color-field-sunken: #110d0b; /* champs dans une modale */
+  --color-active: #2a211c; /* item de nav actif, segment sélectionné */
+  --color-line: #2c231e; /* séparateurs de colonnes, lignes de tableau */
+  --color-border: #3a2e27; /* bordures de champs/boutons */
+
+  /* Texte */
+  --color-text: #f3eae4;
+  --color-text-2: #cdbdb3; /* texte secondaire */
+  --color-muted: #a39187; /* libellés, compteurs, méta (≥ 4.5:1 sur --color-bg) */
+
+  /* Accent */
+  --color-accent: #ff7a45; /* boutons primaires, sélection, barres */
+  --color-accent-ink: #ff9466; /* texte/lien couleur accent sur fond sombre */
+  --color-on-accent: #1a0f08; /* texte sur un fond accent */
+  --color-accent-soft: rgba(255, 122, 69, 0.14); /* pastille de filtre active */
+  --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
+
+  /* États de jeu */
+  --status-playing: #5ba8ff;
+  --status-done: #7cd68a;
+  --status-todo: #a39187;
+  --status-dropped: #e05a6a; /* rose-rouge : ne pas confondre avec l'accent orange */
+  --color-ok: #7cd68a;
+  --color-warn: #f2b33d;
+  --color-danger: #e05a6a;
+
+  /* Couleurs de source (badges, barres de répartition) — identiques quel que soit le thème */
+  --source-steam: #7cc4ff;
+  --source-epic: #e8eae6;
+  --source-gog: #c9a6ff;
+  --source-battlenet: #5ba8ff;
+  --source-riot: #ff8a7a;
+  --source-ea: #ff8a7a;
+  --source-ubisoft: #7cc4ff;
+  --source-xbox: #5bd68a;
+  --source-local: #c6f24e;
+  --source-emulator: #f2b33d;
+  --source-badge-bg: rgba(16, 18, 20, 0.88); /* fond des badges posés sur une jaquette */
+
+  /* Calendrier de jeu (4 niveaux) */
+  --heat-0: #2a211c;
+  --heat-1: #5a2e1c;
+  --heat-2: #a4482a;
+  --heat-3: #ff7a45;
+
+  /* Typographie */
+  --font-sans: 'Inter Tight', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --text-xs: 11px; /* libellés de section MAJUSCULES, letter-spacing .1em, 600 */
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px; /* texte courant, items de nav */
+  --text-lg: 16px; /* titres de cartes, bouton Jouer */
+  --text-xl: 22px;
+  --text-2xl: 26px; /* titre de page */
+  --text-3xl: 44px; /* titre de fiche jeu */
+
+  /* Espacements (base 4) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+
+  /* Rayons */
+  --radius-xs: 5px; /* badges */
+  --radius-sm: 6px;
+  --radius-md: 8px; /* boutons, champs, jaquettes */
+  --radius-lg: 10px; /* bouton Jouer, encarts */
+  --radius-xl: 12px; /* cartes, sections */
+  --radius-2xl: 16px; /* modales */
+  --radius-pill: 999px;
+
+  /* Tailles de composants */
+  --h-control-sm: 36px; /* pastilles, boutons secondaires */
+  --h-control: 40px; /* champs, items de nav */
+  --h-control-lg: 48px; /* bouton Jouer du panneau */
+  --h-control-xl: 52px; /* bouton Jouer de la fiche */
+  --sidebar-w: 248px; /* 232–260 */
+  --panel-w: 360px; /* 340–380 */
+
+  --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.6);
+  --transition: 120ms ease-out;
+}

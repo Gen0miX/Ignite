@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Réglages — Sources et suivi</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101214}
+a{color:#E8EAE6;text-decoration:none}a:hover{color:#C6F24E}
+</style>
+</helmet>
+<div style="min-height: 1050px; background: #101214; color: #E8EAE6; font-family: 'Inter Tight', system-ui, sans-serif; display: flex; flex-wrap: wrap; box-sizing: border-box">
+  <aside style="flex: 1 1 232px; max-width: 260px; border-right: 1px solid #22262A; padding: 24px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px">
+    <a href="Multi-Bibliotheque.dc.html" style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #B4BAB0; padding: 0 10px 16px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Bibliothèque
+    </a>
+    <div style="padding: 0 10px 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #8B9196">Réglages</div>
+    <a href="#" style="height: 40px; padding: 0 10px; border-radius: 8px; display: flex; align-items: center; font-size: 14px">Général</a>
+    <a href="#" style="height: 40px; padding: 0 10px; border-radius: 8px; display: flex; align-items: center; font-size: 14px; background: #1E2226; font-weight: 600">Sources &amp; comptes</a>
+    <a href="#suivi" style="height: 40px; padding: 0 10px; border-radius: 8px; display: flex; align-items: center; font-size: 14px">Suivi du temps</a>
+    <a href="#" style="height: 40px; padding: 0 10px; border-radius: 8px; display: flex; align-items: center; font-size: 14px">Jaquettes &amp; métadonnées</a>
+    <a href="#" style="height: 40px; padding: 0 10px; border-radius: 8px; display: flex; align-items: center; font-size: 14px">Manette &amp; mode Canapé</a>
+    <a href="#" style="height: 40px; padding: 0 10px; border-radius: 8px; display: flex; align-items: center; font-size: 14px">Confidentialité</a>
+  </aside>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 24px 32px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px; max-width: 1100px">
+    <div>
+      <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em">Sources &amp; comptes</h1>
+      <p style="margin: 6px 0 0; font-size: 14px; color: #B4BAB0">Chaque source alimente ta bibliothèque, ton temps de jeu et tes succès. Les identifiants restent sur ce PC.</p>
+    </div>
+
+    <section aria-label="Sources" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+      <sc-for list="{{sources}}" as="s" hint-placeholder-count="8">
+        <div style="padding: 16px; border-radius: 12px; background: #14171A; border: 1px solid #22262A; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <span style="width: 34px; height: 34px; border-radius: 8px; background: {{s.c}}; color: #101214; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">{{s.ab}}</span>
+            <div style="flex: 1; min-width: 0">
+              <div style="font-size: 15px; font-weight: 600">{{s.n}}</div>
+              <div style="font-size: 12px; color: {{s.stc}}">{{s.st}}</div>
+            </div>
+            <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: #B4BAB0">
+              <input type="checkbox" role="switch" checked="{{s.on}}" aria-label="Activer {{s.n}}" style="width: 20px; height: 20px; accent-color: #C6F24E">
+            </label>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <sc-for list="{{s.feats}}" as="f" hint-placeholder-count="3">
+              <span style="font-size: 11px; padding: 4px 8px; border-radius: 999px; background: #1B1F23; color: #B4BAB0">{{f}}</span>
+            </sc-for>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #8B9196">
+            <span>{{s.how}}</span>
+            <a href="#" style="color: {{accent}}; font-weight: 600">{{s.cta}}</a>
+          </div>
+        </div>
+      </sc-for>
+    </section>
+
+    <section id="suivi" aria-labelledby="suivih" style="padding: 20px; border-radius: 12px; background: #14171A; border: 1px solid #22262A; display: flex; flex-direction: column; gap: 4px">
+      <h2 id="suivih" style="margin: 0 0 10px; font-size: 18px; font-weight: 700">Suivi du temps de jeu</h2>
+      <sc-for list="{{rules}}" as="r" hint-placeholder-count="5">
+        <div style="display: flex; align-items: center; gap: 16px; padding: 12px 0; border-top: 1px solid #22262A">
+          <div style="flex: 1; min-width: 0">
+            <div style="font-size: 14px; font-weight: 600">{{r.t}}</div>
+            <div style="font-size: 12px; color: #8B9196; margin-top: 2px">{{r.d}}</div>
+          </div>
+          <span style="font-size: 13px; padding: 8px 12px; border-radius: 8px; background: #1B1F23; border: 1px solid #2A2F34; white-space: nowrap">{{r.v}}</span>
+        </div>
+      </sc-for>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#C6F24E","options":["#C6F24E","#7CC4FF","#FF7A1A"]},"$preview":{"width":1440,"height":1050}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#C6F24E';
+    const ok = '#5BD68A', mute = '#8B9196', warn = '#F2B33D';
+    return {
+      accent,
+      sources: [
+        { n: 'Steam', ab: 'ST', c: '#7CC4FF', st: 'Connecté · GenomiX · synchro il y a 4 min', stc: ok, on: true, feats: ['Bibliothèque', 'Temps de jeu', 'Succès', 'Amis'], how: 'Clé Web API + SteamID64', cta: 'Modifier' },
+        { n: 'Epic Games', ab: 'EP', c: '#E8EAE6', st: 'Connecté · 18 jeux', stc: ok, on: true, feats: ['Bibliothèque', 'Temps (historique)', 'Lancement via launcher'], how: 'Manifestes locaux + compte', cta: 'Resynchroniser' },
+        { n: 'GOG Galaxy', ab: 'GG', c: '#C9A6FF', st: 'Connecté · 9 jeux', stc: ok, on: true, feats: ['Bibliothèque', 'Temps de jeu', 'Succès'], how: 'Base locale Galaxy 2.0', cta: 'Resynchroniser' },
+        { n: 'Battle.net', ab: 'BN', c: '#5BA8FF', st: 'Détection locale · 3 jeux', stc: ok, on: true, feats: ['Jeux installés', 'Temps suivi localement'], how: 'Pas d’API publique', cta: 'Détails' },
+        { n: 'EA app', ab: 'EA', c: '#FF8A7A', st: 'Non installée sur ce PC', stc: mute, on: false, feats: ['Jeux installés', 'Temps suivi localement'], how: 'Détection locale', cta: 'Rechercher' },
+        { n: 'Xbox / Game Pass', ab: 'XB', c: '#5BD68A', st: 'Connexion requise', stc: warn, on: false, feats: ['Bibliothèque PC', 'Succès'], how: 'Compte Microsoft', cta: 'Se connecter' },
+        { n: 'Exécutables & dossiers', ab: 'EX', c: '#C6F24E', st: '6 jeux · 2 dossiers surveillés', stc: ok, on: true, feats: ['Ajout manuel', 'Temps suivi localement', 'Objectifs perso'], how: 'C:\\Games, D:\\Games', cta: 'Gérer' },
+        { n: 'Émulateurs + RetroAchievements', ab: 'EM', c: '#F2B33D', st: 'PCSX2, Dolphin · 42 ROMs', stc: ok, on: true, feats: ['ROMs', 'Temps suivi localement', 'Succès RA'], how: 'Identifiant + clé RA', cta: 'Configurer' }
+      ],
+      rules: [
+        { t: 'Méthode de suivi', d: 'Détecte le processus du jeu au démarrage et à la fermeture, même lancé hors de Ludothèque.', v: 'Détection de processus ▾' },
+        { t: 'Session minimale', d: 'Les sessions plus courtes sont ignorées (crash, lancement par erreur).', v: '2 min ▾' },
+        { t: 'Pause si inactif', d: 'Arrête le chrono quand clavier et manette sont inactifs.', v: 'Après 15 min ▾' },
+        { t: 'Jeux possédés sur plusieurs plateformes', d: 'Une seule fiche, temps et succès cumulés par source.', v: 'Fusionner ▾' },
+        { t: 'Importer l’historique', d: 'Récupère le temps déjà enregistré par chaque launcher.', v: 'Au premier import ▾' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
