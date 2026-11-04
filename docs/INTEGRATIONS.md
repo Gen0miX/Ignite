@@ -26,7 +26,19 @@
 
 **Lancement** : `steam://rungameid/<appid>`. **Processus à suivre** : les exe sous `<library>\steamapps\common\<installdir>\`.
 
+### Vérifié sur la machine de l'utilisateur (J1, novembre 2026)
+
+- `HKCU\Software\Valve\Steam\SteamPath` renvoie le chemin **en minuscules avec des `/`** (`c:/program files (x86)/steam`) : on le normalise et on préfère la casse de `HKLM\SOFTWARE\WOW6432Node\Valve\Steam\InstallPath`. `RunningAppID` existe bien (0 hors jeu).
+- `libraryfolders.vdf` : une entrée par bibliothèque avec `path` (ici `C:\Program Files (x86)\Steam` et `E:\SteamLibrary`). Une bibliothèque sur un disque débranché est signalée en avertissement, pas en erreur.
+- `appmanifest_*.acf` : `appid`, `name`, `installdir`, `SizeOnDisk`, `LastPlayed` (Unix), `StateFlags` (bit 4 = entièrement installé). **Certains manifests peuvent être entièrement remplis d'octets nuls** (corruption côté Steam) : ils sont ignorés. Les outils Steam (Proton, Steam Linux Runtime, Steamworks Common Redistributables) sont exclus.
+- `userdata\<accountId>\config\localconfig.vdf` : **confirmé**, chemin `UserLocalConfigStore > Software > Valve > Steam > apps > <appid>`, champs `Playtime` (minutes) et `LastPlayed` (Unix). Sert de temps de jeu sans clé API. `accountId = SteamID64 − 76561197960265728`.
+- `config\loginusers.vdf` : la clé est `timestamp` (minuscules) et `MostRecent` peut être absent : on trie par `MostRecent` puis `timestamp`.
+- Cache d'images : beaucoup d'anciens jeux n'ont **pas** de `library_600x900.jpg`, seulement `header.jpg`. Ordre utilisé : fichier local (dossier direct ou sous-dossier haché) → `https://shared.steamstatic.com/store_item_assets/steam/apps/<appid>/<fichier>` (vérifié, l'ancien `cdn.cloudflare.steamstatic.com/steam/apps/...` répond aussi) → jaquette générée. Les URL en 404 sont mémorisées 7 jours (`artwork/misses.json`).
+- Sans Steam installé mais avec clé + SteamID64, la bibliothèque possédée est quand même importée (lancement impossible tant que Steam est absent).
+
 ## Epic Games (priorité 2)
+
+> Sur la machine de l'utilisateur, Epic n'est **pas installé** (`Data\Manifests` absent) : la source devra simplement apparaître « non installée ». Même règle pour tout launcher : facultatif, jamais bloquant.
 
 - Manifests des jeux installés : `C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests\*.item` (JSON : `DisplayName`, `AppName`, `InstallLocation`, `LaunchExecutable`, `CatalogNamespace`, `CatalogItemId`).
 - Jeux possédés mais non installés : ils demandent l'API Epic avec OAuth. **Hors MVP**, on ne liste que les jeux installés au début.

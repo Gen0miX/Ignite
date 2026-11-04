@@ -168,7 +168,8 @@ pub fn installed_apps(library: &Path) -> Vec<AppManifest> {
             .and_then(|b| parse_manifest(&String::from_utf8_lossy(&b), library));
         match parsed {
             Ok(Some(m)) if !is_steam_tool(m.appid, &m.name) => apps.push(m),
-            Ok(_) => {}
+            Ok(Some(_)) => {}
+            Ok(None) => tracing::info!(file = %name, "empty or corrupted manifest skipped"),
             Err(e) => tracing::warn!(file = %name, error = %e, "skipping unreadable manifest"),
         }
     }

@@ -39,6 +39,12 @@ pub fn run() {
 
             app.manage(database);
             app.manage(secrets::default_store()?);
+            // Serve cached artwork through `asset:` (only this folder).
+            let artwork_dir = metadata::artwork::cache_root(&data_dir);
+            std::fs::create_dir_all(&artwork_dir)?;
+            app.asset_protocol_scope()
+                .allow_directory(&artwork_dir, true)?;
+
             app.manage(AppPaths { data_dir, db_path });
             app.manage(commands::sources::SyncState::default());
 

@@ -4,23 +4,23 @@ Chaque tâche = une PR ou un commit, avec ses tests. Ne passe au jalon suivant q
 
 ## J0 — Socle (1 à 2 jours)
 
-- [ ] Créer le projet Tauri 2 + React + TS + Vite, avec pnpm, ESLint, Prettier, `cargo fmt` et clippy.
-- [ ] Intégrer `design/tokens.css`, les polices en local et un fichier `global.css` (reset, scrollbars sombres, focus ring).
-- [ ] Mettre en place la base SQLite (`rusqlite`) avec la migration initiale (schéma d'`ARCHITECTURE.md` § 3) et des repositories.
-- [ ] Générer les types TS des commandes Tauri (`tauri-specta`).
-- [ ] Créer le module `secrets` (keyring), avec des tests.
-- [ ] Construire la coquille de l'app : barre latérale et zone de contenu, routeur (`/library`, `/game/:id`, `/stats`, `/settings/sources`, `/import`), fichier `i18n/fr.ts`.
+- [x] Créer le projet Tauri 2 + React + TS + Vite, avec pnpm, ESLint, Prettier, `cargo fmt` et clippy.
+- [x] Intégrer `design/tokens.css`, les polices en local et un fichier `global.css` (reset, scrollbars sombres, focus ring).
+- [x] Mettre en place la base SQLite (`rusqlite`) avec la migration initiale (schéma d'`ARCHITECTURE.md` § 3) et des repositories.
+- [x] Générer les types TS des commandes Tauri (`tauri-specta`).
+- [x] Créer le module `secrets` (keyring), avec des tests.
+- [x] Construire la coquille de l'app : barre latérale et zone de contenu, routeur (`/library`, `/game/:id`, `/stats`, `/settings/sources`, `/import`), fichier `i18n/fr.ts`.
 
 **Fini quand** : `pnpm tauri dev` ouvre la coquille vide au thème Braise, et la migration crée la base.
 
 ## J1 — Bibliothèque Steam (MVP lisible)
 
-- [ ] `sources/steam` en local : chemin Steam, `libraryfolders.vdf`, `appmanifest_*.acf` → jeux installés.
-- [ ] `sources/steam` via le Web API : `GetOwnedGames` (avec clé et SteamID saisis dans Réglages) → tous les jeux possédés et leur temps.
-- [ ] Images Steam : lecture de `appcache\librarycache` (avec la recherche dans les sous-dossiers hachés) et copie dans le cache de l'app.
-- [ ] Écran Bibliothèque : barre latérale (nav, sources, statuts), grille de GameCards, recherche texte, tri.
-- [ ] Panneau du jeu sélectionné : chiffres, statut, note perso, tags.
-- [ ] Lancement : `steam://rungameid/<appid>`.
+- [x] `sources/steam` en local : chemin Steam, `libraryfolders.vdf`, `appmanifest_*.acf` → jeux installés.
+- [x] `sources/steam` via le Web API : `GetOwnedGames` (avec clé et SteamID saisis dans Réglages) → tous les jeux possédés et leur temps.
+- [x] Images Steam : lecture de `appcache\librarycache` (avec la recherche dans les sous-dossiers hachés) et copie dans le cache de l'app.
+- [x] Écran Bibliothèque : barre latérale (nav, sources, statuts), grille de GameCards, recherche texte, tri.
+- [x] Panneau du jeu sélectionné : chiffres, statut, note perso, tags.
+- [x] Lancement : `steam://rungameid/<appid>`.
 
 **Fini quand** : la vraie bibliothèque Steam de l'utilisateur s'affiche avec ses jaquettes, on peut filtrer et trier, et Jouer lance le jeu.
 
