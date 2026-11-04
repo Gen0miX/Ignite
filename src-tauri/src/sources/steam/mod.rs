@@ -4,6 +4,7 @@
 //! Works in degraded modes: no Steam installed but a key → owned games only;
 //! Steam installed without a key → installed games only; neither → skipped.
 
+pub mod achievements;
 pub mod api;
 pub mod local;
 

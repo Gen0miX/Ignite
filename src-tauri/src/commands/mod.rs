@@ -1,8 +1,10 @@
 //! Tauri commands. Every command is annotated with `#[specta::specta]` so its
 //! TypeScript signature is generated into `src/api/bindings.ts`.
 
+pub mod achievements;
 pub mod app;
 pub mod library;
+pub mod play;
 pub mod secrets;
 pub mod sources;
 
@@ -58,6 +60,16 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         sources::sources_status,
         sources::steam_settings_get,
         sources::steam_settings_set,
+        play::tracker_active,
+        play::sessions_list,
+        play::session_save,
+        play::session_delete,
+        play::goals_list,
+        play::goal_add,
+        play::goal_toggle,
+        play::goal_rename,
+        play::goal_delete,
+        achievements::achievements_get,
     ])
 }
 

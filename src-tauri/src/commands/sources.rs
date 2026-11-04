@@ -32,7 +32,7 @@ pub struct SyncState {
 }
 
 /// Steam settings resolved from the registry, the settings table and the vault.
-fn steam_config(db: &Db, secrets: &Secrets) -> SteamConfig {
+pub(crate) fn steam_config(db: &Db, secrets: &Secrets) -> SteamConfig {
     let root = local::locate_steam();
     let configured: Option<String> = settings::get(&db.conn(), STEAM_ID_KEY).ok().flatten();
     let steam_id = configured

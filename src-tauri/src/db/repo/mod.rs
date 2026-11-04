@@ -1,6 +1,7 @@
 //! Repositories: plain functions over a `&Connection`, so callers control
 //! locking and transactions.
 
+pub mod achievements;
 pub mod artwork;
 pub mod game_sources;
 pub mod games;

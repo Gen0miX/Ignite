@@ -23,9 +23,78 @@ export const commands = {
 	steamSettingsGet: () => typedError<SteamSettings_Serialize, CommandError>(__TAURI_INVOKE("steam_settings_get")),
 	/**  Sets the SteamID64 to use; `None` goes back to automatic detection. */
 	steamSettingsSet: (steamId: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("steam_settings_set", { steamId })),
+	trackerActive: () => __TAURI_INVOKE<ActiveGame[]>("tracker_active"),
+	sessionsList: (gameId: string) => typedError<PlaySession_Serialize[], CommandError>(__TAURI_INVOKE("sessions_list", { gameId })),
+	sessionSave: (input: SessionInput_Deserialize) => typedError<PlaySession_Serialize, CommandError>(__TAURI_INVOKE("session_save", { input })),
+	sessionDelete: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("session_delete", { id })),
+	goalsList: (gameId: string) => typedError<Goal_Serialize[], CommandError>(__TAURI_INVOKE("goals_list", { gameId })),
+	goalAdd: (gameId: string, title: string) => typedError<Goal_Serialize, CommandError>(__TAURI_INVOKE("goal_add", { gameId, title })),
+	goalToggle: (id: string, done: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("goal_toggle", { id, done })),
+	goalRename: (id: string, title: string) => typedError<null, CommandError>(__TAURI_INVOKE("goal_rename", { id, title })),
+	goalDelete: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("goal_delete", { id })),
+	achievementsGet: (gameId: string, refresh: boolean) => typedError<AchievementsView_Serialize, CommandError>(__TAURI_INVOKE("achievements_get", { gameId, refresh })),
 };
 
 /* Types */
+export type AchievementItem = AchievementItem_Serialize | AchievementItem_Deserialize;
+
+export type AchievementItem_Deserialize = {
+	apiName: string,
+	name: string,
+	description?: string | null,
+	unlockedAt?: string | null,
+	globalPercent?: number | null,
+};
+
+export type AchievementItem_Serialize = {
+	apiName: string,
+	name: string,
+	description: string | null,
+	unlockedAt: string | null,
+	globalPercent: number | null,
+};
+
+export type AchievementsState = 
+/**  List available. */
+"ok" | 
+/**  The platform says this game has no achievements. */
+"none" | 
+/**  A Steam Web API key (and SteamID) is needed. */
+"needsKey" | 
+/**  No source of this game provides achievements: use personal goals. */
+"unsupported";
+
+export type AchievementsView = AchievementsView_Serialize | AchievementsView_Deserialize;
+
+export type AchievementsView_Deserialize = {
+	state: AchievementsState,
+	unlocked: number,
+	total: number,
+	items: AchievementItem_Deserialize[],
+	syncedAt?: string | null,
+	/**  Last fetch error (cached data, if any, is still returned). */
+	error?: string | null,
+};
+
+export type AchievementsView_Serialize = {
+	state: AchievementsState,
+	unlocked: number,
+	total: number,
+	items: AchievementItem_Serialize[],
+	syncedAt: string | null,
+	/**  Last fetch error (cached data, if any, is still returned). */
+	error: string | null,
+};
+
+/**  A game being played right now (for the "En jeu" badge and live timer). */
+export type ActiveGame = {
+	sessionId: string,
+	gameId: string,
+	startedAt: string,
+	/**  Active seconds at the last poll. */
+	activeSeconds: number,
+};
+
 export type AppInfo = {
 	version: string,
 	dataDir: string,
@@ -85,6 +154,10 @@ export type GameSummary_Deserialize = {
 	/**  Absolute paths in the app's artwork cache (served via `asset:`). */
 	cover?: string | null,
 	header?: string | null,
+	/**  Achievements (cached), when the platform provides them. */
+	achievements?: Progress | null,
+	/**  Personal goals, when the user defined some. */
+	goals?: Progress | null,
 };
 
 export type GameSummary_Serialize = {
@@ -103,6 +176,10 @@ export type GameSummary_Serialize = {
 	/**  Absolute paths in the app's artwork cache (served via `asset:`). */
 	cover: string | null,
 	header: string | null,
+	/**  Achievements (cached), when the platform provides them. */
+	achievements: Progress | null,
+	/**  Personal goals, when the user defined some. */
+	goals: Progress | null,
 };
 
 /**  Fields editable from the game panel. An empty `notes` string clears the note. */
@@ -122,6 +199,24 @@ export type GameUpdate_Serialize = {
 	favorite: boolean | null,
 	hidden: boolean | null,
 	notes: string | null,
+};
+
+export type Goal = Goal_Serialize | Goal_Deserialize;
+
+export type Goal_Deserialize = {
+	id: string,
+	title: string,
+	position: number,
+	/**  RFC 3339 when checked. */
+	doneAt?: string | null,
+};
+
+export type Goal_Serialize = {
+	id: string,
+	title: string,
+	position: number,
+	/**  RFC 3339 when checked. */
+	doneAt: string | null,
 };
 
 export type LibraryCounts = {
@@ -151,6 +246,41 @@ export type LibraryView = { kind: "all" } | { kind: "installed" } | { kind: "fav
 /**  Hidden games only (playtests, betas, games hidden by the user). */
 { kind: "hidden" } | { kind: "status"; value: GameStatus } | { kind: "source"; value: SourceKind };
 
+export type PlaySession = PlaySession_Serialize | PlaySession_Deserialize;
+
+export type PlaySession_Deserialize = {
+	id: string,
+	gameId: string,
+	gameSourceId?: string | null,
+	/**  RFC 3339; `None` for an "already played" estimate. */
+	startedAt?: string | null,
+	endedAt?: string | null,
+	/**  Active time (idle removed). */
+	durationSeconds: number,
+	idleSeconds: number,
+	origin: SessionOrigin,
+	note?: string | null,
+};
+
+export type PlaySession_Serialize = {
+	id: string,
+	gameId: string,
+	gameSourceId: string | null,
+	/**  RFC 3339; `None` for an "already played" estimate. */
+	startedAt: string | null,
+	endedAt: string | null,
+	/**  Active time (idle removed). */
+	durationSeconds: number,
+	idleSeconds: number,
+	origin: SessionOrigin,
+	note: string | null,
+};
+
+export type Progress = {
+	done: number,
+	total: number,
+};
+
 /**  Every secret the app knows about. */
 export type SecretKind = "steam_web_api_key" | "steamgriddb_api_key" | "igdb_client_id" | "igdb_client_secret" | "retroachievements_api_key";
 
@@ -158,6 +288,35 @@ export type SecretStatus = {
 	kind: SecretKind,
 	present: boolean,
 };
+
+/**  A session typed by the user. `id = None` creates one. */
+export type SessionInput = SessionInput_Serialize | SessionInput_Deserialize;
+
+/**  A session typed by the user. `id = None` creates one. */
+export type SessionInput_Deserialize = {
+	id?: string | null,
+	gameId: string,
+	/**  RFC 3339; required for a manual session, ignored for an estimate. */
+	startedAt?: string | null,
+	durationMinutes: number,
+	/**  `manual` or `estimate` when creating; kept as is when editing. */
+	origin: SessionOrigin,
+	note?: string | null,
+};
+
+/**  A session typed by the user. `id = None` creates one. */
+export type SessionInput_Serialize = {
+	id: string | null,
+	gameId: string,
+	/**  RFC 3339; required for a manual session, ignored for an estimate. */
+	startedAt: string | null,
+	durationMinutes: number,
+	/**  `manual` or `estimate` when creating; kept as is when editing. */
+	origin: SessionOrigin,
+	note: string | null,
+};
+
+export type SessionOrigin = "auto" | "manual" | "imported" | "estimate";
 
 export type SortKey = "lastPlayed" | "name" | "playtime" | "added";
 

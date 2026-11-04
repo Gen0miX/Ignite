@@ -5,7 +5,7 @@ use std::collections::{BTreeSet, HashMap};
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 
-use crate::db::repo::{artwork, game_sources, games, sessions};
+use crate::db::repo::{achievements, artwork, game_sources, games, goals, sessions};
 use crate::error::AppResult;
 use crate::library::playtime;
 use crate::models::{GameStatus, SourceKind};
@@ -30,6 +30,16 @@ pub struct GameSummary {
     /// Absolute paths in the app's artwork cache (served via `asset:`).
     pub cover: Option<String>,
     pub header: Option<String>,
+    /// Achievements (cached), when the platform provides them.
+    pub achievements: Option<Progress>,
+    /// Personal goals, when the user defined some.
+    pub goals: Option<Progress>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, specta::Type)]
+pub struct Progress {
+    pub done: u32,
+    pub total: u32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize, specta::Type)]
@@ -109,6 +119,11 @@ pub fn summaries(conn: &Connection) -> AppResult<Vec<GameSummary>> {
             .push(s);
     }
     let mut art = artwork::all(conn)?;
+    let ach = achievements::progress_by_game(conn)?;
+    let goal_progress: HashMap<String, Progress> = goals::progress(conn)?
+        .into_iter()
+        .map(|(g, done, total)| (g, Progress { done, total }))
+        .collect();
 
     Ok(all_games
         .into_iter()
@@ -137,6 +152,10 @@ pub fn summaries(conn: &Connection) -> AppResult<Vec<GameSummary>> {
                 sources: kinds.into_iter().collect(),
                 playtime_minutes: playtime::total_minutes(&parts).clamp(0, u32::MAX as i64) as u32,
                 last_played,
+                achievements: ach
+                    .get(&g.id)
+                    .map(|&(done, total)| Progress { done, total }),
+                goals: goal_progress.get(&g.id).copied(),
                 cover: images.remove("cover"),
                 header: images.remove("header"),
                 id: g.id,
@@ -258,6 +277,8 @@ mod tests {
             added_at: "2026-01-01T00:00:00Z".into(),
             cover: None,
             header: None,
+            achievements: None,
+            goals: None,
         }
     }
 
