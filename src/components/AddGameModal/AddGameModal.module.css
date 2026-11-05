@@ -196,3 +196,44 @@
   padding-top: var(--space-3);
   border-top: 1px solid var(--color-line);
 }
+
+.scanList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.scanList li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.scanList input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent);
+}
+
+.scanTitle,
+.scanList select {
+  height: var(--h-control-sm);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-field-sunken);
+  color: var(--color-text);
+  font-size: var(--text-base);
+}
+
+.scanTitle {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.scanList select {
+  flex: 1 1 220px;
+  min-width: 0;
+}

@@ -66,6 +66,8 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         library::exe_inspect,
         library::add_executable,
         library::facets,
+        library::folders_scan,
+        library::add_scanned_games,
         artwork::artwork_search,
         artwork::artwork_set,
         collections::collections_list,

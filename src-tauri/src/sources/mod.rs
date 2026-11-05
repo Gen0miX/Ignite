@@ -5,6 +5,7 @@
 //! prevents the others from being scanned (see `scan_all`).
 
 pub mod epic;
+pub mod folder_scan;
 pub mod gog;
 pub mod local;
 pub mod others;

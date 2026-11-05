@@ -8,13 +8,14 @@ import { commands, unwrap, type ExeInfo } from '../../api/client';
 import { fr } from '../../i18n/fr';
 import buttons from '../Button/Button.module.css';
 import styles from './AddGameModal.module.css';
+import { ScanForm } from './ScanForm';
 
 const t = fr.addGame;
 type TrackChoice = 'auto' | 'file' | 'process';
 
 interface AddGameModalProps {
-  mode: 'menu' | 'exe';
-  onMode: (mode: 'menu' | 'exe') => void;
+  mode: 'menu' | 'exe' | 'scan';
+  onMode: (mode: 'menu' | 'exe' | 'scan') => void;
   onClose: () => void;
 }
 
@@ -268,7 +269,9 @@ export function AddGameModal({ mode, onMode, onClose }: AddGameModalProps) {
         className={styles.modal}
       >
         <header className={styles.header}>
-          <h2 id="add-title">{mode === 'exe' ? t.exeTitle : t.title_}</h2>
+          <h2 id="add-title">
+            {mode === 'exe' ? t.exeTitle : mode === 'scan' ? t.scanTitle : t.title_}
+          </h2>
           <button type="button" className={styles.close} onClick={onClose} aria-label={t.close}>
             <X size={18} aria-hidden="true" />
           </button>
@@ -282,7 +285,12 @@ export function AddGameModal({ mode, onMode, onClose }: AddGameModalProps) {
                 body={t.fromLauncherBody}
                 onClick={() => navigate('/import')}
               />
-              <Option icon={<FolderSearch size={22} />} title={t.scan} body={t.soon} disabled />
+              <Option
+                icon={<FolderSearch size={22} />}
+                title={t.scan}
+                body={t.scanBody}
+                onClick={() => onMode('scan')}
+              />
               <Option
                 icon={<FileUp size={22} />}
                 title={t.exe}
@@ -291,6 +299,13 @@ export function AddGameModal({ mode, onMode, onClose }: AddGameModalProps) {
               />
               <Option icon={<Gamepad2 size={22} />} title={t.emulator} body={t.soon} disabled />
             </div>
+          ) : mode === 'scan' ? (
+            <ScanForm
+              onDone={() => {
+                onClose();
+                navigate('/library?sort=added');
+              }}
+            />
           ) : (
             <ExeForm
               onDone={(id) => {

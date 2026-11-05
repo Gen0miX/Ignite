@@ -332,3 +332,51 @@ pub fn facets(db: tauri::State<'_, Db>) -> CommandResult<Facets> {
         modes: to(tags::auto_facets(&conn, "mode")?),
     })
 }
+
+/// Looks for games in the sub-folders of the given directories.
+#[tauri::command]
+#[specta::specta]
+pub async fn folders_scan(
+    db: tauri::State<'_, Db>,
+    paths: Vec<String>,
+) -> CommandResult<Vec<crate::sources::folder_scan::FolderCandidate>> {
+    let known: Vec<String> = game_sources::list_all(&db.conn())?
+        .into_iter()
+        .flat_map(|s| [s.install_path, s.exe_path])
+        .flatten()
+        .collect();
+    let roots: Vec<std::path::PathBuf> = paths.iter().map(std::path::PathBuf::from).collect();
+    tauri::async_runtime::spawn_blocking(move || crate::sources::folder_scan::scan(&roots, &known))
+        .await
+        .map_err(|e| AppError::Invalid(format!("scan task failed: {e}")).into())
+}
+
+#[derive(Debug, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ScannedGame {
+    pub title: String,
+    pub exe_path: String,
+}
+
+/// Adds several scanned games at once (automatic process tracking).
+/// Returns how many were added; failures (duplicates...) are skipped.
+#[tauri::command]
+#[specta::specta]
+pub fn add_scanned_games(db: tauri::State<'_, Db>, games: Vec<ScannedGame>) -> CommandResult<u32> {
+    let mut added = 0;
+    for g in games {
+        let input = crate::sources::local::AddExeInput {
+            title: g.title,
+            exe_path: Some(g.exe_path),
+            uri: None,
+            args: None,
+            track: crate::sources::local::TrackMode::Auto,
+            estimate_minutes: None,
+        };
+        match crate::sources::local::create(&mut db.conn(), &input) {
+            Ok(_) => added += 1,
+            Err(e) => tracing::info!(error = %e, "scanned game skipped"),
+        }
+    }
+    Ok(added)
+}

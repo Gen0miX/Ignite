@@ -63,7 +63,7 @@ export interface LibraryParams {
   sort: SortKey;
   selected: string | null;
   /** "Ajouter un jeu" dialog: `menu` or `exe` (DESIGN.md: /library?add=exe). */
-  add: 'menu' | 'exe' | null;
+  add: 'menu' | 'exe' | 'scan' | null;
 }
 
 export function readParams(params: URLSearchParams): LibraryParams {
@@ -72,7 +72,7 @@ export function readParams(params: URLSearchParams): LibraryParams {
     text: params.get('q') ?? '',
     sort: parseSort(params.get('sort')),
     selected: params.get('game'),
-    add: params.get('add') === 'exe' ? 'exe' : params.get('add') === 'menu' ? 'menu' : null,
+    add: (['menu', 'exe', 'scan'] as const).find((m) => m === params.get('add')) ?? null,
   };
 }
 
@@ -83,7 +83,7 @@ export function withParams(
     text: string;
     sort: SortKey;
     selected: string | null;
-    add: 'menu' | 'exe' | null;
+    add: 'menu' | 'exe' | 'scan' | null;
   }>,
 ): URLSearchParams {
   const next = new URLSearchParams(params);

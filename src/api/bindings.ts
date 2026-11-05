@@ -30,6 +30,13 @@ export const commands = {
 	addExecutable: (input: AddExeInput_Deserialize) => typedError<GameDetail_Serialize, CommandError>(__TAURI_INVOKE("add_executable", { input })),
 	/**  Genres and player modes present in the library, for the filter chips. */
 	facets: () => typedError<Facets, CommandError>(__TAURI_INVOKE("facets")),
+	/**  Looks for games in the sub-folders of the given directories. */
+	foldersScan: (paths: string[]) => typedError<FolderCandidate[], CommandError>(__TAURI_INVOKE("folders_scan", { paths })),
+	/**
+	 *  Adds several scanned games at once (automatic process tracking).
+	 *  Returns how many were added; failures (duplicates...) are skipped.
+	 */
+	addScannedGames: (games: ScannedGame[]) => typedError<number, CommandError>(__TAURI_INVOKE("add_scanned_games", { games })),
 	/**  Finds artwork options for a game on SteamGridDB. */
 	artworkSearch: (gameId: string, slot: ArtworkSlot, sgdbGameId: number | null, query: string | null) => typedError<ArtworkSearch_Serialize, CommandError>(__TAURI_INVOKE("artwork_search", { gameId, slot, sgdbGameId, query })),
 	/**  Downloads the chosen image into the cache and uses it for the game. */
@@ -316,6 +323,14 @@ export type Facets = {
 	modes: Facet[],
 };
 
+export type FolderCandidate = {
+	folder: string,
+	exePath: string,
+	title: string,
+	/**  Other executables found (to pick another one in the UI). */
+	alternatives: string[],
+};
+
 export type GameDetail = GameDetail_Serialize | GameDetail_Deserialize;
 
 export type GameDetail_Deserialize = {
@@ -579,6 +594,11 @@ export type PlaySession_Serialize = {
 export type Progress = {
 	done: number,
 	total: number,
+};
+
+export type ScannedGame = {
+	title: string,
+	exePath: string,
 };
 
 export type ScannedSource = {
