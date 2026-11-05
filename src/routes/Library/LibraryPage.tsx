@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { RefreshCw, Search } from 'lucide-react';
+import { Plus, RefreshCw, Search } from 'lucide-react';
 import { isTauri, type LibraryView, type SortKey } from '../../api/client';
 import {
   useLaunchGame,
@@ -13,6 +13,7 @@ import { PageMain } from '../../app/AppShell';
 import buttons from '../../components/Button/Button.module.css';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { GameGrid } from '../../components/GameGrid/GameGrid';
+import { AddGameModal } from '../../components/AddGameModal/AddGameModal';
 import { GamePanel } from '../../components/GamePanel/GamePanel';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { fr } from '../../i18n/fr';
@@ -40,7 +41,7 @@ function titleForView(view: LibraryView): string {
 
 export function LibraryPage() {
   const [params, setParams] = useSearchParams();
-  const { view, text, sort, selected } = readParams(params);
+  const { view, text, sort, selected, add } = readParams(params);
 
   // Search input is local for instant typing, pushed to the URL after a pause.
   const [draft, setDraft] = useState(text);
@@ -129,20 +130,32 @@ export function LibraryPage() {
           title={titleForView(view)}
           meta={isTauri() ? meta : fr.library.count(0)}
           actions={
-            isTauri() && !libraryEmpty ? (
-              <button
-                type="button"
-                className={buttons.secondary}
-                onClick={() => sync.mutate()}
-                disabled={sync.isPending}
-              >
-                <RefreshCw
-                  size={16}
-                  aria-hidden="true"
-                  className={sync.isPending ? styles.spin : ''}
-                />
-                {sync.isPending ? fr.library.syncing : fr.library.sync}
-              </button>
+            isTauri() ? (
+              <>
+                {!libraryEmpty && (
+                  <button
+                    type="button"
+                    className={buttons.secondary}
+                    onClick={() => sync.mutate()}
+                    disabled={sync.isPending}
+                  >
+                    <RefreshCw
+                      size={16}
+                      aria-hidden="true"
+                      className={sync.isPending ? styles.spin : ''}
+                    />
+                    {sync.isPending ? fr.library.syncing : fr.library.sync}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={buttons.primary}
+                  onClick={() => setParams((p) => withParams(p, { add: 'menu' }))}
+                >
+                  <Plus size={16} aria-hidden="true" />
+                  {fr.addGame.open}
+                </button>
+              </>
             ) : undefined
           }
         />
@@ -179,6 +192,13 @@ export function LibraryPage() {
         {body}
       </PageMain>
       {selected && isTauri() && <GamePanel gameId={selected} onClose={closePanel} />}
+      {add && isTauri() && (
+        <AddGameModal
+          mode={add}
+          onMode={(mode) => setParams((p) => withParams(p, { add: mode }), { replace: true })}
+          onClose={() => setParams((p) => withParams(p, { add: null }), { replace: true })}
+        />
+      )}
     </>
   );
 }

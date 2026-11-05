@@ -57,6 +57,8 @@ export interface LibraryParams {
   text: string;
   sort: SortKey;
   selected: string | null;
+  /** "Ajouter un jeu" dialog: `menu` or `exe` (DESIGN.md: /library?add=exe). */
+  add: 'menu' | 'exe' | null;
 }
 
 export function readParams(params: URLSearchParams): LibraryParams {
@@ -65,13 +67,19 @@ export function readParams(params: URLSearchParams): LibraryParams {
     text: params.get('q') ?? '',
     sort: parseSort(params.get('sort')),
     selected: params.get('game'),
+    add: params.get('add') === 'exe' ? 'exe' : params.get('add') === 'menu' ? 'menu' : null,
   };
 }
 
 /** Returns new params with the given changes; empty/default values are removed. */
 export function withParams(
   params: URLSearchParams,
-  changes: Partial<{ text: string; sort: SortKey; selected: string | null }>,
+  changes: Partial<{
+    text: string;
+    sort: SortKey;
+    selected: string | null;
+    add: 'menu' | 'exe' | null;
+  }>,
 ): URLSearchParams {
   const next = new URLSearchParams(params);
   const set = (key: string, value: string | null | undefined) => {
@@ -81,5 +89,6 @@ export function withParams(
   if ('text' in changes) set('q', changes.text?.trim() ? changes.text : null);
   if ('sort' in changes) set('sort', changes.sort === DEFAULT_SORT ? null : changes.sort);
   if ('selected' in changes) set('game', changes.selected);
+  if ('add' in changes) set('add', changes.add);
   return next;
 }

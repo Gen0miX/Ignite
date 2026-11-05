@@ -17,7 +17,13 @@ describe('library URL params', () => {
 
   it('reads all params', () => {
     const p = readParams(new URLSearchParams('view=installed&q=souls&sort=name&game=g1'));
-    expect(p).toEqual({ view: { kind: 'installed' }, text: 'souls', sort: 'name', selected: 'g1' });
+    expect(p).toEqual({
+      view: { kind: 'installed' },
+      text: 'souls',
+      sort: 'name',
+      selected: 'g1',
+      add: null,
+    });
   });
 
   it('updates params and drops defaults', () => {

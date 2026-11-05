@@ -34,6 +34,7 @@ export type ImportScan = b.ImportScan_Serialize;
 export type ImportCandidate = b.ImportCandidate_Serialize;
 export type ImportDecision = b.ImportDecision;
 export type ImportReport = b.ImportReport;
+export type ExeInfo = b.ExeInfo_Serialize;
 
 export class BackendError extends Error {
   readonly kind: string;
