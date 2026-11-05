@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use rusqlite::Connection;
 use serde::Serialize;
 
-use crate::db::repo::{artwork, game_sources, games};
+use crate::db::repo::{achievements, artwork, game_sources, games};
 use crate::error::AppResult;
 use crate::library::non_games;
 use crate::models::SourceKind;
@@ -71,7 +71,7 @@ pub fn apply_scan(
             external_id: Some(g.external_id.clone()),
             installed: g.installed,
             install_path: g.install_path.clone(),
-            exe_path: None,
+            exe_path: g.exe_path.clone(),
             size_bytes: g.size_bytes,
             launch_uri: g.launch_uri.clone(),
             process_matchers: None,
@@ -81,7 +81,7 @@ pub fn apply_scan(
         let game_id = match existing {
             Some(prev) => {
                 // Keep what this scan could not provide (e.g. API offline this time).
-                data.exe_path = prev.exe_path;
+                data.exe_path = data.exe_path.or(prev.exe_path);
                 data.process_matchers = prev.process_matchers;
                 data.install_path = data.install_path.or(prev.install_path);
                 data.size_bytes = data.size_bytes.or(prev.size_bytes);
@@ -97,7 +97,7 @@ pub fn apply_scan(
                 let game = games::insert(&tx, &g.title)?;
                 game_sources::upsert(&tx, &game.id, scan.kind, &data)?;
                 report.added += 1;
-                if non_games::is_probably_not_a_game(&g.title) {
+                if g.hide_on_import || non_games::is_probably_not_a_game(&g.title) {
                     let hide = games::GamePatch {
                         hidden: Some(true),
                         ..Default::default()
@@ -108,6 +108,13 @@ pub fn apply_scan(
                 game.id
             }
         };
+
+        if let Some(list) = &g.achievements {
+            let source = game_sources::find_by_external(&tx, scan.kind, &g.external_id)?;
+            if let Some(source) = source {
+                achievements::replace_for_source_tx(&tx, &source.id, Some(list))?;
+            }
+        }
 
         let have = artwork::for_game(&tx, &game_id)?;
         let missing: Vec<_> = g

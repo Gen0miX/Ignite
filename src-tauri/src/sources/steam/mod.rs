@@ -157,6 +157,7 @@ pub fn merge(
                 title: m.name.clone(),
                 installed: m.fully_installed,
                 install_path: Some(m.install_path.display().to_string()),
+                exe_path: None,
                 size_bytes: m.size_bytes.map(|s| s as i64),
                 launch_uri: Some(launch_uri(m.appid)),
                 playtime_minutes: local.minutes.map(|m| m as i64),
@@ -165,6 +166,8 @@ pub fn merge(
                     .or(m.last_played)
                     .and_then(unix_to_rfc3339),
                 artwork: Vec::new(),
+                hide_on_import: false,
+                achievements: None,
             },
         );
     }

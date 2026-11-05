@@ -25,14 +25,24 @@ pub fn replace_for_source(
     list: Option<&[AchievementRow]>,
 ) -> AppResult<()> {
     let tx = conn.transaction()?;
-    tx.execute(
+    replace_for_source_tx(&tx, source_id, list)?;
+    tx.commit()?;
+    Ok(())
+}
+
+/// Same as `replace_for_source`, inside a transaction owned by the caller.
+pub fn replace_for_source_tx(
+    conn: &Connection,
+    source_id: &str,
+    list: Option<&[AchievementRow]>,
+) -> AppResult<()> {
+    conn.execute(
         "DELETE FROM achievements WHERE game_source_id = ?1",
         [source_id],
     )?;
     for a in list.unwrap_or_default() {
-        tx.execute(
-            "INSERT INTO achievements (id, game_source_id, api_name, name, description, icon_url, \
-               unlocked_at, global_percent) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        conn.execute(
+            "INSERT INTO achievements (id, game_source_id, api_name, name, description, icon_url,                unlocked_at, global_percent) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             params![
                 new_id(),
                 source_id,
@@ -46,11 +56,10 @@ pub fn replace_for_source(
         )?;
     }
     let total = list.map(|l| l.len() as i64).unwrap_or(0);
-    tx.execute(
+    conn.execute(
         "UPDATE game_sources SET achievements_synced_at = ?2, achievements_total = ?3 WHERE id = ?1",
         params![source_id, now_rfc3339(), total],
     )?;
-    tx.commit()?;
     Ok(())
 }
 

@@ -4,6 +4,7 @@
 //! `SourceStatus::NotInstalled` and returns no games. A failing source never
 //! prevents the others from being scanned (see `scan_all`).
 
+pub mod gog;
 pub mod steam;
 pub mod vdf;
 
@@ -70,6 +71,8 @@ pub struct DetectedGame {
     pub title: String,
     pub installed: bool,
     pub install_path: Option<String>,
+    /// Executable to start (direct launch / GOG play task).
+    pub exe_path: Option<String>,
     pub size_bytes: Option<i64>,
     pub launch_uri: Option<String>,
     /// Playtime counted by the platform itself, in minutes.
@@ -77,6 +80,11 @@ pub struct DetectedGame {
     /// RFC 3339 date of the last session according to the platform.
     pub last_played: Option<String>,
     pub artwork: Vec<ArtworkCandidate>,
+    /// Import hidden (DLC variant, tool...). The user can show it again.
+    pub hide_on_import: bool,
+    /// Achievements provided by the source itself (GOG database);
+    /// `None` = not provided by the scan.
+    pub achievements: Option<Vec<crate::db::repo::achievements::AchievementRow>>,
 }
 
 /// Result of scanning one source.
