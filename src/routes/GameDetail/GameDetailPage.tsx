@@ -155,7 +155,11 @@ function Sheet({ game }: { game: GameDetail }) {
           <SessionLog game={game} sessions={list} steamCounted={steamCounted} />
         </div>
         <div className={styles.sideColumn}>
-          <AchievementsSection gameId={s.id} hasSteam={s.sources.includes('steam')} />
+          <AchievementsSection
+            gameId={s.id}
+            supported={s.sources.some((k) => k === 'steam' || k === 'gog' || k === 'emulator')}
+            isEmulated={s.sources.includes('emulator')}
+          />
           <GoalsSection gameId={s.id} />
           <LaunchSection game={game} />
         </div>

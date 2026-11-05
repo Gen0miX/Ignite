@@ -297,7 +297,12 @@ export function AddGameModal({ mode, onMode, onClose }: AddGameModalProps) {
                 body={t.exeBody}
                 onClick={() => onMode('exe')}
               />
-              <Option icon={<Gamepad2 size={22} />} title={t.emulator} body={t.soon} disabled />
+              <Option
+                icon={<Gamepad2 size={22} />}
+                title={t.emulator}
+                body={t.emulatorBody}
+                onClick={() => navigate('/settings/sources#emulators-title')}
+              />
             </div>
           ) : mode === 'scan' ? (
             <ScanForm

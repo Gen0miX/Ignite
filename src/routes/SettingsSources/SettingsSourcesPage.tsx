@@ -28,6 +28,7 @@ import { Switch } from '../../components/Switch/Switch';
 import { fr } from '../../i18n/fr';
 import { formatLastPlayed } from '../../lib/format';
 import styles from './SettingsSourcesPage.module.css';
+import { EmulatorsCard } from './EmulatorsCard';
 
 const t = fr.settings;
 
@@ -507,6 +508,7 @@ export function SettingsSourcesPage() {
       <PageHeader title={t.sourcesTitle} />
       <nav className={styles.toc} aria-label={t.sourcesTitle}>
         <a href="#settings-sources">{t.sourcesSection}</a>
+        <a href="#emulators-title">{t.emulators.title}</a>
         <a href="#tracking-title">{t.trackingTitle}</a>
         <a href="#metadata-title">{t.metadataTitle}</a>
         <a href="#settings-about">{t.about}</a>
@@ -527,6 +529,11 @@ export function SettingsSourcesPage() {
         <EmptyState>{t.backendUnavailable}</EmptyState>
       )}
       <p className={styles.muted}>{t.otherSources}</p>
+      {isTauri() && (
+        <EmulatorsCard
+          keyField={<SecretKeyField kind="retroachievements_api_key" labelId="ra-label" />}
+        />
+      )}
       {isTauri() && <TrackingCard />}
       {isTauri() && <MetadataCard />}
       <AboutCard />

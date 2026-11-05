@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { commands, unwrap } from '../../api/client';
 import { Lock, RefreshCw, Trophy } from 'lucide-react';
 import type { AchievementItem } from '../../api/client';
 import { useAchievements, useRefreshAchievements } from '../../api/hooks';
@@ -34,14 +36,23 @@ function Item({ a }: { a: AchievementItem }) {
   );
 }
 
-export function AchievementsSection({ gameId, hasSteam }: { gameId: string; hasSteam: boolean }) {
-  const q = useAchievements(gameId, hasSteam);
+/** `supported`: a source of the game can provide achievements (Steam, GOG, emulator). */
+export function AchievementsSection({
+  gameId,
+  supported,
+  isEmulated = false,
+}: {
+  gameId: string;
+  supported: boolean;
+  isEmulated?: boolean;
+}) {
+  const q = useAchievements(gameId, supported);
   const refresh = useRefreshAchievements(gameId);
   const [showAll, setShowAll] = useState(false);
   const v = q.data;
 
   let body;
-  if (!hasSteam || v?.state === 'unsupported') {
+  if (!supported || v?.state === 'unsupported') {
     body = <p className={styles.muted}>{t.achievementsUnsupported}</p>;
   } else if (q.isPending) {
     body = <p className={styles.muted}>{t.achievementsLoading}</p>;
@@ -49,6 +60,8 @@ export function AchievementsSection({ gameId, hasSteam }: { gameId: string; hasS
     body = <p className={styles.error}>{t.achievementsError}</p>;
   } else if (v.state === 'needsKey') {
     body = <p className={styles.muted}>{t.achievementsNeedsKey}</p>;
+  } else if (v.state === 'notMatched') {
+    body = <p className={styles.muted}>{t.achievementsNotMatched}</p>;
   } else if (v.state === 'none') {
     body = <p className={styles.muted}>{t.achievementsNone}</p>;
   } else {
@@ -105,7 +118,7 @@ export function AchievementsSection({ gameId, hasSteam }: { gameId: string; hasS
         <h2 id="sheet-achievements" className="section-label">
           {t.achievementsTitle}
         </h2>
-        {hasSteam && v && v.state !== 'needsKey' && (
+        {supported && v && v.state !== 'needsKey' && (
           <button
             type="button"
             className={`${buttons.secondary} ${styles.smallButton}`}
@@ -119,6 +132,50 @@ export function AchievementsSection({ gameId, hasSteam }: { gameId: string; hasS
       </div>
       {v?.error && <p className={styles.error}>{t.achievementsError}</p>}
       {body}
+      {isEmulated && <RaIdForm gameId={gameId} />}
     </section>
+  );
+}
+
+/** Manual RetroAchievements id (disc consoles, unrecognized ROMs). */
+function RaIdForm({ gameId }: { gameId: string }) {
+  const client = useQueryClient();
+  const [value, setValue] = useState('');
+  const save = useMutation({
+    mutationFn: () => unwrap(commands.gameSetRaId(gameId, value.trim() ? Number(value) : null)),
+    onSuccess: async () => {
+      setValue('');
+      await unwrap(commands.achievementsGet(gameId, true)).then((data) =>
+        client.setQueryData(['achievements', gameId], data),
+      );
+    },
+  });
+  return (
+    <form
+      className={styles.inlineForm}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (/^\d+$/.test(value.trim())) save.mutate();
+      }}
+    >
+      <label className="visually-hidden" htmlFor="ra-id">
+        {t.raId}
+      </label>
+      <input
+        id="ra-id"
+        className={styles.input}
+        inputMode="numeric"
+        placeholder={t.raId}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+      />
+      <button
+        type="submit"
+        className={buttons.secondary}
+        disabled={!/^\d+$/.test(value.trim()) || save.isPending}
+      >
+        {t.raIdSave}
+      </button>
+    </form>
   );
 }

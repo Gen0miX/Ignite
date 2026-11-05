@@ -160,6 +160,7 @@ export const fr = {
     exe: 'Exécutable',
     exeBody: 'Un .exe, un raccourci .lnk ou un lien .url (glisser-déposer accepté).',
     emulator: 'Émulateur / ROMs',
+    emulatorBody: 'Déclare un émulateur et son dossier de ROMs dans les réglages.',
     soon: 'Arrive au jalon J5.',
     fileFilter: 'Jeux et raccourcis',
     dropHint: 'Glisse un fichier .exe, .lnk ou .url ici, ou parcours ton disque.',
@@ -366,7 +367,11 @@ export const fr = {
     achievementsRefresh: 'Actualiser',
     achievementsNone: "Ce jeu n'a pas de succès Steam : utilise les objectifs perso.",
     achievementsNeedsKey:
-      'Ajoute ta clé Steam Web API dans Réglages › Sources pour voir les succès.',
+      'Ajoute ta clé (Steam Web API ou RetroAchievements) dans Réglages pour voir les succès.',
+    achievementsNotMatched:
+      'Ce jeu n’a pas été reconnu sur RetroAchievements. Indique son ID ci-dessous (dans l’adresse retroachievements.org/game/ID).',
+    raId: 'ID RetroAchievements',
+    raIdSave: 'Enregistrer',
     achievementsUnsupported:
       'Cette plateforme ne fournit pas de succès : utilise les objectifs perso.',
     achievementsError: 'Impossible de récupérer les succès.',
@@ -460,6 +465,34 @@ export const fr = {
         'Temps importé à chaque synchronisation (Steam, GOG) ; relevés quotidiens pour les statistiques',
       saved: 'Enregistré',
       saveError: "Les réglages n'ont pas pu être enregistrés.",
+    },
+    emulators: {
+      title: 'Émulateurs',
+      help: 'Chaque ROM du dossier choisi devient un jeu, lancé avec l’émulateur et chronométré pendant que tu joues.',
+      add: 'Ajouter un émulateur',
+      edit: 'Modifier',
+      remove: 'Supprimer',
+      confirmRemove: (name: string) => `Retirer ${name} ? Ses jeux restent dans la bibliothèque.`,
+      name: 'Nom',
+      exe: "Exécutable de l'émulateur",
+      browse: 'Parcourir…',
+      args: 'Arguments',
+      argsHint:
+        '{rom} est remplacé par le chemin de la ROM. Exemple pour PCSX2 : -batch -fullscreen "{rom}"',
+      roms: 'Dossier des ROMs',
+      extensions: 'Extensions (séparées par des virgules)',
+      console: 'Console (pour RetroAchievements)',
+      noConsole: 'Aucune',
+      autoMatch: 'Les succès sont reconnus automatiquement à partir du fichier de la ROM.',
+      manualMatch: 'Console à disque : indique l’ID RetroAchievements sur la fiche de chaque jeu.',
+      save: 'Enregistrer',
+      cancel: 'Annuler',
+      saveError:
+        "L'émulateur n'a pas pu être enregistré : vérifie l'exécutable, le dossier et les extensions.",
+      raTitle: 'RetroAchievements',
+      raHelp:
+        'Facultatif. Ton nom d’utilisateur et ta clé Web API (retroachievements.org › Paramètres). La clé est stockée dans le Gestionnaire d’identification Windows.',
+      raUser: "Nom d'utilisateur",
     },
     metadataTitle: 'Services de métadonnées',
     sgdb: {
