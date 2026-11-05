@@ -44,14 +44,25 @@
 
 - Manifests des jeux installés : `C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests\*.item` (JSON : `DisplayName`, `AppName`, `InstallLocation`, `LaunchExecutable`, `CatalogNamespace`, `CatalogItemId`).
 - Jeux possédés mais non installés : ils demandent l'API Epic avec OAuth. **Hors MVP**, on ne liste que les jeux installés au début.
-- Lancement : `com.epicgames.launcher://apps/<CatalogNamespace>%3A<CatalogItemId>%3A<AppName>?action=launch&silent=true` (ou la forme courte avec `<AppName>` seul, à vérifier).
+- Lancement : `com.epicgames.launcher://apps/<CatalogNamespace>%3A<CatalogItemId>%3A<AppName>?action=launch&silent=true`, ou la forme courte avec `<AppName>` seul quand les identifiants de catalogue manquent (non vérifié en réel : Epic absent de la machine de l'utilisateur ; couvert par des tests sur des manifests d'exemple).
+- Filtrage : on ignore les add-ons (`MainGameAppName` ≠ `AppName`), les plugins (`AppCategories` sans `games`) et les installations incomplètes (`bIsIncompleteInstall`).
 - Temps de jeu : pas de source locale fiable. On utilise le suivi local.
 - Succès : non disponibles pour le MVP.
 
 ## GOG Galaxy (priorité 2)
 
-- Base locale : `C:\ProgramData\GOG.com\Galaxy\storage\galaxy-2.0.db` (SQLite). **Copie le fichier avant de l'ouvrir**, il peut être verrouillé. Tables utiles (à vérifier) : `InstalledBaseProducts`, `LibraryReleases`, `GamePieces` (titre, images), `GameTimes` (temps en minutes), `LastPlayedDates`, `UserReleaseAchievements` / `Achievements`.
-- La base contient aussi les jeux des **launchers que l'utilisateur a connectés dans Galaxy**, avec un préfixe `releaseKey` comme `steam_`, `epic_`, `battlenet_`… On peut s'en servir de source secondaire, mais on dédoublonne avec nos propres sources.
+- Base locale : `C:\ProgramData\GOG.com\Galaxy\storage\galaxy-2.0.db` (SQLite, journal **WAL**). On copie `galaxy-2.0.db` **avec** `-wal` et `-shm` dans un dossier temporaire avant de l'ouvrir : sans le WAL, les données récentes manquent. L'original n'est jamais ouvert.
+
+**Vérifié sur la machine de l'utilisateur (J3, novembre 2026)** :
+
+- `LibraryReleases.releaseKey` (`gog_<productId>`) liste les jeux possédés **et leurs DLC** (43 entrées dont 33 DLC de The Witcher 3). On écarte les DLC listés dans la pièce `dlcs` du jeu de base (`{"dlcs": ["gog_…", …]}`). Il reste des variantes non listées (`dlc_13_a`, `… [A]`, `4k graphic assets pack`) : importées **masquées**.
+- Titre : pièce `title` puis `originalTitle` de `GamePieces` (JSON `{"title": …}`), via `GamePieceTypes.type`. Images : pièce `originalImages` (`verticalCover` en WebP, `background`).
+- Temps : `GameTimes.minutesInGame` (compteur de la plateforme, règle de cumul) ; `LastPlayedDates.lastPlayedDate` au format `YYYY-MM-DD HH:MM:SS` (UTC).
+- Installation : `InstalledBaseProducts(productId, installationPath)` ; exécutable principal : `PlayTasks` (`isPrimary`) → `PlayTaskLaunchParameters.executablePath`.
+- Succès : `UserReleaseAchievements` **n'existe pas**. On lit `Achievements` (apikey, rarity, image) + `UserAchievements` (`isUnlocked`, `unlockTime`) + `LocalizedAchievements` (nom/description par `languageId`, français en priorité via la table `Languages`).
+- Client : `HKLM\SOFTWARE\WOW6432Node\GOG.com\GalaxyClient\paths\client` + `clientExecutable`.
+- Résultat réel : 10 jeux (dont The Witcher 3 : 3 188 min, 21/78 succès) et 13 variantes de DLC masquées.
+- La base peut contenir les jeux des **launchers connectés dans Galaxy** (`steam_`, `epic_`…). **On ne lit que `gog_*`** : les autres viennent de leur propre source, ce qui évite de compter deux fois le même temps.
 - Lancement : `"<GalaxyClient.exe>" /command=runGame /gameId=<productId>`, ou l'exe direct depuis `goggame-<id>.info` dans le dossier du jeu.
 - Temps et succès : présents dans la base Galaxy.
 

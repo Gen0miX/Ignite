@@ -186,6 +186,13 @@ Pour chaque `game_source` :
 - `pre_command` / `post_command` : exécutées via `cmd /C` avec un délai maximum. Leur sortie va dans les logs.
 - Un seul jeu « en cours » à la fois par défaut. Si un deuxième lancement est demandé, on demande confirmation.
 
+## 5 bis. Sources, import et doublons (J3)
+
+- Chaque source a un interrupteur (`settings` : `sources.<kind>.enabled`). Steam est actif par défaut ; GOG et Epic restent inactifs tant que l'utilisateur ne les active pas (Réglages › Sources ou assistant d'import) : rien n'entre dans la bibliothèque sans son accord.
+- Assistant d'import : `import_scan` lit les sources **sans rien écrire** et classe chaque jeu (nouveau / déjà importé / doublon d'un jeu d'une autre plateforme / probablement pas un jeu) ; `import_commit` enregistre les choix. Les jeux décochés sont mémorisés (`import.ignored`, clés `kind:external_id`) et filtrés des synchronisations suivantes.
+- Doublons : clé de comparaison = titre sans casse, accents, ™/®, ponctuation ni mots d'édition (GOTY, Remastered, Enhanced Edition…). Deux jeux de la même plateforme ne sont jamais proposés à la fusion. La fusion déplace sources, sessions, objectifs, tags, collections et images manquantes ; la défusion détache une source et ses sessions.
+- Images SteamGridDB : seules les URL `*.steamgriddb.com` sont téléchargées ; les vignettes du sélecteur sont elles aussi copiées dans `artwork/_sgdb/` avant affichage (pas de hotlinking).
+
 ## 6. Collections intelligentes — format des règles
 
 ```json
