@@ -1,6 +1,9 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import type { GameStatus } from '../../api/client';
-import { useLibraryCounts, useSourcesStatus } from '../../api/hooks';
+import { useCollections, useLibraryCounts, useSourcesStatus } from '../../api/hooks';
+import { CollectionEditor } from '../CollectionEditor/CollectionEditor';
 import { fr } from '../../i18n/fr';
 import { AppLogo } from '../AppLogo/AppLogo';
 import { SourceChip } from '../SourceBadge/SourceBadge';
@@ -14,6 +17,9 @@ const STATUSES: GameStatus[] = ['playing', 'done', 'todo', 'dropped'];
 export function Sidebar() {
   const { data: counts } = useLibraryCounts();
   const { data: sources } = useSourcesStatus();
+  const { data: collections } = useCollections();
+  const [creating, setCreating] = useState(false);
+  const navigate = useNavigate();
   const syncing = sources?.some((s) => s.syncing) ?? false;
   const n = (v: number | undefined) => String(v ?? 0);
 
@@ -59,6 +65,37 @@ export function Sidebar() {
         <Link to="/settings/sources" className={styles.secondaryLink}>
           {fr.sidebar.manageSources}
         </Link>
+      </section>
+
+      <section aria-labelledby="sidebar-collections">
+        <h2 id="sidebar-collections" className={`section-label ${styles.sectionLabel}`}>
+          {fr.collections.section}
+        </h2>
+        <ul className={styles.group}>
+          {collections?.map((c) => (
+            <li key={c.collection.id}>
+              <NavItem
+                to={`/library?view=collection-${c.collection.id}`}
+                label={c.collection.name}
+                trailing={String(c.count)}
+                size="compact"
+              />
+            </li>
+          ))}
+        </ul>
+        <button type="button" className={styles.secondaryLink} onClick={() => setCreating(true)}>
+          <Plus size={14} aria-hidden="true" />
+          {fr.collections.add}
+        </button>
+        {creating && (
+          <CollectionEditor
+            collection={null}
+            onClose={(saved) => {
+              setCreating(false);
+              if (saved) navigate(`/library?view=collection-${saved.id}`);
+            }}
+          />
+        )}
       </section>
 
       <section aria-labelledby="sidebar-status">

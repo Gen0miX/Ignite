@@ -73,6 +73,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         collections::collection_set_member,
         collections::rules_preview,
         collections::search_check,
+        collections::game_collections,
         sources::library_sync,
         sources::sources_status,
         sources::source_set_enabled,

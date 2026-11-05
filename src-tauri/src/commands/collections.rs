@@ -125,3 +125,18 @@ pub fn search_check(text: String) -> CommandResult<SearchCheck> {
         rules: serde_json::to_string(&parsed.rule).map_err(crate::error::AppError::from)?,
     })
 }
+
+/// Ids of the manual collections containing a game.
+#[tauri::command]
+#[specta::specta]
+pub fn game_collections(db: tauri::State<'_, Db>, game_id: String) -> CommandResult<Vec<String>> {
+    let conn = db.conn();
+    let mut stmt = conn
+        .prepare("SELECT collection_id FROM collection_games WHERE game_id = ?1")
+        .map_err(crate::error::AppError::from)?;
+    let ids = stmt
+        .query_map([game_id], |r| r.get(0))
+        .and_then(|rows| rows.collect::<Result<Vec<String>, _>>())
+        .map_err(crate::error::AppError::from)?;
+    Ok(ids)
+}

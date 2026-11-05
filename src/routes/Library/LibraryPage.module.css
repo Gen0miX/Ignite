@@ -78,3 +78,8 @@
     transform: rotate(360deg);
   }
 }
+
+.warn {
+  color: var(--color-warn);
+  font-size: var(--text-base);
+}

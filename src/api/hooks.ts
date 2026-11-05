@@ -26,7 +26,15 @@ export const keys = {
 };
 
 /** Everything derived from the library must refresh after a change. */
-const LIBRARY_KEYS = [['library'], ['counts'], ['game'], ['sources'], ['sessions'], ['goals']];
+const LIBRARY_KEYS = [
+  ['library'],
+  ['counts'],
+  ['game'],
+  ['sources'],
+  ['sessions'],
+  ['goals'],
+  ['collections'],
+];
 
 export function useLibraryList(query: LibraryQuery) {
   return useQuery({
@@ -156,6 +164,51 @@ export function useSplitSource() {
       void client.invalidateQueries({ queryKey: ['duplicates'] });
       void invalidate();
     },
+  });
+}
+
+export function useCollections() {
+  return useQuery({
+    queryKey: ['collections'],
+    queryFn: () => unwrap(commands.collectionsList()),
+    enabled: isTauri(),
+  });
+}
+
+export function useDeleteCollection() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => unwrap(commands.collectionDelete(id)),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['collections'] }),
+  });
+}
+
+export function useSetCollectionMember() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, gameId, member }: { id: string; gameId: string; member: boolean }) =>
+      unwrap(commands.collectionSetMember(id, gameId, member)),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['collections'] });
+      void client.invalidateQueries({ queryKey: ['library'] });
+    },
+  });
+}
+
+export function useCollectionMembership(gameId: string, ids: string[]) {
+  return useQuery({
+    queryKey: ['collections', 'members', gameId, ids.length],
+    queryFn: async () => new Set(await unwrap(commands.gameCollections(gameId))),
+    enabled: isTauri() && ids.length > 0,
+  });
+}
+
+export function useSearchCheck(text: string) {
+  return useQuery({
+    queryKey: ['search-check', text],
+    queryFn: () => unwrap(commands.searchCheck(text)),
+    enabled: isTauri() && text.includes(':'),
+    staleTime: Infinity,
   });
 }
 

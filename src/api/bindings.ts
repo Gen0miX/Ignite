@@ -40,6 +40,8 @@ export const commands = {
 	/**  Number of visible games matching rules being edited (live preview). */
 	rulesPreview: (rules: string) => typedError<number, CommandError>(__TAURI_INVOKE("rules_preview", { rules })),
 	searchCheck: (text: string) => typedError<SearchCheck, CommandError>(__TAURI_INVOKE("search_check", { text })),
+	/**  Ids of the manual collections containing a game. */
+	gameCollections: (gameId: string) => typedError<string[], CommandError>(__TAURI_INVOKE("game_collections", { gameId })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
 	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
 	/**  Turns a source on or off. Disabling keeps its games in the library. */

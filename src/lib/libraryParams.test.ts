@@ -2,7 +2,15 @@ import { parseSort, parseView, readParams, viewParam, withParams } from './libra
 
 describe('library URL params', () => {
   it('parses views and round-trips them', () => {
-    const cases = [null, 'installed', 'favorites', 'hidden', 'status-done', 'source-steam'];
+    const cases = [
+      null,
+      'installed',
+      'favorites',
+      'hidden',
+      'status-done',
+      'source-steam',
+      'collection-abc',
+    ];
     for (const raw of cases) expect(viewParam(parseView(raw))).toBe(raw);
     expect(parseView('status-unknown')).toEqual({ kind: 'all' });
     expect(parseView('source-psn')).toEqual({ kind: 'all' });

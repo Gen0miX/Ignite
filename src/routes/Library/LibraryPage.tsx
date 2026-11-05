@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Plus, RefreshCw, Search } from 'lucide-react';
-import { isTauri, type LibraryView, type SortKey } from '../../api/client';
+import { isTauri, type CollectionInfo, type LibraryView, type SortKey } from '../../api/client';
 import {
+  useCollections,
+  useDeleteCollection,
   useLaunchGame,
   useLibraryCounts,
+  useSearchCheck,
   useLibraryList,
   useSync,
   useTrackerActive,
@@ -14,6 +17,7 @@ import buttons from '../../components/Button/Button.module.css';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { GameGrid } from '../../components/GameGrid/GameGrid';
 import { AddGameModal } from '../../components/AddGameModal/AddGameModal';
+import { CollectionEditor } from '../../components/CollectionEditor/CollectionEditor';
 import { GamePanel } from '../../components/GamePanel/GamePanel';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { fr } from '../../i18n/fr';
@@ -22,8 +26,13 @@ import styles from './LibraryPage.module.css';
 
 const SORTS: SortKey[] = ['lastPlayed', 'name', 'playtime', 'added'];
 
-function titleForView(view: LibraryView): string {
+function titleForView(view: LibraryView, collections?: CollectionInfo[]): string {
   switch (view.kind) {
+    case 'collection':
+      return (
+        collections?.find((c) => c.collection.id === view.value)?.collection.name ??
+        fr.collections.section
+      );
     case 'installed':
       return fr.library.installedTitle;
     case 'favorites':
@@ -68,6 +77,14 @@ export function LibraryPage() {
   const active = useTrackerActive();
   const playingIds = useMemo(() => new Set(active.data?.map((a) => a.gameId)), [active.data]);
   const games = list.data ?? [];
+  const collections = useCollections();
+  const removeCollection = useDeleteCollection();
+  const check = useSearchCheck(text);
+  const [editor, setEditor] = useState<{ mode: 'edit' | 'fromSearch' } | null>(null);
+  const currentCollection =
+    view.kind === 'collection'
+      ? collections.data?.find((c) => c.collection.id === view.value)?.collection
+      : undefined;
 
   const select = useCallback(
     (id: string | null) => setParams((p) => withParams(p, { selected: id }), { replace: true }),
@@ -127,7 +144,7 @@ export function LibraryPage() {
     <>
       <PageMain>
         <PageHeader
-          title={titleForView(view)}
+          title={titleForView(view, collections.data)}
           meta={isTauri() ? meta : fr.library.count(0)}
           actions={
             isTauri() ? (
@@ -168,9 +185,43 @@ export function LibraryPage() {
               type="search"
               value={draft}
               placeholder={fr.library.searchPlaceholder}
+              title={fr.collections.syntaxHelp}
               onChange={(e) => setDraft(e.target.value)}
             />
           </label>
+          {isTauri() && text.includes(':') && (
+            <button
+              type="button"
+              className={buttons.secondary}
+              onClick={() => setEditor({ mode: 'fromSearch' })}
+            >
+              {fr.collections.saveSearch}
+            </button>
+          )}
+          {currentCollection && (
+            <>
+              <button
+                type="button"
+                className={buttons.secondary}
+                onClick={() => setEditor({ mode: 'edit' })}
+              >
+                {fr.collections.edit}
+              </button>
+              <button
+                type="button"
+                className={buttons.secondary}
+                onClick={() => {
+                  if (window.confirm(fr.collections.confirmRemove(currentCollection.name))) {
+                    removeCollection.mutate(currentCollection.id, {
+                      onSuccess: () => setParams(new URLSearchParams(), { replace: true }),
+                    });
+                  }
+                }}
+              >
+                {fr.collections.remove}
+              </button>
+            </>
+          )}
           <label className={styles.sort}>
             <span>{fr.library.sortLabel}</span>
             <select
@@ -189,8 +240,25 @@ export function LibraryPage() {
             </select>
           </label>
         </div>
+        {check.data && check.data.warnings.length > 0 && (
+          <p className={styles.warn} role="status">
+            {fr.collections.unknownFilters(check.data.warnings.join(', '))}
+          </p>
+        )}
         {body}
       </PageMain>
+      {editor && (
+        <CollectionEditor
+          collection={editor.mode === 'edit' ? (currentCollection ?? null) : null}
+          initialRules={editor.mode === 'fromSearch' ? check.data?.rules : null}
+          onClose={(saved) => {
+            setEditor(null);
+            if (saved && editor.mode === 'fromSearch') {
+              setParams(new URLSearchParams({ view: `collection-${saved.id}` }));
+            }
+          }}
+        />
+      )}
       {selected && isTauri() && <GamePanel gameId={selected} onClose={closePanel} />}
       {add && isTauri() && (
         <AddGameModal

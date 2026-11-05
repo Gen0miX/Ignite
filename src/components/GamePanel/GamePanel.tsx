@@ -4,11 +4,14 @@ import { Eye, EyeOff, Play, Star, X } from 'lucide-react';
 import { artworkSrc, type GameDetail, type GameStatus } from '../../api/client';
 import {
   useAddTag,
+  useCollectionMembership,
+  useCollections,
   useDuplicates,
   useGame,
   useLaunchGame,
   useMergeGames,
   useRemoveTag,
+  useSetCollectionMember,
   useSplitSource,
   useUpdateGame,
 } from '../../api/hooks';
@@ -174,6 +177,8 @@ function PanelContent({ game }: { game: GameDetail }) {
         </section>
 
         <Tags game={game} />
+
+        <ManualCollections gameId={s.id} />
 
         <div className={styles.footerActions}>
           <Link to={`/game/${s.id}`} className={buttons.secondary}>
@@ -409,6 +414,44 @@ function SourcesSection({ game }: { game: GameDetail }) {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+/** Add or remove the game from manual collections. */
+function ManualCollections({ gameId }: { gameId: string }) {
+  const { data } = useCollections();
+  const setMember = useSetCollectionMember();
+  const manual = data?.filter((c) => c.collection.kind === 'manual') ?? [];
+  const { data: members } = useCollectionMembership(
+    gameId,
+    manual.map((c) => c.collection.id),
+  );
+  return (
+    <section className={styles.section} aria-labelledby="panel-collections">
+      <h3 id="panel-collections" className="section-label">
+        {fr.collections.manualIn}
+      </h3>
+      {manual.length === 0 ? (
+        <p className={styles.muted}>{fr.collections.noManual}</p>
+      ) : (
+        <ul className={styles.collectionList}>
+          {manual.map((c) => (
+            <li key={c.collection.id}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={members?.has(c.collection.id) ?? false}
+                  onChange={(e) =>
+                    setMember.mutate({ id: c.collection.id, gameId, member: e.target.checked })
+                  }
+                />
+                {c.collection.name}
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

@@ -349,3 +349,24 @@
   color: var(--color-accent-ink);
   font-size: var(--text-base);
 }
+
+.collectionList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.collectionList label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--h-control-sm);
+  font-size: var(--text-base);
+  cursor: pointer;
+}
+
+.collectionList input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-accent);
+}

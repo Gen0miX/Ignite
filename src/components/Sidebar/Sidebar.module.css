@@ -67,6 +67,7 @@
 .secondaryLink {
   display: flex;
   align-items: center;
+  gap: 6px;
   height: var(--h-control-sm);
   padding: 0 10px;
   border-radius: var(--radius-md);

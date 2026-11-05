@@ -26,6 +26,9 @@ export function parseView(raw: string | null): LibraryView {
     const s = raw.slice(7) as GameStatus;
     if (STATUSES.includes(s)) return { kind: 'status', value: s };
   }
+  if (raw?.startsWith('collection-') && raw.length > 11) {
+    return { kind: 'collection', value: raw.slice(11) };
+  }
   if (raw?.startsWith('source-')) {
     const k = raw.slice(7) as SourceKind;
     if (SOURCES.includes(k)) return { kind: 'source', value: k };
@@ -45,6 +48,8 @@ export function viewParam(view: LibraryView): string | null {
       return `status-${view.value}`;
     case 'source':
       return `source-${view.value}`;
+    case 'collection':
+      return `collection-${view.value}`;
   }
 }
 
