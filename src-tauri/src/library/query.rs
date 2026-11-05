@@ -1,13 +1,16 @@
 //! Library listing: game summaries, filters, sorting and sidebar counters.
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 
+use crate::db::repo::collections::{self, CollectionKind};
 use crate::db::repo::{achievements, artwork, game_sources, games, goals, sessions};
 use crate::error::AppResult;
 use crate::library::playtime;
+use crate::library::rules::{Facts, Rule};
+use crate::library::search;
 use crate::models::{GameStatus, SourceKind};
 
 #[derive(Debug, Clone, PartialEq, Serialize, specta::Type)]
@@ -42,7 +45,7 @@ pub struct Progress {
     pub total: u32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize, specta::Type)]
+#[derive(Debug, Clone, PartialEq, Deserialize, specta::Type)]
 #[serde(tag = "kind", content = "value", rename_all = "camelCase")]
 pub enum LibraryView {
     All,
@@ -52,6 +55,8 @@ pub enum LibraryView {
     Hidden,
     Status(GameStatus),
     Source(SourceKind),
+    /// A manual or smart collection, by id.
+    Collection(String),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize, specta::Type)]
@@ -170,41 +175,175 @@ pub fn summaries(conn: &Connection) -> AppResult<Vec<GameSummary>> {
         .collect())
 }
 
-/// Same folding as `games::sort_title`, used for text search.
-fn fold(text: &str) -> String {
-    games::sort_title(text)
+fn parse_date(s: Option<&str>) -> Option<chrono::DateTime<chrono::Utc>> {
+    s.and_then(|d| chrono::DateTime::parse_from_rfc3339(d).ok())
+        .map(|d| d.with_timezone(&chrono::Utc))
 }
 
-pub fn matches(game: &GameSummary, query: &LibraryQuery) -> bool {
-    if game.hidden != (query.view == LibraryView::Hidden) {
-        return false;
+/// Facts a rule can see, from the summary alone.
+pub fn base_facts(g: &GameSummary) -> Facts {
+    Facts {
+        title: g.title.clone(),
+        sources: g.sources.iter().map(|k| k.as_str().to_string()).collect(),
+        installed: g.installed,
+        status: g.status.as_str().to_string(),
+        favorite: g.favorite,
+        playtime_minutes: f64::from(g.playtime_minutes),
+        last_played: parse_date(g.last_played.as_deref()),
+        added_at: parse_date(Some(&g.added_at)),
+        achievement_percent: g
+            .achievements
+            .filter(|a| a.total > 0)
+            .map(|a| f64::from(a.done) * 100.0 / f64::from(a.total)),
+        ..Default::default()
     }
-    let in_view = match query.view {
-        LibraryView::All | LibraryView::Hidden => true,
-        LibraryView::Installed => game.installed,
-        LibraryView::Favorites => game.favorite,
-        LibraryView::Status(s) => game.status == s,
-        LibraryView::Source(k) => game.sources.contains(&k),
-    };
-    if !in_view {
-        return false;
+}
+
+/// How a collection selects its games.
+#[derive(Debug, Clone)]
+pub enum CollectionFilter {
+    Manual(HashSet<String>),
+    Smart(Rule),
+}
+
+/// Everything filters need beyond the summaries.
+#[derive(Debug, Clone, Default)]
+pub struct Context {
+    pub facts: HashMap<String, Facts>,
+    pub collections: HashMap<String, CollectionFilter>,
+}
+
+impl Context {
+    /// Facts from the summaries only (tests, quick listings).
+    pub fn from_summaries(list: &[GameSummary]) -> Self {
+        Self {
+            facts: list.iter().map(|g| (g.id.clone(), base_facts(g))).collect(),
+            collections: HashMap::new(),
+        }
     }
-    match query
-        .text
-        .as_deref()
-        .map(str::trim)
-        .filter(|t| !t.is_empty())
-    {
-        None => true,
-        Some(text) => {
-            let needle = fold(text);
-            fold(&game.title).contains(&needle) || game.sort_title.contains(&needle)
+
+    /// Full context: tags, genres, modes, average session, HLTB, collections.
+    pub fn load(conn: &Connection, list: &[GameSummary]) -> AppResult<Self> {
+        let mut ctx = Self::from_summaries(list);
+        let mut stmt = conn.prepare(
+            "SELECT gt.game_id, t.name, COALESCE(t.origin, 'user') FROM game_tags gt JOIN tags t ON t.id = gt.tag_id",
+        )?;
+        let rows = stmt.query_map([], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, String>(2)?,
+            ))
+        })?;
+        for row in rows {
+            let (game, name, origin) = row?;
+            if let Some(f) = ctx.facts.get_mut(&game) {
+                match origin.as_str() {
+                    "genre" => f.genres.push(name),
+                    "mode" => f.modes.push(name),
+                    _ => f.tags.push(name),
+                }
+            }
+        }
+        let mut stmt = conn.prepare(
+            "SELECT game_id, SUM(duration_seconds), COUNT(*) FROM play_sessions \
+             WHERE origin != 'estimate' GROUP BY game_id",
+        )?;
+        let rows = stmt.query_map([], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, i64>(1)?,
+                r.get::<_, i64>(2)?,
+            ))
+        })?;
+        for row in rows {
+            let (game, secs, count) = row?;
+            if let (Some(f), true) = (ctx.facts.get_mut(&game), count > 0) {
+                f.avg_session_minutes = Some(secs as f64 / count as f64 / 60.0);
+            }
+        }
+        let mut stmt = conn.prepare(
+            "SELECT id, hltb_main_minutes FROM games WHERE hltb_main_minutes IS NOT NULL",
+        )?;
+        let rows = stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?;
+        for row in rows {
+            let (game, minutes) = row?;
+            if let Some(f) = ctx.facts.get_mut(&game) {
+                f.hltb_main_minutes = Some(minutes as f64);
+            }
+        }
+        for c in collections::list(conn)? {
+            let filter = match c.kind {
+                CollectionKind::Manual => CollectionFilter::Manual(
+                    collections::members(conn, &c.id)?.into_iter().collect(),
+                ),
+                CollectionKind::Smart => match c.rules.as_deref().map(Rule::parse) {
+                    Some(Ok(rule)) => CollectionFilter::Smart(rule),
+                    _ => continue,
+                },
+            };
+            ctx.collections.insert(c.id, filter);
+        }
+        Ok(ctx)
+    }
+
+    fn in_collection(
+        &self,
+        id: &str,
+        game: &GameSummary,
+        now: chrono::DateTime<chrono::Utc>,
+    ) -> bool {
+        match self.collections.get(id) {
+            Some(CollectionFilter::Manual(ids)) => ids.contains(&game.id),
+            Some(CollectionFilter::Smart(rule)) => self
+                .facts
+                .get(&game.id)
+                .is_some_and(|f| rule.matches(f, now)),
+            None => false,
         }
     }
 }
 
-pub fn filter_and_sort(mut list: Vec<GameSummary>, query: &LibraryQuery) -> Vec<GameSummary> {
-    list.retain(|g| matches(g, query));
+pub fn matches(
+    game: &GameSummary,
+    query: &LibraryQuery,
+    ctx: &Context,
+    search: Option<&Rule>,
+) -> bool {
+    if game.hidden != (query.view == LibraryView::Hidden) {
+        return false;
+    }
+    let now = chrono::Utc::now();
+    let in_view = match &query.view {
+        LibraryView::All | LibraryView::Hidden => true,
+        LibraryView::Installed => game.installed,
+        LibraryView::Favorites => game.favorite,
+        LibraryView::Status(s) => game.status == *s,
+        LibraryView::Source(k) => game.sources.contains(k),
+        LibraryView::Collection(id) => ctx.in_collection(id, game, now),
+    };
+    if !in_view {
+        return false;
+    }
+    match (search, ctx.facts.get(&game.id)) {
+        (None, _) => true,
+        (Some(rule), Some(facts)) => rule.matches(facts, now),
+        (Some(rule), None) => rule.matches(&base_facts(game), now),
+    }
+}
+
+pub fn filter_and_sort(
+    mut list: Vec<GameSummary>,
+    query: &LibraryQuery,
+    ctx: &Context,
+) -> Vec<GameSummary> {
+    let search = query
+        .text
+        .as_deref()
+        .map(str::trim)
+        .filter(|t| !t.is_empty())
+        .map(|t| search::parse(t).rule);
+    list.retain(|g| matches(g, query, ctx, search.as_ref()));
     let by_name = |a: &GameSummary, b: &GameSummary| a.sort_title.cmp(&b.sort_title);
     match query.sort {
         SortKey::Name => list.sort_by(by_name),
@@ -290,6 +429,11 @@ mod tests {
         }
     }
 
+    fn filter_and_sort_basic(list: Vec<GameSummary>, q: &LibraryQuery) -> Vec<GameSummary> {
+        let ctx = Context::from_summaries(&list);
+        filter_and_sort(list, q, &ctx)
+    }
+
     fn titles(list: &[GameSummary]) -> Vec<&str> {
         list.iter().map(|g| g.title.as_str()).collect()
     }
@@ -316,25 +460,25 @@ mod tests {
     fn views_filter_and_hidden_is_excluded() {
         let all = sample();
         assert_eq!(
-            filter_and_sort(all.clone(), &q(LibraryView::All, None, SortKey::Name)).len(),
+            filter_and_sort_basic(all.clone(), &q(LibraryView::All, None, SortKey::Name)).len(),
             3
         );
         assert_eq!(
-            titles(&filter_and_sort(
+            titles(&filter_and_sort_basic(
                 all.clone(),
                 &q(LibraryView::Installed, None, SortKey::Name)
             )),
             ["The Witcher 3"]
         );
         assert_eq!(
-            titles(&filter_and_sort(
+            titles(&filter_and_sort_basic(
                 all.clone(),
                 &q(LibraryView::Favorites, None, SortKey::Name)
             )),
             ["Élden Ring"]
         );
         assert_eq!(
-            titles(&filter_and_sort(
+            titles(&filter_and_sort_basic(
                 all.clone(),
                 &q(
                     LibraryView::Status(GameStatus::Playing),
@@ -345,7 +489,7 @@ mod tests {
             ["Élden Ring"]
         );
         assert_eq!(
-            titles(&filter_and_sort(
+            titles(&filter_and_sort_basic(
                 all,
                 &q(LibraryView::Source(SourceKind::Epic), None, SortKey::Name)
             )),
@@ -355,7 +499,7 @@ mod tests {
 
     #[test]
     fn hidden_view_lists_only_hidden_games() {
-        let list = filter_and_sort(sample(), &q(LibraryView::Hidden, None, SortKey::Name));
+        let list = filter_and_sort_basic(sample(), &q(LibraryView::Hidden, None, SortKey::Name));
         assert_eq!(titles(&list), ["Hidden demo"]);
     }
 
@@ -363,7 +507,7 @@ mod tests {
     fn text_search_ignores_case_accents_and_articles() {
         let all = sample();
         let find = |t: &str| {
-            titles(&filter_and_sort(
+            titles(&filter_and_sort_basic(
                 all.clone(),
                 &q(LibraryView::All, Some(t), SortKey::Name),
             ))
@@ -379,8 +523,13 @@ mod tests {
     #[test]
     fn sorts() {
         let all = sample();
-        let sorted =
-            |s| titles(&filter_and_sort(all.clone(), &q(LibraryView::All, None, s))).join(", ");
+        let sorted = |s| {
+            titles(&filter_and_sort_basic(
+                all.clone(),
+                &q(LibraryView::All, None, s),
+            ))
+            .join(", ")
+        };
         assert_eq!(
             sorted(SortKey::Name),
             "Alan Wake 2, Élden Ring, The Witcher 3"

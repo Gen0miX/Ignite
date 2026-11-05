@@ -32,6 +32,14 @@ export const commands = {
 	artworkSearch: (gameId: string, slot: ArtworkSlot, sgdbGameId: number | null, query: string | null) => typedError<ArtworkSearch_Serialize, CommandError>(__TAURI_INVOKE("artwork_search", { gameId, slot, sgdbGameId, query })),
 	/**  Downloads the chosen image into the cache and uses it for the game. */
 	artworkSet: (gameId: string, slot: ArtworkSlot, url: string, sgdbGameId: number | null) => typedError<GameDetail_Serialize, CommandError>(__TAURI_INVOKE("artwork_set", { gameId, slot, url, sgdbGameId })),
+	collectionsList: () => typedError<CollectionInfo_Serialize[], CommandError>(__TAURI_INVOKE("collections_list")),
+	collectionCreate: (name: string, kind: CollectionKind, rules: string | null) => typedError<Collection_Serialize, CommandError>(__TAURI_INVOKE("collection_create", { name, kind, rules })),
+	collectionUpdate: (id: string, name: string, rules: string | null) => typedError<Collection_Serialize, CommandError>(__TAURI_INVOKE("collection_update", { id, name, rules })),
+	collectionDelete: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("collection_delete", { id })),
+	collectionSetMember: (id: string, gameId: string, member: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("collection_set_member", { id, gameId, member })),
+	/**  Number of visible games matching rules being edited (live preview). */
+	rulesPreview: (rules: string) => typedError<number, CommandError>(__TAURI_INVOKE("rules_preview", { rules })),
+	searchCheck: (text: string) => typedError<SearchCheck, CommandError>(__TAURI_INVOKE("search_check", { text })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
 	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
 	/**  Turns a source on or off. Disabling keeps its games in the library. */
@@ -202,6 +210,42 @@ export type CandidateState =
 { kind: "imported"; gameId: string } | 
 /**  Looks like a game already in the library on another platform. */
 { kind: "duplicate"; gameId: string; title: string };
+
+export type Collection = Collection_Serialize | Collection_Deserialize;
+
+export type CollectionInfo = CollectionInfo_Serialize | CollectionInfo_Deserialize;
+
+export type CollectionInfo_Deserialize = {
+	collection: Collection_Deserialize,
+	/**  Visible games currently in the collection. */
+	count: number,
+};
+
+export type CollectionInfo_Serialize = {
+	collection: Collection_Serialize,
+	/**  Visible games currently in the collection. */
+	count: number,
+};
+
+export type CollectionKind = "manual" | "smart";
+
+export type Collection_Deserialize = {
+	id: string,
+	name: string,
+	kind: CollectionKind,
+	/**  JSON rules (smart collections), ARCHITECTURE.md § 6. */
+	rules?: string | null,
+	position: number,
+};
+
+export type Collection_Serialize = {
+	id: string,
+	name: string,
+	kind: CollectionKind,
+	/**  JSON rules (smart collections), ARCHITECTURE.md § 6. */
+	rules: string | null,
+	position: number,
+};
 
 /**  Error shape returned to the frontend by every command. */
 export type CommandError = {
@@ -460,7 +504,9 @@ export type LibraryQuery_Serialize = {
 
 export type LibraryView = { kind: "all" } | { kind: "installed" } | { kind: "favorites" } | 
 /**  Hidden games only (playtests, betas, games hidden by the user). */
-{ kind: "hidden" } | { kind: "status"; value: GameStatus } | { kind: "source"; value: SourceKind };
+{ kind: "hidden" } | { kind: "status"; value: GameStatus } | { kind: "source"; value: SourceKind } | 
+/**  A manual or smart collection, by id. */
+{ kind: "collection"; value: string };
 
 export type PlaySession = PlaySession_Serialize | PlaySession_Deserialize;
 
@@ -502,6 +548,13 @@ export type ScannedSource = {
 	status: SourceStatus,
 	detected: number,
 	warnings: string[],
+};
+
+export type SearchCheck = {
+	/**  Tokens that looked like filters but were not understood. */
+	warnings: string[],
+	/**  The search as rules JSON, to save it as a smart collection. */
+	rules: string,
 };
 
 /**  Every secret the app knows about. */

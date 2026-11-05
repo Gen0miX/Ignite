@@ -3,6 +3,7 @@
 
 pub mod achievements;
 pub mod artwork;
+pub mod collections;
 pub mod game_sources;
 pub mod games;
 pub mod goals;

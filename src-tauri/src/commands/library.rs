@@ -14,8 +14,10 @@ pub fn library_list(
     db: tauri::State<'_, Db>,
     query: LibraryQuery,
 ) -> CommandResult<Vec<GameSummary>> {
-    let all = query::summaries(&db.conn())?;
-    Ok(query::filter_and_sort(all, &query))
+    let conn = db.conn();
+    let all = query::summaries(&conn)?;
+    let ctx = query::Context::load(&conn, &all)?;
+    Ok(query::filter_and_sort(all, &query, &ctx))
 }
 
 #[tauri::command]
