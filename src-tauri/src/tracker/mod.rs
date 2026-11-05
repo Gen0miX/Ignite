@@ -51,11 +51,27 @@ struct SessionEventPayload {
 #[derive(Default)]
 pub struct TrackerState {
     active: Mutex<Vec<ActiveGame>>,
+    /// Game last launched from Ludothèque (resolves emulator ties), 2 h.
+    hint: Mutex<Option<(String, Instant)>>,
     stop: AtomicBool,
     stopped: Arc<(Mutex<bool>, std::sync::Condvar)>,
 }
 
 impl TrackerState {
+    pub fn set_launch_hint(&self, game_id: &str) {
+        *self.hint.lock().unwrap_or_else(|e| e.into_inner()) =
+            Some((game_id.to_string(), Instant::now()));
+    }
+
+    fn launch_hint(&self) -> Option<String> {
+        self.hint
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_ref()
+            .filter(|(_, at)| at.elapsed() < Duration::from_secs(2 * 3600))
+            .map(|(id, _)| id.clone())
+    }
+
     pub fn active(&self) -> Vec<ActiveGame> {
         self.active
             .lock()
@@ -201,7 +217,8 @@ fn run(app: AppHandle) {
             last_reload = Instant::now();
         }
 
-        let running = matcher::running_games(&watch, &processes.processes());
+        let hint = state.launch_hint();
+        let running = matcher::running_games(&watch, &processes.processes(), hint.as_deref());
         let events = tracker.tick(Utc::now(), &running, idle.idle_seconds());
         if !events.is_empty() {
             persist(&app, events);

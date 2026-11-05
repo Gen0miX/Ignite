@@ -68,6 +68,7 @@ pub const SCANNED_SOURCES: &[SourceKind] = &[
     SourceKind::Ubisoft,
     SourceKind::Ea,
     SourceKind::Riot,
+    SourceKind::Emulator,
 ];
 
 fn enabled_key(kind: SourceKind) -> String {
@@ -81,7 +82,7 @@ pub fn is_enabled(db: &Db, kind: SourceKind) -> bool {
     settings::get::<bool>(&db.conn(), &enabled_key(kind))
         .ok()
         .flatten()
-        .unwrap_or(kind == SourceKind::Steam)
+        .unwrap_or(matches!(kind, SourceKind::Steam | SourceKind::Emulator))
 }
 
 pub fn set_enabled(db: &Db, kind: SourceKind, enabled: bool) -> AppResult<()> {
@@ -93,6 +94,9 @@ fn make_source(db: &Db, secrets: &Secrets, kind: SourceKind) -> Option<Box<dyn S
         SourceKind::Steam => Some(Box::new(SteamSource::new(steam_config(db, secrets)))),
         SourceKind::Gog => Some(Box::new(GogSource::new(gog::locate_db()))),
         SourceKind::Epic => Some(Box::new(EpicSource::new(epic::locate_manifests()))),
+        SourceKind::Emulator => Some(Box::new(crate::sources::emulator::EmulatorSource::new(
+            crate::sources::emulator::load(db),
+        ))),
         SourceKind::Battlenet | SourceKind::Ubisoft | SourceKind::Ea | SourceKind::Riot => {
             Some(Box::new(crate::sources::others::OtherSource::new(kind)))
         }

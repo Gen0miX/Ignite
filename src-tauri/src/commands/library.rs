@@ -212,7 +212,12 @@ pub fn game_tag_remove(db: tauri::State<'_, Db>, id: String, tag_id: String) -> 
 
 #[tauri::command]
 #[specta::specta]
-pub fn launch_game(db: tauri::State<'_, Db>, game_id: String) -> CommandResult<()> {
+pub fn launch_game(
+    db: tauri::State<'_, Db>,
+    tracker: tauri::State<'_, crate::tracker::TrackerState>,
+    game_id: String,
+) -> CommandResult<()> {
+    tracker.set_launch_hint(&game_id);
     let (sources, preferred) = {
         let conn = db.conn();
         let game = games::get(&conn, &game_id)?;

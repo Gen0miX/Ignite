@@ -89,10 +89,17 @@ fn score(matcher: &ProcessMatcher, process: &ProcessInfo) -> Option<usize> {
 
 /// `(game_id, source_id)` of every game with at least one running process.
 /// Each process is attributed to its single best-matching source.
-pub fn running_games(watch: &[WatchEntry], processes: &[ProcessInfo]) -> Vec<(String, String)> {
+/// `hint`: game last launched from Ludothèque. When several games share the
+/// same process (ROMs of one emulator), the hinted one wins; without a hint
+/// such a tie is ambiguous and nothing is recorded rather than guessing.
+pub fn running_games(
+    watch: &[WatchEntry],
+    processes: &[ProcessInfo],
+    hint: Option<&str>,
+) -> Vec<(String, String)> {
     let mut found: Vec<(String, String)> = Vec::new();
     for process in processes {
-        let best = watch
+        let scored: Vec<(usize, &WatchEntry)> = watch
             .iter()
             .filter_map(|entry| {
                 entry
@@ -102,8 +109,26 @@ pub fn running_games(watch: &[WatchEntry], processes: &[ProcessInfo]) -> Vec<(St
                     .max()
                     .map(|s| (s, entry))
             })
-            .max_by_key(|(s, _)| *s);
-        if let Some((_, entry)) = best {
+            .collect();
+        let Some(best) = scored.iter().map(|(s, _)| *s).max() else {
+            continue;
+        };
+        let top: Vec<&WatchEntry> = scored
+            .iter()
+            .filter(|(s, _)| *s == best)
+            .map(|(_, e)| *e)
+            .collect();
+        let distinct_games = top
+            .iter()
+            .map(|e| &e.game_id)
+            .collect::<std::collections::HashSet<_>>()
+            .len();
+        let chosen = if distinct_games == 1 {
+            top.first().copied()
+        } else {
+            hint.and_then(|h| top.iter().find(|e| e.game_id == h).copied())
+        };
+        if let Some(entry) = chosen {
             let key = (entry.game_id.clone(), entry.source_id.clone());
             if !found.contains(&key) {
                 found.push(key);
@@ -183,10 +208,10 @@ mod tests {
             Some(r"C:\Steam\steamapps\common\Hades II\Hades2.exe"),
         );
         assert_eq!(
-            running_games(&watch, &[inside]),
+            running_games(&watch, &[inside], None),
             vec![("hades".into(), "src-hades".into())]
         );
-        assert!(running_games(&watch, &[sibling]).is_empty());
+        assert!(running_games(&watch, &[sibling], None).is_empty());
     }
 
     #[test]
@@ -209,12 +234,12 @@ mod tests {
         ];
         let p = proc("Celeste.exe", Some(r"D:\Games\Celeste\Celeste.exe"));
         assert_eq!(
-            running_games(&watch, &[p]),
+            running_games(&watch, &[p], None),
             vec![("exact".into(), "src-exact".into())]
         );
         let q = proc("Tool.exe", Some(r"D:\Games\Celeste\tools\Tool.exe"));
         assert_eq!(
-            running_games(&watch, &[q]),
+            running_games(&watch, &[q], None),
             vec![("inner".into(), "src-inner".into())]
         );
     }
@@ -222,13 +247,40 @@ mod tests {
     #[test]
     fn name_matching_works_without_a_path() {
         let watch = [entry("mc", vec![ProcessMatcher::Exe("javaw.exe".into())])];
-        assert_eq!(running_games(&watch, &[proc("JAVAW.EXE", None)]).len(), 1);
+        assert_eq!(
+            running_games(&watch, &[proc("JAVAW.EXE", None)], None).len(),
+            1
+        );
         // A prefix matcher needs the path: elevated processes without a path are ignored.
         let watch = [entry(
             "x",
             vec![ProcessMatcher::PathPrefix(r"C:\Games\X".into())],
         )];
-        assert!(running_games(&watch, &[proc("X.exe", None)]).is_empty());
+        assert!(running_games(&watch, &[proc("X.exe", None)], None).is_empty());
+    }
+
+    #[test]
+    fn shared_emulator_exe_needs_the_launch_hint() {
+        let emu = ProcessMatcher::ExePath(r"C:\Emu\snes9x.exe".into());
+        let watch = [
+            entry("metroid", vec![emu.clone()]),
+            entry("zelda", vec![emu]),
+        ];
+        let p = proc("snes9x.exe", Some(r"C:\Emu\snes9x.exe"));
+        assert!(running_games(&watch, std::slice::from_ref(&p), None).is_empty());
+        assert_eq!(
+            running_games(&watch, std::slice::from_ref(&p), Some("zelda")),
+            vec![("zelda".into(), "src-zelda".into())]
+        );
+        // A hint for another game does not break normal matching.
+        let single = [entry(
+            "hades",
+            vec![ProcessMatcher::Exe("Hades.exe".into())],
+        )];
+        assert_eq!(
+            running_games(&single, &[proc("Hades.exe", None)], Some("zelda")).len(),
+            1
+        );
     }
 
     #[test]
@@ -246,7 +298,7 @@ mod tests {
             proc("explorer.exe", Some(r"C:\Windows\explorer.exe")),
         ];
         assert_eq!(
-            running_games(&watch, &procs),
+            running_games(&watch, &procs, None),
             vec![("g".into(), "src-g".into())]
         );
     }

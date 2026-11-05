@@ -56,6 +56,14 @@ export const commands = {
 	trackingSettingsGet: () => __TAURI_INVOKE<TrackingSettings>("tracking_settings_get"),
 	/**  Saved settings are picked up by the tracker within 30 seconds. */
 	trackingSettingsSet: (settings: TrackingSettings) => typedError<null, CommandError>(__TAURI_INVOKE("tracking_settings_set", { settings })),
+	emulatorsGet: () => __TAURI_INVOKE<EmulatorConfig_Serialize[]>("emulators_get"),
+	/**  Saves the whole list (each entry validated). New entries get an id. */
+	emulatorsSet: (emulators: EmulatorConfig_Deserialize[]) => typedError<EmulatorConfig_Serialize[], CommandError>(__TAURI_INVOKE("emulators_set", { emulators })),
+	raConsoles: () => __TAURI_INVOKE<ConsoleOption[]>("ra_consoles"),
+	raUsernameGet: () => __TAURI_INVOKE<string | null>("ra_username_get"),
+	raUsernameSet: (username: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("ra_username_set", { username })),
+	/**  Sets (or clears) the RetroAchievements game id of an emulated game. */
+	gameSetRaId: (gameId: string, raId: number | null) => typedError<null, CommandError>(__TAURI_INVOKE("game_set_ra_id", { gameId, raId })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
 	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
 	/**  Turns a source on or off. Disabling keeps its games in the library. */
@@ -106,7 +114,9 @@ export type AchievementsState =
 /**  A Steam Web API key (and SteamID) is needed. */
 "needsKey" | 
 /**  No source of this game provides achievements: use personal goals. */
-"unsupported";
+"unsupported" | 
+/**  Emulated game not found on RetroAchievements (set its id by hand). */
+"notMatched";
 
 export type AchievementsView = AchievementsView_Serialize | AchievementsView_Deserialize;
 
@@ -271,6 +281,13 @@ export type CommandError = {
 	message: string,
 };
 
+export type ConsoleOption = {
+	id: number,
+	name: string,
+	/**  Achievements matched automatically from the ROM file. */
+	autoMatch: boolean,
+};
+
 export type CoverlessGame = {
 	id: string,
 	title: string,
@@ -280,6 +297,34 @@ export type DayMinutes = {
 	/**  YYYY-MM-DD. */
 	day: string,
 	minutes: number,
+};
+
+export type EmulatorConfig = EmulatorConfig_Serialize | EmulatorConfig_Deserialize;
+
+export type EmulatorConfig_Deserialize = {
+	id: string,
+	name: string,
+	exePath: string,
+	/**  Arguments; `{rom}` is replaced by the quoted ROM path. */
+	argsTemplate: string,
+	romsDir: string,
+	/**  Extensions without dot, lowercase (`sfc`, `iso`...). */
+	extensions: string[],
+	/**  RetroAchievements console id (optional). */
+	consoleId?: number | null,
+};
+
+export type EmulatorConfig_Serialize = {
+	id: string,
+	name: string,
+	exePath: string,
+	/**  Arguments; `{rom}` is replaced by the quoted ROM path. */
+	argsTemplate: string,
+	romsDir: string,
+	/**  Extensions without dot, lowercase (`sfc`, `iso`...). */
+	extensions: string[],
+	/**  RetroAchievements console id (optional). */
+	consoleId: number | null,
 };
 
 /**  What a picked file points to, to prefill the "add a game" form. */

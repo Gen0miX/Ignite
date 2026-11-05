@@ -27,6 +27,8 @@ pub enum AchievementsState {
     NeedsKey,
     /// No source of this game provides achievements: use personal goals.
     Unsupported,
+    /// Emulated game not found on RetroAchievements (set its id by hand).
+    NotMatched,
 }
 
 #[derive(Debug, Clone, Serialize, specta::Type)]
@@ -113,6 +115,9 @@ pub async fn achievements_get(
 fn load(app: &AppHandle, game_id: &str, refresh: bool) -> CommandResult<AchievementsView> {
     let db = app.state::<Db>();
     let sources = game_sources::list_for_game(&db.conn(), game_id)?;
+    if let Some(src) = sources.iter().find(|s| s.kind == SourceKind::Emulator) {
+        return load_ra(app, src, refresh);
+    }
     let Some(source) = sources.iter().find(|s| s.kind == SourceKind::Steam) else {
         // Other platforms (GOG) fill the cache during the sync.
         for s in &sources {
@@ -179,6 +184,41 @@ fn load(app: &AppHandle, game_id: &str, refresh: bool) -> CommandResult<Achievem
                 v.state = AchievementsState::Ok;
             }
             Ok(v)
+        }
+    }
+}
+
+/// RetroAchievements for an emulated game, cached like Steam's.
+fn load_ra(
+    app: &AppHandle,
+    source: &crate::db::repo::game_sources::GameSource,
+    refresh: bool,
+) -> CommandResult<AchievementsView> {
+    use super::emulators::{fetch_ra, store_ra, RaResult};
+    let db = app.state::<Db>();
+    let cached = achievements::sync_state(&db.conn(), &source.id)?;
+    if let Some((synced_at, _)) = &cached {
+        if !refresh && is_fresh(synced_at) {
+            let rows = achievements::list_for_source(&db.conn(), &source.id)?;
+            return Ok(view(rows, Some(synced_at.clone()), None));
+        }
+    }
+    match fetch_ra(app, source) {
+        Ok(RaResult::Rows(rows)) => {
+            store_ra(&db, &source.id, &rows)?;
+            let synced = achievements::sync_state(&db.conn(), &source.id)?.map(|(s, _)| s);
+            Ok(view(
+                achievements::list_for_source(&db.conn(), &source.id)?,
+                synced,
+                None,
+            ))
+        }
+        Ok(RaResult::NeedsKey) => Ok(empty(AchievementsState::NeedsKey)),
+        Ok(RaResult::NotMatched) => Ok(empty(AchievementsState::NotMatched)),
+        Err(e) => {
+            tracing::warn!(error = %e, "RetroAchievements fetch failed");
+            let rows = achievements::list_for_source(&db.conn(), &source.id)?;
+            Ok(view(rows, cached.map(|(s, _)| s), Some(e.to_string())))
         }
     }
 }

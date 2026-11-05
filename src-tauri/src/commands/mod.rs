@@ -5,6 +5,7 @@ pub mod achievements;
 pub mod app;
 pub mod artwork;
 pub mod collections;
+pub mod emulators;
 pub mod import;
 pub mod library;
 pub mod play;
@@ -81,6 +82,12 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         collections::stats_overview,
         tracking::tracking_settings_get,
         tracking::tracking_settings_set,
+        emulators::emulators_get,
+        emulators::emulators_set,
+        emulators::ra_consoles,
+        emulators::ra_username_get,
+        emulators::ra_username_set,
+        emulators::game_set_ra_id,
         sources::library_sync,
         sources::sources_status,
         sources::source_set_enabled,

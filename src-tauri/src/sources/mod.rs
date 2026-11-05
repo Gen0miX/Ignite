@@ -4,6 +4,7 @@
 //! `SourceStatus::NotInstalled` and returns no games. A failing source never
 //! prevents the others from being scanned (see `scan_all`).
 
+pub mod emulator;
 pub mod epic;
 pub mod folder_scan;
 pub mod gog;
