@@ -58,6 +58,9 @@ pub struct GameDetail {
     pub hero: Option<String>,
     pub logo: Option<String>,
     pub tags: Vec<tags::Tag>,
+    pub genres: Vec<String>,
+    /// Player modes (Solo, Multijoueur, Coopération, Écran partagé).
+    pub modes: Vec<String>,
     /// Source the Play button uses (same rule as `launch_game`).
     pub play_source_id: Option<String>,
     pub sources: Vec<SourceInfo>,
@@ -99,6 +102,8 @@ pub(crate) fn load_detail(db: &Db, id: &str) -> CommandResult<GameDetail> {
         hero: art.remove("hero"),
         logo: art.remove("logo"),
         tags: tags::for_game(&conn, id)?,
+        genres: auto_tags(&conn, id, "genre")?,
+        modes: auto_tags(&conn, id, "mode")?,
         time_by_source: parts
             .into_iter()
             .map(|p| SourceTime {
@@ -278,4 +283,52 @@ pub fn add_executable(
 ) -> CommandResult<GameDetail> {
     let id = crate::sources::local::create(&mut db.conn(), &input)?;
     load_detail(&db, &id)
+}
+
+fn auto_tags(
+    conn: &rusqlite::Connection,
+    game_id: &str,
+    origin: &str,
+) -> crate::error::AppResult<Vec<String>> {
+    let mut stmt = conn.prepare(
+        "SELECT t.name FROM tags t JOIN game_tags gt ON gt.tag_id = t.id \
+         WHERE gt.game_id = ?1 AND t.origin = ?2 ORDER BY t.name",
+    )?;
+    let prefix = format!("{origin}:");
+    let rows = stmt.query_map(rusqlite::params![game_id, origin], |r| {
+        r.get::<_, String>(0)
+    })?;
+    let mut out = Vec::new();
+    for row in rows {
+        out.push(row?.trim_start_matches(&prefix).to_string());
+    }
+    Ok(out)
+}
+
+#[derive(Debug, Serialize, specta::Type)]
+pub struct Facet {
+    pub name: String,
+    pub count: u32,
+}
+
+#[derive(Debug, Serialize, specta::Type)]
+pub struct Facets {
+    pub genres: Vec<Facet>,
+    pub modes: Vec<Facet>,
+}
+
+/// Genres and player modes present in the library, for the filter chips.
+#[tauri::command]
+#[specta::specta]
+pub fn facets(db: tauri::State<'_, Db>) -> CommandResult<Facets> {
+    let conn = db.conn();
+    let to = |v: Vec<(String, u32)>| {
+        v.into_iter()
+            .map(|(name, count)| Facet { name, count })
+            .collect()
+    };
+    Ok(Facets {
+        genres: to(tags::auto_facets(&conn, "genre")?),
+        modes: to(tags::auto_facets(&conn, "mode")?),
+    })
 }

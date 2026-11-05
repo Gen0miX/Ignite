@@ -30,6 +30,7 @@ const STEAM_ID_KEY: &str = "steam.steam_id";
 pub struct SyncState {
     running: AtomicBool,
     artwork_running: AtomicBool,
+    metadata_running: AtomicBool,
     last: Mutex<HashMap<SourceKind, SyncReport>>,
 }
 
@@ -164,7 +165,79 @@ fn sync_inner(app: &AppHandle) -> AppResult<Vec<SyncReport>> {
     }
     let _ = app.emit(LIBRARY_CHANGED_EVENT, ());
     spawn_artwork_downloads(app.clone(), data_dir, jobs);
+    spawn_store_metadata(app.clone());
     Ok(reports)
+}
+
+/// Seconds between two Steam store requests (~200 allowed per 5 minutes).
+const STORE_DELAY: std::time::Duration = std::time::Duration::from_millis(1600);
+
+/// Fetches genres and player modes of Steam games from the store, slowly,
+/// in the background. Stops on rate limiting and resumes at the next sync.
+fn spawn_store_metadata(app: AppHandle) {
+    if app
+        .state::<SyncState>()
+        .metadata_running
+        .swap(true, Ordering::SeqCst)
+    {
+        return;
+    }
+    std::thread::spawn(move || {
+        let db = app.state::<Db>();
+        let todo: Vec<(String, String, String)> = {
+            let conn = db.conn();
+            let mut stmt = match conn.prepare(
+                "SELECT s.id, s.game_id, s.external_id FROM game_sources s JOIN games g ON g.id = s.game_id \
+                 WHERE s.kind = 'steam' AND s.store_meta_synced_at IS NULL AND g.hidden = 0 \
+                 ORDER BY s.source_last_played DESC",
+            ) {
+                Ok(s) => s,
+                Err(e) => {
+                    tracing::warn!(error = %e, "store metadata: query failed");
+                    app.state::<SyncState>().metadata_running.store(false, Ordering::SeqCst);
+                    return;
+                }
+            };
+            stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+                .and_then(|rows| rows.collect())
+                .unwrap_or_default()
+        };
+        let mut done = 0;
+        for (source_id, game_id, appid) in todo {
+            match crate::metadata::genres::fetch_steam(&appid) {
+                Ok(data) => {
+                    let conn = db.conn();
+                    if let Some((genres, modes)) = &data {
+                        let _ = crate::db::repo::tags::set_auto(&conn, &game_id, "genre", genres);
+                        let _ = crate::db::repo::tags::set_auto(&conn, &game_id, "mode", modes);
+                    }
+                    let _ = conn.execute(
+                        "UPDATE game_sources SET store_meta_synced_at = ?2 WHERE id = ?1",
+                        rusqlite::params![source_id, crate::db::now_rfc3339()],
+                    );
+                    done += 1;
+                    if done % 25 == 0 {
+                        let _ = app.emit(LIBRARY_CHANGED_EVENT, ());
+                    }
+                }
+                Err(AppError::Network {
+                    status: Some(429), ..
+                }) => {
+                    tracing::info!(done, "store metadata: rate limited, will resume later");
+                    break;
+                }
+                Err(e) => tracing::debug!(%appid, error = %e, "store metadata failed"),
+            }
+            std::thread::sleep(STORE_DELAY);
+        }
+        if done > 0 {
+            tracing::info!(done, "store metadata fetched");
+            let _ = app.emit(LIBRARY_CHANGED_EVENT, ());
+        }
+        app.state::<SyncState>()
+            .metadata_running
+            .store(false, Ordering::SeqCst);
+    });
 }
 
 /// Downloads the artwork still missing, in the background, then refreshes the UI.

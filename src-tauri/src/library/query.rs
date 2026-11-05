@@ -239,8 +239,8 @@ impl Context {
             let (game, name, origin) = row?;
             if let Some(f) = ctx.facts.get_mut(&game) {
                 match origin.as_str() {
-                    "genre" => f.genres.push(name),
-                    "mode" => f.modes.push(name),
+                    "genre" => f.genres.push(name.trim_start_matches("genre:").to_string()),
+                    "mode" => f.modes.push(name.trim_start_matches("mode:").to_string()),
                     _ => f.tags.push(name),
                 }
             }

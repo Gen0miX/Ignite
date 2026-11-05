@@ -82,6 +82,8 @@ pub struct DetectedGame {
     /// RFC 3339 date of the last session according to the platform.
     pub last_played: Option<String>,
     pub artwork: Vec<ArtworkCandidate>,
+    /// Genres provided by the source (normalized French names).
+    pub genres: Vec<String>,
     /// Import hidden (DLC variant, tool...). The user can show it again.
     pub hide_on_import: bool,
     /// Achievements provided by the source itself (GOG database);

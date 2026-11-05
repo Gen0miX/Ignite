@@ -116,6 +116,10 @@ pub fn apply_scan(
             }
         }
 
+        if !g.genres.is_empty() {
+            crate::db::repo::tags::set_auto(&tx, &game_id, "genre", &g.genres)?;
+        }
+
         if let Some(minutes) = g.playtime_minutes {
             if let Some(src) = game_sources::find_by_external(&tx, scan.kind, &g.external_id)? {
                 tx.execute(

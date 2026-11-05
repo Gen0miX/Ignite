@@ -28,6 +28,8 @@ export const commands = {
 	exeInspect: (path: string) => typedError<ExeInfo_Serialize, CommandError>(__TAURI_INVOKE("exe_inspect", { path })),
 	/**  Adds a game from an executable or a launcher link. */
 	addExecutable: (input: AddExeInput_Deserialize) => typedError<GameDetail_Serialize, CommandError>(__TAURI_INVOKE("add_executable", { input })),
+	/**  Genres and player modes present in the library, for the filter chips. */
+	facets: () => typedError<Facets, CommandError>(__TAURI_INVOKE("facets")),
 	/**  Finds artwork options for a game on SteamGridDB. */
 	artworkSearch: (gameId: string, slot: ArtworkSlot, sgdbGameId: number | null, query: string | null) => typedError<ArtworkSearch_Serialize, CommandError>(__TAURI_INVOKE("artwork_search", { gameId, slot, sgdbGameId, query })),
 	/**  Downloads the chosen image into the cache and uses it for the game. */
@@ -304,6 +306,16 @@ export type ExeInfo_Serialize = {
 	probablyNotAGame: boolean,
 };
 
+export type Facet = {
+	name: string,
+	count: number,
+};
+
+export type Facets = {
+	genres: Facet[],
+	modes: Facet[],
+};
+
 export type GameDetail = GameDetail_Serialize | GameDetail_Deserialize;
 
 export type GameDetail_Deserialize = {
@@ -313,6 +325,9 @@ export type GameDetail_Deserialize = {
 	hero?: string | null,
 	logo?: string | null,
 	tags: Tag[],
+	genres: string[],
+	/**  Player modes (Solo, Multijoueur, Coopération, Écran partagé). */
+	modes: string[],
 	/**  Source the Play button uses (same rule as `launch_game`). */
 	playSourceId?: string | null,
 	sources: SourceInfo_Deserialize[],
@@ -326,6 +341,9 @@ export type GameDetail_Serialize = {
 	hero: string | null,
 	logo: string | null,
 	tags: Tag[],
+	genres: string[],
+	/**  Player modes (Solo, Multijoueur, Coopération, Écran partagé). */
+	modes: string[],
 	/**  Source the Play button uses (same rule as `launch_game`). */
 	playSourceId: string | null,
 	sources: SourceInfo_Serialize[],

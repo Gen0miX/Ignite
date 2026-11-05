@@ -106,6 +106,7 @@ pub struct GogGame {
     pub exe_path: Option<String>,
     pub cover_url: Option<String>,
     pub hero_url: Option<String>,
+    pub genres: Vec<String>,
     /// DLC variants Galaxy lists as separate releases.
     pub probably_dlc: bool,
     /// `None` when Galaxy has no achievement data for the game.
@@ -327,6 +328,15 @@ pub fn read_library(conn: &Connection) -> AppResult<Vec<GogGame>> {
             last_played: last.as_deref().and_then(galaxy_date),
             exe_path: exe.filter(|_| install_path.is_some()),
             install_path,
+            genres: piece(conn, &key, "meta")?
+                .or(piece(conn, &key, "originalMeta")?)
+                .and_then(|m| m.get("genres").cloned())
+                .and_then(|g| g.as_array().cloned())
+                .unwrap_or_default()
+                .iter()
+                .filter_map(|g| g.as_str())
+                .filter_map(crate::metadata::genres::normalize_genre)
+                .collect(),
             cover_url: piece_str(conn, &key, "originalImages", "verticalCover")?,
             hero_url: piece_str(conn, &key, "originalImages", "background")?,
             achievements: achievements(conn, &key, &langs)?,
@@ -360,6 +370,7 @@ pub fn to_detected(g: GogGame) -> DetectedGame {
         playtime_minutes: g.minutes,
         last_played: g.last_played,
         artwork,
+        genres: g.genres,
         hide_on_import: g.probably_dlc,
         achievements: g.achievements,
     }

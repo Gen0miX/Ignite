@@ -166,6 +166,7 @@ pub fn merge(
                     .or(m.last_played)
                     .and_then(unix_to_rfc3339),
                 artwork: Vec::new(),
+                genres: Vec::new(),
                 hide_on_import: false,
                 achievements: None,
             },
