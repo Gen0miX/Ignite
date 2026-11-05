@@ -209,11 +209,18 @@ Champs : `title`, `tag`, `genre`, `source`, `installed`, `status`, `favorite`, `
 
 La **barre de recherche** reprend les mêmes champs : `source:gog heures:>20 tag:souls statut:todo texte`. Un seul parseur sert aux deux (recherche et règles), avec des tests unitaires.
 
+### Implémentation J4
+
+- Un seul modèle de règles (`library/rules.rs`) sert aux collections intelligentes et à la recherche ; la barre de recherche est traduite en règles par `library/search.rs` (alias français : `statut:termine`, `heures:>20`, `joueurs:coop`, `joue:<30j`, `-` pour exclure, guillemets). Les pastilles de filtre modifient le texte de recherche lui-même. Champ supplémentaire : `mode` (joueurs). Un jeu jamais lancé compte comme « pas lancé depuis N jours ».
+- Statistiques par période (`library/stats.rs`) : temps par jour = sessions datées + croissance des compteurs Steam/GOG **non expliquée** par ces sessions (calcul cumulé, donc aucun double comptage). Les compteurs sont relevés une fois par jour (`playtime_snapshots`) ; l'historique par période commence au premier relevé. « Depuis toujours » reprend la règle de cumul de la bibliothèque.
+- `games.completed_at` est posé quand le statut passe à « terminé » (jeux terminés par période).
+- Genres et modes de jeu : tags automatiques (`origin` = `genre` / `mode`, noms préfixés `genre:` / `mode:`), séparés des tags de l'utilisateur.
+
 ## 7. Métadonnées & images (`metadata/`)
 
 - **Steam** : les images locales de `Steam\appcache\librarycache\<appid>\` (`library_600x900.jpg`, `library_hero.jpg`, `logo.png`, `header.jpg`, parfois dans un sous-dossier haché) viennent en premier. Sinon, le CDN Steam (`https://cdn.cloudflare.steamstatic.com/steam/apps/<appid>/library_600x900.jpg`, à vérifier).
 - **Jeux non-Steam** : SteamGridDB (jaquettes 600×900, héros, logos), cherché par titre.
-- **Genres, tags, description** : IGDB. Durées pour finir : HowLongToBeat (pas d'API officielle, facultatif, derrière un réglage).
+- **Genres et modes de jeu** (J4) : boutique Steam (`appdetails`, sans clé) pour les jeux Steam, base GOG Galaxy pour les jeux GOG, noms ramenés à une liste française commune. IGDB reste prévu pour les autres jeux (exécutables, Epic) et les descriptions. Durées pour finir : HowLongToBeat (pas d'API officielle, facultatif, derrière un réglage).
 - **Cache** : toutes les images sont copiées dans `app-data/artwork/<game_id>/` et servies au frontend via le protocole `asset:` de Tauri. On ne fait pas de hotlinking.
 
 ## 8. Commandes Tauri (première liste)

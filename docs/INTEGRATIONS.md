@@ -22,6 +22,7 @@
 - Succès (J2) : un jeu sans succès répond **HTTP 400** (`"Requested app has no stats"`), un profil privé **HTTP 403**. Le cache SQLite est valable 6 h ; `game_sources.achievements_total = 0` mémorise « pas de succès ». Les icônes (CDN Steam) ne sont pas encore affichées : pas de hotlinking, elles seront mises en cache plus tard.
 - `ISteamUser/GetPlayerSummaries/v2` et `GetFriendList/v1` : les amis (pour plus tard).
 - `ISteamNews/GetNewsForApp/v2` : les actus de chaque jeu (à filtrer, voir SPEC § 4).
+- Boutique (sans clé, vérifié en J4) : `https://store.steampowered.com/api/appdetails?appids=<appid>&l=french&filters=genres,categories` → genres en français et catégories (id 2 Solo, 1/36/37/47/49 multijoueur, 9/38/48 coopération, 24/39/44 écran partagé). **Un seul appid par requête** avec ces filtres ; limite d'environ 200 requêtes / 5 min (HTTP 429 au-delà) : une requête toutes les 1,6 s en tâche de fond.
 - Le SteamID64 vient de `config\loginusers.vdf`, ou bien l'utilisateur le saisit.
 - Limiter les appels (~1 requête/s, cache 15 min). Le profil doit être public, ou la clé doit appartenir au compte.
 
