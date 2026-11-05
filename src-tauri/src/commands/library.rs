@@ -202,5 +202,5 @@ pub fn launch_game(db: tauri::State<'_, Db>, game_id: String) -> CommandResult<(
     if source.kind == SourceKind::Steam && !super::sources::steam_installed() {
         return Err(AppError::Invalid("Steam is not installed on this PC".into()).into());
     }
-    crate::launcher::launch(source).map_err(CommandError::from)
+    crate::launcher::launch(source, None).map_err(CommandError::from)
 }
