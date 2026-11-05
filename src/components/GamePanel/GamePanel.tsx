@@ -2,7 +2,16 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff, Play, Star, X } from 'lucide-react';
 import { artworkSrc, type GameDetail, type GameStatus } from '../../api/client';
-import { useAddTag, useGame, useLaunchGame, useRemoveTag, useUpdateGame } from '../../api/hooks';
+import {
+  useAddTag,
+  useDuplicates,
+  useGame,
+  useLaunchGame,
+  useMergeGames,
+  useRemoveTag,
+  useSplitSource,
+  useUpdateGame,
+} from '../../api/hooks';
 import { fr } from '../../i18n/fr';
 import { formatBytes, formatLastPlayed, formatPlaytimeLong, titleTint } from '../../lib/format';
 import { SegmentedControl } from '../SegmentedControl/SegmentedControl';
@@ -53,7 +62,7 @@ function PanelContent({ game }: { game: GameDetail }) {
   const update = useUpdateGame(s.id);
   const launch = useLaunchGame();
   const banner = artworkSrc(game.hero ?? s.header ?? s.cover);
-  const playSource = game.sources.find((src) => src.launchUri);
+  const playSource = game.sources.find((src) => src.id === game.playSourceId);
   const total = s.playtimeMinutes;
 
   const launchError =
@@ -126,7 +135,11 @@ function PanelContent({ game }: { game: GameDetail }) {
           <StatTile label={fr.panel.lastSession} value={formatLastPlayed(s.lastPlayed)} />
         </div>
 
+        <DuplicateHint game={game} />
+
         {total > 0 && <TimeBreakdown game={game} />}
+
+        <SourcesSection game={game} />
 
         <section className={styles.section}>
           <h3 className="section-label">{fr.panel.status}</h3>
@@ -317,6 +330,84 @@ function Tags({ game }: { game: GameDetail }) {
             </button>
           )}
         </li>
+      </ul>
+    </section>
+  );
+}
+
+/** Suggests merging with a game that looks like the same title elsewhere. */
+function DuplicateHint({ game }: { game: GameDetail }) {
+  const { data: groups } = useDuplicates();
+  const merge = useMergeGames();
+  const group = groups?.find((g) => g.some((x) => x.id === game.summary.id));
+  const others = group?.filter((x) => x.id !== game.summary.id) ?? [];
+  if (others.length === 0) return null;
+  return (
+    <section className={styles.duplicate} aria-labelledby="dup-title">
+      <h3 id="dup-title" className="section-label">
+        {fr.panel.duplicateTitle}
+      </h3>
+      {others.map((o) => (
+        <p key={o.id}>
+          {fr.panel.duplicateBody(o.title, o.sources.map((k) => fr.sources[k]).join(', '))}
+        </p>
+      ))}
+      <button
+        type="button"
+        className={buttons.secondary}
+        disabled={merge.isPending}
+        onClick={() =>
+          merge.mutate({ targetId: game.summary.id, otherIds: others.map((o) => o.id) })
+        }
+      >
+        {fr.panel.merge}
+      </button>
+    </section>
+  );
+}
+
+/** Sources of the game: preferred one for Play, split a merged source. */
+function SourcesSection({ game }: { game: GameDetail }) {
+  const update = useUpdateGame(game.summary.id);
+  const split = useSplitSource();
+  if (game.sources.length < 2) return null;
+  return (
+    <section className={styles.section} aria-labelledby="panel-sources">
+      <h3 id="panel-sources" className="section-label">
+        {fr.panel.sources}
+      </h3>
+      <label className={styles.preferred}>
+        <span>{fr.panel.preferred}</span>
+        <select
+          value={game.preferredSourceId ?? ''}
+          onChange={(e) => update.mutate({ preferredSourceId: e.target.value })}
+        >
+          <option value="">{fr.panel.preferredAuto}</option>
+          {game.sources.map((src) => (
+            <option key={src.id} value={src.id}>
+              {fr.sources[src.kind]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <ul className={styles.sourceList}>
+        {game.sources.map((src) => (
+          <li key={src.id}>
+            <SourceBadge kind={src.kind} />
+            <span className="mono">
+              {src.playtimeMinutes != null ? formatPlaytimeLong(src.playtimeMinutes) : '—'}
+            </span>
+            <button
+              type="button"
+              className={styles.linkButton}
+              aria-label={fr.panel.splitLabel(fr.sources[src.kind])}
+              disabled={split.isPending}
+              onClick={() => split.mutate(src.id)}
+            >
+              {fr.panel.split}
+            </button>
+          </li>
+        ))}
       </ul>
     </section>
   );

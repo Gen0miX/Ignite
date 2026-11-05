@@ -59,7 +59,7 @@ function Sheet({ game }: { game: GameDetail }) {
   const list = sessions.data ?? [];
   const stats = sessionStats(list);
   const banner = artworkSrc(game.hero ?? s.header ?? s.cover);
-  const playSource = game.sources.find((src) => src.launchUri);
+  const playSource = game.sources.find((src) => src.id === game.playSourceId);
   const steamCounted = game.timeBySource.some((p) => p.fromPlatform);
 
   return (

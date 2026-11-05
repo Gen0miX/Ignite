@@ -44,6 +44,7 @@ vi.mock('../api/client', async (importOriginal) => {
       hero: null,
       logo: null,
       tags: [],
+      playSourceId: `src-${id}`,
       sources: [
         {
           id: `src-${id}`,
@@ -78,6 +79,7 @@ vi.mock('../api/client', async (importOriginal) => {
         return ok([]);
       },
       sourcesStatus: () => ok([]),
+      duplicatesList: () => ok([]),
     },
   };
 });

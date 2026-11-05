@@ -18,6 +18,12 @@ export const commands = {
 	gameTagAdd: (id: string, name: string) => typedError<Tag, CommandError>(__TAURI_INVOKE("game_tag_add", { id, name })),
 	gameTagRemove: (id: string, tagId: string) => typedError<null, CommandError>(__TAURI_INVOKE("game_tag_remove", { id, tagId })),
 	launchGame: (gameId: string) => typedError<null, CommandError>(__TAURI_INVOKE("launch_game", { gameId })),
+	/**  Groups of games that look like the same title on several platforms. */
+	duplicatesList: () => typedError<GameSummary_Serialize[][], CommandError>(__TAURI_INVOKE("duplicates_list")),
+	/**  Merges `others` into `target`: one sheet, several sources. */
+	gameMerge: (targetId: string, otherIds: string[]) => typedError<GameDetail_Serialize, CommandError>(__TAURI_INVOKE("game_merge", { targetId, otherIds })),
+	/**  Detaches a source into its own game. Returns the new game id. */
+	gameSplit: (sourceId: string) => typedError<string, CommandError>(__TAURI_INVOKE("game_split", { sourceId })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
 	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
 	/**  Turns a source on or off. Disabling keeps its games in the library. */
@@ -120,6 +126,8 @@ export type GameDetail_Deserialize = {
 	hero?: string | null,
 	logo?: string | null,
 	tags: Tag[],
+	/**  Source the Play button uses (same rule as `launch_game`). */
+	playSourceId?: string | null,
 	sources: SourceInfo_Deserialize[],
 	timeBySource: SourceTime_Deserialize[],
 };
@@ -131,6 +139,8 @@ export type GameDetail_Serialize = {
 	hero: string | null,
 	logo: string | null,
 	tags: Tag[],
+	/**  Source the Play button uses (same rule as `launch_game`). */
+	playSourceId: string | null,
 	sources: SourceInfo_Serialize[],
 	timeBySource: SourceTime_Serialize[],
 };
@@ -193,6 +203,8 @@ export type GameUpdate_Deserialize = {
 	favorite?: boolean | null,
 	hidden?: boolean | null,
 	notes?: string | null,
+	/**  Source used by the Play button; an empty string resets to automatic. */
+	preferredSourceId?: string | null,
 };
 
 /**  Fields editable from the game panel. An empty `notes` string clears the note. */
@@ -201,6 +213,8 @@ export type GameUpdate_Serialize = {
 	favorite: boolean | null,
 	hidden: boolean | null,
 	notes: string | null,
+	/**  Source used by the Play button; an empty string resets to automatic. */
+	preferredSourceId: string | null,
 };
 
 export type Goal = Goal_Serialize | Goal_Deserialize;

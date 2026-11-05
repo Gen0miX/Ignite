@@ -56,6 +56,8 @@ pub struct GameDetail {
     pub hero: Option<String>,
     pub logo: Option<String>,
     pub tags: Vec<tags::Tag>,
+    /// Source the Play button uses (same rule as `launch_game`).
+    pub play_source_id: Option<String>,
     pub sources: Vec<SourceInfo>,
     pub time_by_source: Vec<SourceTime>,
 }
@@ -85,7 +87,11 @@ fn load_detail(db: &Db, id: &str) -> CommandResult<GameDetail> {
         &session_sums,
     );
     let mut art = artwork::for_game(&conn, id)?;
+    let play_source_id =
+        crate::launcher::pick_source(&sources, game.preferred_source_id.as_deref())
+            .map(|s| s.id.clone());
     Ok(GameDetail {
+        play_source_id,
         notes: game.notes,
         preferred_source_id: game.preferred_source_id,
         hero: art.remove("hero"),
@@ -136,6 +142,8 @@ pub struct GameUpdate {
     pub favorite: Option<bool>,
     pub hidden: Option<bool>,
     pub notes: Option<String>,
+    /// Source used by the Play button; an empty string resets to automatic.
+    pub preferred_source_id: Option<String>,
 }
 
 const MAX_NOTES_LEN: usize = 10_000;
@@ -162,8 +170,17 @@ pub fn game_update(
             let n = n.trim().to_string();
             (!n.is_empty()).then_some(n)
         }),
+        preferred_source_id: update
+            .preferred_source_id
+            .map(|s| (!s.is_empty()).then_some(s)),
         ..Default::default()
     };
+    if let Some(Some(source_id)) = &patch.preferred_source_id {
+        let source = game_sources::get(&db.conn(), source_id)?;
+        if source.game_id != id {
+            return Err(AppError::Invalid("source belongs to another game".into()).into());
+        }
+    }
     games::update(&db.conn(), &id, &patch)?;
     load_detail(&db, &id)
 }
@@ -203,4 +220,41 @@ pub fn launch_game(db: tauri::State<'_, Db>, game_id: String) -> CommandResult<(
         return Err(AppError::Invalid("Steam is not installed on this PC".into()).into());
     }
     crate::launcher::launch(source, None).map_err(CommandError::from)
+}
+
+/// Groups of games that look like the same title on several platforms.
+#[tauri::command]
+#[specta::specta]
+pub fn duplicates_list(db: tauri::State<'_, Db>) -> CommandResult<Vec<Vec<GameSummary>>> {
+    let conn = db.conn();
+    let groups = crate::library::merge::duplicate_groups(&conn)?;
+    let all = query::summaries(&conn)?;
+    Ok(groups
+        .into_iter()
+        .map(|ids| {
+            all.iter()
+                .filter(|g| ids.contains(&g.id))
+                .cloned()
+                .collect()
+        })
+        .collect())
+}
+
+/// Merges `others` into `target`: one sheet, several sources.
+#[tauri::command]
+#[specta::specta]
+pub fn game_merge(
+    db: tauri::State<'_, Db>,
+    target_id: String,
+    other_ids: Vec<String>,
+) -> CommandResult<GameDetail> {
+    crate::library::merge::merge(&mut db.conn(), &target_id, &other_ids)?;
+    load_detail(&db, &target_id)
+}
+
+/// Detaches a source into its own game. Returns the new game id.
+#[tauri::command]
+#[specta::specta]
+pub fn game_split(db: tauri::State<'_, Db>, source_id: String) -> CommandResult<String> {
+    Ok(crate::library::merge::split(&mut db.conn(), &source_id)?)
 }

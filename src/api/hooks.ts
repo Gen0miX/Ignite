@@ -126,6 +126,39 @@ export function useSetSourceEnabled() {
   });
 }
 
+export function useDuplicates() {
+  return useQuery({
+    queryKey: ['duplicates'],
+    queryFn: () => unwrap(commands.duplicatesList()),
+    enabled: isTauri(),
+  });
+}
+
+export function useMergeGames() {
+  const client = useQueryClient();
+  const invalidate = useInvalidateLibrary();
+  return useMutation({
+    mutationFn: ({ targetId, otherIds }: { targetId: string; otherIds: string[] }) =>
+      unwrap(commands.gameMerge(targetId, otherIds)),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['duplicates'] });
+      void invalidate();
+    },
+  });
+}
+
+export function useSplitSource() {
+  const client = useQueryClient();
+  const invalidate = useInvalidateLibrary();
+  return useMutation({
+    mutationFn: (sourceId: string) => unwrap(commands.gameSplit(sourceId)),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['duplicates'] });
+      void invalidate();
+    },
+  });
+}
+
 export function useSteamSettings() {
   return useQuery({
     queryKey: keys.steamSettings,
