@@ -12,6 +12,8 @@ import {
   useSetSecret,
   useSecretsStatus,
   useSetSourceEnabled,
+  useSetTrackingSettings,
+  useTrackingSettings,
   useSetSteamId,
   useSourcesStatus,
   useSteamSettings,
@@ -371,6 +373,75 @@ function SecretKeyField({ kind, labelId }: { kind: SecretKind; labelId: string }
   );
 }
 
+const MIN_SESSION_CHOICES = [0, 1, 2, 5, 10];
+const IDLE_CHOICES = [5, 10, 15, 30, 60];
+
+function TrackingCard() {
+  const { data } = useTrackingSettings();
+  const save = useSetTrackingSettings();
+  if (!data) return null;
+  const tt = t.tracking;
+  const minutes = (n: number) => (n === 0 ? tt.none : tt.minutes(n));
+  const withCurrent = (choices: number[], v: number) =>
+    choices.includes(v) ? choices : [...choices, v].sort((a, b) => a - b);
+  return (
+    <section className={styles.card} aria-labelledby="tracking-title">
+      <h2 id="tracking-title" className="section-label">
+        {t.trackingTitle}
+      </h2>
+      <dl className={styles.details}>
+        <dt>{tt.method}</dt>
+        <dd>{tt.methodValue}</dd>
+        <dt>{tt.duplicates}</dt>
+        <dd>{tt.duplicatesValue}</dd>
+        <dt>{tt.history}</dt>
+        <dd>{tt.historyValue}</dd>
+      </dl>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="min-session">
+          {tt.minSession}
+        </label>
+        <select
+          id="min-session"
+          className={styles.select}
+          value={data.minSessionMinutes}
+          onChange={(e) => save.mutate({ ...data, minSessionMinutes: Number(e.target.value) })}
+        >
+          {withCurrent(MIN_SESSION_CHOICES, data.minSessionMinutes).map((n) => (
+            <option key={n} value={n}>
+              {minutes(n)}
+            </option>
+          ))}
+        </select>
+        <span className={styles.muted}>{tt.minSessionHint}</span>
+      </div>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="idle">
+          {tt.idle}
+        </label>
+        <select
+          id="idle"
+          className={styles.select}
+          value={data.idleMinutes}
+          onChange={(e) => save.mutate({ ...data, idleMinutes: Number(e.target.value) })}
+        >
+          {withCurrent(IDLE_CHOICES, data.idleMinutes).map((n) => (
+            <option key={n} value={n}>
+              {minutes(n)}
+            </option>
+          ))}
+        </select>
+        <span className={styles.muted}>{tt.idleHint}</span>
+      </div>
+      {save.isError && (
+        <p role="alert" className={styles.errorText}>
+          {tt.saveError}
+        </p>
+      )}
+    </section>
+  );
+}
+
 function MetadataCard() {
   return (
     <section className={styles.card} aria-labelledby="metadata-title">
@@ -443,6 +514,7 @@ export function SettingsSourcesPage() {
         <EmptyState>{t.backendUnavailable}</EmptyState>
       )}
       <p className={styles.muted}>{t.otherSources}</p>
+      {isTauri() && <TrackingCard />}
       {isTauri() && <MetadataCard />}
       <AboutCard />
     </PageMain>

@@ -42,6 +42,9 @@ export const commands = {
 	searchCheck: (text: string) => typedError<SearchCheck, CommandError>(__TAURI_INVOKE("search_check", { text })),
 	/**  Ids of the manual collections containing a game. */
 	gameCollections: (gameId: string) => typedError<string[], CommandError>(__TAURI_INVOKE("game_collections", { gameId })),
+	trackingSettingsGet: () => __TAURI_INVOKE<TrackingSettings>("tracking_settings_get"),
+	/**  Saved settings are picked up by the tracker within 30 seconds. */
+	trackingSettingsSet: (settings: TrackingSettings) => typedError<null, CommandError>(__TAURI_INVOKE("tracking_settings_set", { settings })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
 	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
 	/**  Turns a source on or off. Disabling keeps its games in the library. */
@@ -764,6 +767,13 @@ export type TrackMode =
 { mode: "file" } | 
 /**  Another process by name (launcher that starts the real game). */
 { mode: "process"; processName: string };
+
+export type TrackingSettings = {
+	/**  Sessions shorter than this are discarded (0 = keep everything). */
+	minSessionMinutes: number,
+	/**  No input for this long pauses the timer. */
+	idleMinutes: number,
+};
 
 /* Tauri Specta runtime */
 async function typedError<T, E>(result: Promise<T>): Promise<{ status: "ok"; data: T } | { status: "error"; error: E }> {

@@ -212,6 +212,23 @@ export function useSearchCheck(text: string) {
   });
 }
 
+export function useTrackingSettings() {
+  return useQuery({
+    queryKey: ['tracking-settings'],
+    queryFn: () => commands.trackingSettingsGet(),
+    enabled: isTauri(),
+  });
+}
+
+export function useSetTrackingSettings() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (settings: { minSessionMinutes: number; idleMinutes: number }) =>
+      unwrap(commands.trackingSettingsSet(settings)),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['tracking-settings'] }),
+  });
+}
+
 export function useSecretsStatus() {
   return useQuery({
     queryKey: keys.secrets,

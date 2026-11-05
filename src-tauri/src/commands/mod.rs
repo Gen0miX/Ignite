@@ -10,6 +10,7 @@ pub mod library;
 pub mod play;
 pub mod secrets;
 pub mod sources;
+pub mod tracking;
 
 use serde::Serialize;
 
@@ -74,6 +75,8 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         collections::rules_preview,
         collections::search_check,
         collections::game_collections,
+        tracking::tracking_settings_get,
+        tracking::tracking_settings_set,
         sources::library_sync,
         sources::sources_status,
         sources::source_set_enabled,

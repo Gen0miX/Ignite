@@ -364,6 +364,26 @@ export const fr = {
     optionalNote:
       "Chaque launcher est facultatif : s'il n'est pas installé, il est simplement ignoré et le reste de l'app fonctionne normalement.",
     otherSources: 'Battle.net, Ubisoft Connect, EA app et Riot arrivent au jalon J5.',
+    trackingTitle: 'Règles de suivi',
+    tracking: {
+      method: 'Méthode',
+      methodValue:
+        'Détection du processus du jeu (toutes les 3 s), clavier, souris et manette pour l’inactivité',
+      minSession: 'Session minimale',
+      minSessionHint: 'Les sessions plus courtes sont ignorées (crash, lancement par erreur).',
+      idle: 'Pause si inactif',
+      idleHint:
+        'Sans clavier, souris ni manette pendant ce temps, la période d’inactivité est retirée de la session.',
+      none: 'aucune',
+      minutes: (n: number) => `${n} min`,
+      duplicates: 'Jeux sur plusieurs plateformes',
+      duplicatesValue: 'Proposer de fusionner (assistant d’import et panneau du jeu)',
+      history: 'Historique des launchers',
+      historyValue:
+        'Temps importé à chaque synchronisation (Steam, GOG) ; relevés quotidiens pour les statistiques',
+      saved: 'Enregistré',
+      saveError: "Les réglages n'ont pas pu être enregistrés.",
+    },
     metadataTitle: 'Services de métadonnées',
     sgdb: {
       title: 'SteamGridDB',
