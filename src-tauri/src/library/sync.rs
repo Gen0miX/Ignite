@@ -116,6 +116,15 @@ pub fn apply_scan(
             }
         }
 
+        if let Some(minutes) = g.playtime_minutes {
+            if let Some(src) = game_sources::find_by_external(&tx, scan.kind, &g.external_id)? {
+                tx.execute(
+                    "INSERT INTO playtime_snapshots (game_source_id, day, minutes) VALUES (?1, ?2, ?3)                      ON CONFLICT(game_source_id, day) DO UPDATE SET minutes = excluded.minutes",
+                    rusqlite::params![src.id, chrono::Local::now().format("%Y-%m-%d").to_string(), minutes],
+                )?;
+            }
+        }
+
         let have = artwork::for_game(&tx, &game_id)?;
         let missing: Vec<_> = g
             .artwork

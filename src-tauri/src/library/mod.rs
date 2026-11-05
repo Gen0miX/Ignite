@@ -8,4 +8,5 @@ pub mod playtime;
 pub mod query;
 pub mod rules;
 pub mod search;
+pub mod stats;
 pub mod sync;

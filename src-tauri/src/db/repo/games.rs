@@ -150,7 +150,20 @@ pub fn update(conn: &Connection, id: &str, patch: &GamePatch) -> AppResult<Game>
     if let Some(preferred) = &patch.preferred_source_id {
         game.preferred_source_id = preferred.clone();
     }
+    let was_done = get(conn, id)?.status == GameStatus::Done;
     game.updated_at = now_rfc3339();
+    match (was_done, game.status == GameStatus::Done) {
+        (false, true) => {
+            conn.execute(
+                "UPDATE games SET completed_at = ?2 WHERE id = ?1",
+                params![id, game.updated_at],
+            )?;
+        }
+        (true, false) => {
+            conn.execute("UPDATE games SET completed_at = NULL WHERE id = ?1", [id])?;
+        }
+        _ => {}
+    }
     conn.execute(
         "UPDATE games SET title = ?2, sort_title = ?3, status = ?4, favorite = ?5, hidden = ?6, \
          notes = ?7, preferred_source_id = ?8, updated_at = ?9 WHERE id = ?1",

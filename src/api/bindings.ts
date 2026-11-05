@@ -42,6 +42,8 @@ export const commands = {
 	searchCheck: (text: string) => typedError<SearchCheck, CommandError>(__TAURI_INVOKE("search_check", { text })),
 	/**  Ids of the manual collections containing a game. */
 	gameCollections: (gameId: string) => typedError<string[], CommandError>(__TAURI_INVOKE("game_collections", { gameId })),
+	/**  Statistics for a period, optionally limited to some sources. */
+	statsOverview: (range: StatsRange, sources: SourceKind[]) => typedError<StatsOverview_Serialize, CommandError>(__TAURI_INVOKE("stats_overview", { range, sources })),
 	trackingSettingsGet: () => __TAURI_INVOKE<TrackingSettings>("tracking_settings_get"),
 	/**  Saved settings are picked up by the tracker within 30 seconds. */
 	trackingSettingsSet: (settings: TrackingSettings) => typedError<null, CommandError>(__TAURI_INVOKE("tracking_settings_set", { settings })),
@@ -263,6 +265,12 @@ export type CommandError = {
 export type CoverlessGame = {
 	id: string,
 	title: string,
+};
+
+export type DayMinutes = {
+	/**  YYYY-MM-DD. */
+	day: string,
+	minutes: number,
 };
 
 /**  What a picked file points to, to prefill the "add a game" form. */
@@ -507,6 +515,13 @@ export type LibraryQuery_Serialize = {
 	sort: SortKey,
 };
 
+export type LibraryState = {
+	done: number,
+	playing: number,
+	dropped: number,
+	todo: number,
+};
+
 export type LibraryView = { kind: "all" } | { kind: "installed" } | { kind: "favorites" } | 
 /**  Hidden games only (playtests, betas, games hidden by the user). */
 { kind: "hidden" } | { kind: "status"; value: GameStatus } | { kind: "source"; value: SourceKind } | 
@@ -671,6 +686,20 @@ export type SourceInfo_Serialize = {
 /**  Platform a copy of a game comes from. */
 export type SourceKind = "steam" | "epic" | "gog" | "battlenet" | "ea" | "ubisoft" | "xbox" | "riot" | "local" | "emulator";
 
+export type SourceMinutes = SourceMinutes_Serialize | SourceMinutes_Deserialize;
+
+export type SourceMinutes_Deserialize = {
+	/**  `None` = sessions not attached to a source. */
+	kind?: SourceKind | null,
+	minutes: number,
+};
+
+export type SourceMinutes_Serialize = {
+	/**  `None` = sessions not attached to a source. */
+	kind: SourceKind | null,
+	minutes: number,
+};
+
 /**  Connection state shown in the sidebar and in Settings › Sources. */
 export type SourceStatus = 
 /**  Launcher found and readable. */
@@ -697,6 +726,48 @@ export type SourceTime_Serialize = {
 	minutes: number,
 	fromPlatform: boolean,
 };
+
+export type StatsOverview = StatsOverview_Serialize | StatsOverview_Deserialize;
+
+export type StatsOverview_Deserialize = {
+	range: StatsRange,
+	totalMinutes: number,
+	minutesPerDay: number,
+	gamesPlayed: number,
+	gamesOwned: number,
+	gamesCompleted: number,
+	achievementsUnlocked: number,
+	longestStreakDays: number,
+	longestStreakEnd?: string | null,
+	/**  Calendar year shown (current year, or last 12 months for other ranges). */
+	calendar: DayMinutes[],
+	topGames: TopGame_Deserialize[],
+	bySource: SourceMinutes_Deserialize[],
+	library: LibraryState,
+	/**  First day with dated history (sessions or counter snapshots). */
+	historyStart?: string | null,
+};
+
+export type StatsOverview_Serialize = {
+	range: StatsRange,
+	totalMinutes: number,
+	minutesPerDay: number,
+	gamesPlayed: number,
+	gamesOwned: number,
+	gamesCompleted: number,
+	achievementsUnlocked: number,
+	longestStreakDays: number,
+	longestStreakEnd: string | null,
+	/**  Calendar year shown (current year, or last 12 months for other ranges). */
+	calendar: DayMinutes[],
+	topGames: TopGame_Serialize[],
+	bySource: SourceMinutes_Serialize[],
+	library: LibraryState,
+	/**  First day with dated history (sessions or counter snapshots). */
+	historyStart: string | null,
+};
+
+export type StatsRange = "week" | "month" | "year" | "all";
 
 export type StatusCounts = {
 	todo: number,
@@ -757,6 +828,28 @@ export type SyncReport = {
 export type Tag = {
 	id: string,
 	name: string,
+};
+
+export type TopGame = TopGame_Serialize | TopGame_Deserialize;
+
+export type TopGame_Deserialize = {
+	gameId: string,
+	title: string,
+	cover?: string | null,
+	header?: string | null,
+	/**  Source with the most time in the range (bar colour). */
+	source?: SourceKind | null,
+	minutes: number,
+};
+
+export type TopGame_Serialize = {
+	gameId: string,
+	title: string,
+	cover: string | null,
+	header: string | null,
+	/**  Source with the most time in the range (bar colour). */
+	source: SourceKind | null,
+	minutes: number,
 };
 
 /**  Which process the tracker follows for this game. */

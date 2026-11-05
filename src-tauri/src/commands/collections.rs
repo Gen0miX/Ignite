@@ -140,3 +140,20 @@ pub fn game_collections(db: tauri::State<'_, Db>, game_id: String) -> CommandRes
         .map_err(crate::error::AppError::from)?;
     Ok(ids)
 }
+
+/// Statistics for a period, optionally limited to some sources.
+#[tauri::command]
+#[specta::specta]
+pub fn stats_overview(
+    db: tauri::State<'_, Db>,
+    range: crate::library::stats::StatsRange,
+    sources: Vec<crate::models::SourceKind>,
+) -> CommandResult<crate::library::stats::StatsOverview> {
+    let today = chrono::Local::now().date_naive();
+    Ok(crate::library::stats::overview(
+        &db.conn(),
+        range,
+        &sources,
+        today,
+    )?)
+}

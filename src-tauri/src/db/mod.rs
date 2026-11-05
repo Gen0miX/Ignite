@@ -17,6 +17,7 @@ fn migrations() -> Migrations<'static> {
         M::up(include_str!("../../migrations/0001_initial.sql")),
         M::up(include_str!("../../migrations/0002_artwork_header.sql")),
         M::up(include_str!("../../migrations/0003_achievements_cache.sql")),
+        M::up(include_str!("../../migrations/0004_stats.sql")),
     ])
 }
 
@@ -106,6 +107,7 @@ mod tests {
                 "goals",
                 "launch_profiles",
                 "play_sessions",
+                "playtime_snapshots",
                 "settings",
                 "tags",
             ]
@@ -123,7 +125,7 @@ mod tests {
             .conn()
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .unwrap();
-        assert_eq!(version, 3);
+        assert_eq!(version, 4);
         drop(db);
         let _ = std::fs::remove_dir_all(dir);
     }
