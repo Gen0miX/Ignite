@@ -36,12 +36,12 @@ Chaque tâche = une PR ou un commit, avec ses tests. Ne passe au jalon suivant q
 
 ## J3 — Jeux non-Steam
 
-- [ ] Modale « Ajouter un jeu » › Exécutable (fichier, nom, arguments, processus suivi, temps déjà joué).
-- [ ] SteamGridDB : recherche et choix de la jaquette, du héros et du logo.
-- [ ] `sources/epic` (manifests) et `sources/gog` (copie de `galaxy-2.0.db`, temps, succès).
-- [ ] Parcours d'import (4 étapes) : détection, doublons, faux jeux, import du temps.
-- [ ] Fusion et défusion des doublons, choix de la source préférée.
-- [ ] Badges de source et filtre Source dans la bibliothèque.
+- [x] Modale « Ajouter un jeu » › Exécutable (fichier, nom, arguments, processus suivi, temps déjà joué).
+- [x] SteamGridDB : recherche et choix de la jaquette, du héros et du logo.
+- [x] `sources/epic` (manifests) et `sources/gog` (copie de `galaxy-2.0.db`, temps, succès).
+- [x] Parcours d'import (4 étapes) : détection, doublons, faux jeux, import du temps.
+- [x] Fusion et défusion des doublons, choix de la source préférée.
+- [x] Badges de source et filtre Source dans la bibliothèque.
 
 **Fini quand** : un jeu GOG possédé aussi sur Steam n'a qu'une fiche, avec les deux temps décomposés.
 

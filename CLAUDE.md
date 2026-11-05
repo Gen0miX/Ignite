@@ -40,6 +40,8 @@ Versions épinglées à connaître : `specta`/`tauri-specta` `=2.0.0-rc.26` et `
 `rusqlite` 0.40 (contrainte de `rusqlite_migration` 2.6) ; TypeScript 6.0 (typescript-eslint ne supporte pas TS 7) ;
 secrets via `keyring-core` + `windows-native-keyring-store` (recommandé par keyring 4 pour une app).
 
+**Attention, base de données en dev** : une instance lancée par les outils de Claude (Bash/PowerShell de l'app Claude) voit son `%APPDATA%` **virtualisé** par Windows vers `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\com.ludotheque.app\`. Pour tester sur la vraie base de l'utilisateur, lance `pnpm tauri dev` depuis le panneau Terminal (non virtualisé), et lis la base réelle depuis ce même terminal. L'app installée n'est pas concernée.
+
 (Mets à jour cette section si tu changes l'outillage.)
 
 ## Règles
