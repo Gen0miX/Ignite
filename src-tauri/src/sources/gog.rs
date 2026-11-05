@@ -181,6 +181,15 @@ fn language_order(conn: &Connection) -> AppResult<Vec<i64>> {
     Ok(ids)
 }
 
+/// apikey, rarity, icon, isUnlocked, unlockTime.
+type AchievementBase = (
+    String,
+    Option<f64>,
+    Option<String>,
+    Option<i64>,
+    Option<String>,
+);
+
 fn achievements(
     conn: &Connection,
     key: &str,
@@ -195,13 +204,7 @@ fn achievements(
            ON ua.gameReleaseKey = a.gameReleaseKey AND ua.apikey = a.apikey \
          WHERE a.gameReleaseKey = ?1 ORDER BY a.apikey",
     )?;
-    let base: Vec<(
-        String,
-        Option<f64>,
-        Option<String>,
-        Option<i64>,
-        Option<String>,
-    )> = stmt
+    let base: Vec<AchievementBase> = stmt
         .query_map([key], |r| {
             Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
         })?
