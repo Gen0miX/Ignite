@@ -24,6 +24,10 @@ export const commands = {
 	gameMerge: (targetId: string, otherIds: string[]) => typedError<GameDetail_Serialize, CommandError>(__TAURI_INVOKE("game_merge", { targetId, otherIds })),
 	/**  Detaches a source into its own game. Returns the new game id. */
 	gameSplit: (sourceId: string) => typedError<string, CommandError>(__TAURI_INVOKE("game_split", { sourceId })),
+	/**  Reads a picked `.exe` / `.lnk` / `.url` to prefill the "add a game" form. */
+	exeInspect: (path: string) => typedError<ExeInfo_Serialize, CommandError>(__TAURI_INVOKE("exe_inspect", { path })),
+	/**  Adds a game from an executable or a launcher link. */
+	addExecutable: (input: AddExeInput_Deserialize) => typedError<GameDetail_Serialize, CommandError>(__TAURI_INVOKE("add_executable", { input })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
 	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
 	/**  Turns a source on or off. Disabling keeps its games in the library. */
@@ -107,6 +111,28 @@ export type ActiveGame = {
 	activeSeconds: number,
 };
 
+export type AddExeInput = AddExeInput_Serialize | AddExeInput_Deserialize;
+
+export type AddExeInput_Deserialize = {
+	title: string,
+	exePath?: string | null,
+	uri?: string | null,
+	args?: string | null,
+	track: TrackMode,
+	/**  "Temps déjà joué", recorded as an `estimate` session. */
+	estimateMinutes?: number | null,
+};
+
+export type AddExeInput_Serialize = {
+	title: string,
+	exePath: string | null,
+	uri: string | null,
+	args: string | null,
+	track: TrackMode,
+	/**  "Temps déjà joué", recorded as an `estimate` session. */
+	estimateMinutes: number | null,
+};
+
 export type AppInfo = {
 	version: string,
 	dataDir: string,
@@ -138,6 +164,37 @@ export type CommandError = {
 export type CoverlessGame = {
 	id: string,
 	title: string,
+};
+
+/**  What a picked file points to, to prefill the "add a game" form. */
+export type ExeInfo = ExeInfo_Serialize | ExeInfo_Deserialize;
+
+/**  What a picked file points to, to prefill the "add a game" form. */
+export type ExeInfo_Deserialize = {
+	/**  The file the user picked. */
+	picked: string,
+	/**  Executable to start (`.exe`, or the target of a `.lnk`). */
+	exePath?: string | null,
+	/**  Launcher URI (`.url` shortcut). */
+	uri?: string | null,
+	args?: string | null,
+	suggestedTitle: string,
+	/**  Crash handler, uninstaller, setup...: probably not the game itself. */
+	probablyNotAGame: boolean,
+};
+
+/**  What a picked file points to, to prefill the "add a game" form. */
+export type ExeInfo_Serialize = {
+	/**  The file the user picked. */
+	picked: string,
+	/**  Executable to start (`.exe`, or the target of a `.lnk`). */
+	exePath: string | null,
+	/**  Launcher URI (`.url` shortcut). */
+	uri: string | null,
+	args: string | null,
+	suggestedTitle: string,
+	/**  Crash handler, uninstaller, setup...: probably not the game itself. */
+	probablyNotAGame: boolean,
 };
 
 export type GameDetail = GameDetail_Serialize | GameDetail_Deserialize;
@@ -579,6 +636,15 @@ export type Tag = {
 	id: string,
 	name: string,
 };
+
+/**  Which process the tracker follows for this game. */
+export type TrackMode = 
+/**  The executable and, for a dedicated folder, anything inside it. */
+{ mode: "auto" } | 
+/**  Only the chosen executable. */
+{ mode: "file" } | 
+/**  Another process by name (launcher that starts the real game). */
+{ mode: "process"; processName: string };
 
 /* Tauri Specta runtime */
 async function typedError<T, E>(result: Promise<T>): Promise<{ status: "ok"; data: T } | { status: "error"; error: E }> {

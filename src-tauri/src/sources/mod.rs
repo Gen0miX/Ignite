@@ -6,6 +6,7 @@
 
 pub mod epic;
 pub mod gog;
+pub mod local;
 pub mod steam;
 pub mod vdf;
 

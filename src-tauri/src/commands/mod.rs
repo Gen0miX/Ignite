@@ -60,6 +60,8 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         library::duplicates_list,
         library::game_merge,
         library::game_split,
+        library::exe_inspect,
+        library::add_executable,
         sources::library_sync,
         sources::sources_status,
         sources::source_set_enabled,

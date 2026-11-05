@@ -66,7 +66,7 @@ fn to_u32(v: i64) -> u32 {
     v.clamp(0, u32::MAX as i64) as u32
 }
 
-fn load_detail(db: &Db, id: &str) -> CommandResult<GameDetail> {
+pub(crate) fn load_detail(db: &Db, id: &str) -> CommandResult<GameDetail> {
     let conn = db.conn();
     let game = games::get(&conn, id)?;
     let summary = query::summaries(&conn)?
@@ -219,7 +219,8 @@ pub fn launch_game(db: tauri::State<'_, Db>, game_id: String) -> CommandResult<(
     if source.kind == SourceKind::Steam && !super::sources::steam_installed() {
         return Err(AppError::Invalid("Steam is not installed on this PC".into()).into());
     }
-    crate::launcher::launch(source, None).map_err(CommandError::from)
+    let args = crate::sources::local::default_args(&db.conn(), &source.id)?;
+    crate::launcher::launch(source, args.as_deref()).map_err(CommandError::from)
 }
 
 /// Groups of games that look like the same title on several platforms.
@@ -257,4 +258,22 @@ pub fn game_merge(
 #[specta::specta]
 pub fn game_split(db: tauri::State<'_, Db>, source_id: String) -> CommandResult<String> {
     Ok(crate::library::merge::split(&mut db.conn(), &source_id)?)
+}
+
+/// Reads a picked `.exe` / `.lnk` / `.url` to prefill the "add a game" form.
+#[tauri::command]
+#[specta::specta]
+pub fn exe_inspect(path: String) -> CommandResult<crate::sources::local::ExeInfo> {
+    Ok(crate::sources::local::inspect(std::path::Path::new(&path))?)
+}
+
+/// Adds a game from an executable or a launcher link.
+#[tauri::command]
+#[specta::specta]
+pub fn add_executable(
+    db: tauri::State<'_, Db>,
+    input: crate::sources::local::AddExeInput,
+) -> CommandResult<GameDetail> {
+    let id = crate::sources::local::create(&mut db.conn(), &input)?;
+    load_detail(&db, &id)
 }
