@@ -38,6 +38,7 @@ export type ExeInfo = b.ExeInfo_Serialize;
 export type ArtworkSlot = b.ArtworkSlot;
 export type Collection = b.Collection_Serialize;
 export type CollectionInfo = b.CollectionInfo_Serialize;
+export type StatsRange = b.StatsRange;
 
 export class BackendError extends Error {
   readonly kind: string;
