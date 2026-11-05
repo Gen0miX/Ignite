@@ -176,6 +176,21 @@ function PanelContent({ game }: { game: GameDetail }) {
           </dl>
         </section>
 
+        {(game.genres.length > 0 || game.modes.length > 0) && (
+          <section className={styles.section} aria-labelledby="panel-genres">
+            <h3 id="panel-genres" className="section-label">
+              {fr.panel.genres}
+            </h3>
+            <ul className={styles.tags}>
+              {[...game.genres, ...game.modes].map((g) => (
+                <li key={g} className={styles.tag}>
+                  {g}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         <Tags game={game} />
 
         <ManualCollections gameId={s.id} />

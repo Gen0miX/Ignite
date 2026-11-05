@@ -44,6 +44,8 @@ vi.mock('../api/client', async (importOriginal) => {
       hero: null,
       logo: null,
       tags: [],
+      genres: [],
+      modes: [],
       playSourceId: `src-${id}`,
       sources: [
         {
@@ -80,6 +82,8 @@ vi.mock('../api/client', async (importOriginal) => {
       },
       sourcesStatus: () => ok([]),
       duplicatesList: () => ok([]),
+      facets: () => ok({ genres: [], modes: [] }),
+      collectionsList: () => ok([]),
     },
   };
 });

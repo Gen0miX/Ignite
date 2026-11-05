@@ -15,6 +15,7 @@ import {
 import { PageMain } from '../../app/AppShell';
 import buttons from '../../components/Button/Button.module.css';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
+import { FilterChips } from '../../components/FilterChips/FilterChips';
 import { GameGrid } from '../../components/GameGrid/GameGrid';
 import { AddGameModal } from '../../components/AddGameModal/AddGameModal';
 import { CollectionEditor } from '../../components/CollectionEditor/CollectionEditor';
@@ -240,6 +241,15 @@ export function LibraryPage() {
             </select>
           </label>
         </div>
+        {isTauri() && (
+          <FilterChips
+            text={draft}
+            onChange={(next) => {
+              setDraft(next);
+              setParams((p) => withParams(p, { text: next }), { replace: true });
+            }}
+          />
+        )}
         {check.data && check.data.warnings.length > 0 && (
           <p className={styles.warn} role="status">
             {fr.collections.unknownFilters(check.data.warnings.join(', '))}
