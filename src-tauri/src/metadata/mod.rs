@@ -2,5 +2,6 @@
 
 pub mod artwork;
 pub mod genres;
+pub mod news;
 pub mod retroachievements;
 pub mod steamgriddb;

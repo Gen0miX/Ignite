@@ -16,13 +16,16 @@ function renderAt(path: string) {
 }
 
 describe('app shell', () => {
-  it('redirects / to the library and shows the sidebar', async () => {
-    const router = renderAt('/');
-    expect(await screen.findByRole('heading', { level: 1, name: 'Tous les jeux' })).toBeVisible();
-    expect(router.state.location.pathname).toBe('/library');
+  it('opens on the home page', async () => {
+    renderAt('/');
+    expect(await screen.findByRole('heading', { name: 'Accueil' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Accueil' })).toHaveAttribute('aria-current', 'page');
+  });
 
-    const nav = screen.getByRole('navigation', { name: 'Bibliothèque' });
-    expect(nav).toBeVisible();
+  it('shows the library with the sidebar', async () => {
+    renderAt('/library');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Tous les jeux' })).toBeVisible();
+    expect(screen.getByRole('navigation', { name: 'Bibliothèque' })).toBeVisible();
     expect(screen.getByRole('link', { name: /Tous les jeux/ })).toHaveAttribute(
       'aria-current',
       'page',

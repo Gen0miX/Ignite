@@ -1,6 +1,7 @@
 //! Library: summaries and filters, playtime rule, syncing source scans into
 //! the database.
 
+pub mod home;
 pub mod import;
 pub mod merge;
 pub mod non_games;

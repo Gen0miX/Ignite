@@ -64,6 +64,12 @@ export const commands = {
 	raUsernameSet: (username: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("ra_username_set", { username })),
 	/**  Sets (or clears) the RetroAchievements game id of an emulated game. */
 	gameSetRaId: (gameId: string, raId: number | null) => typedError<null, CommandError>(__TAURI_INVOKE("game_set_ra_id", { gameId, raId })),
+	homeOverview: () => typedError<HomeOverview_Serialize, CommandError>(__TAURI_INVOKE("home_overview")),
+	homeTonight: (choice: Tonight) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("home_tonight", { choice })),
+	/**  Steam news of the games played in the last 30 days. */
+	homeNews: () => typedError<HomeNews, CommandError>(__TAURI_INVOKE("home_news")),
+	/**  Opens a news article in the default browser (https only). */
+	openLink: (url: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_link", { url })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
 	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
 	/**  Turns a source on or off. Disabling keeps its games in the library. */
@@ -500,6 +506,44 @@ export type Goal_Serialize = {
 	doneAt: string | null,
 };
 
+export type HomeGame = HomeGame_Serialize | HomeGame_Deserialize;
+
+export type HomeGame_Deserialize = {
+	game: GameSummary_Deserialize,
+	avgSessionMinutes?: number | null,
+};
+
+export type HomeGame_Serialize = {
+	game: GameSummary_Serialize,
+	avgSessionMinutes: number | null,
+};
+
+export type HomeNews = {
+	items: NewsItem[],
+	/**  Promotions and press articles, shown on demand. */
+	hidden: NewsItem[],
+};
+
+export type HomeOverview = HomeOverview_Serialize | HomeOverview_Deserialize;
+
+export type HomeOverview_Deserialize = {
+	/**  Most recently played game. */
+	resume?: HomeGame_Deserialize | null,
+	recent: HomeGame_Deserialize[],
+	/**  Never launched or dropped games, installed first. */
+	pile: HomeGame_Deserialize[],
+	pileTotal: number,
+};
+
+export type HomeOverview_Serialize = {
+	/**  Most recently played game. */
+	resume: HomeGame_Serialize | null,
+	recent: HomeGame_Serialize[],
+	/**  Never launched or dropped games, installed first. */
+	pile: HomeGame_Serialize[],
+	pileTotal: number,
+};
+
 /**  What the user decided for one candidate. */
 export type ImportAction = { type: "import" } | 
 /**  Import and merge into an existing game. */
@@ -605,6 +649,17 @@ export type LibraryView = { kind: "all" } | { kind: "installed" } | { kind: "fav
 { kind: "hidden" } | { kind: "status"; value: GameStatus } | { kind: "source"; value: SourceKind } | 
 /**  A manual or smart collection, by id. */
 { kind: "collection"; value: string };
+
+export type NewsItem = {
+	gameId: string,
+	gameTitle: string,
+	title: string,
+	url: string,
+	/**  RFC 3339. */
+	date: string,
+	/**  Short text without markup. */
+	excerpt: string,
+};
 
 export type PlaySession = PlaySession_Serialize | PlaySession_Deserialize;
 
@@ -912,6 +967,9 @@ export type Tag = {
 	id: string,
 	name: string,
 };
+
+/**  Time the user has tonight. */
+export type Tonight = "halfHour" | "hour" | "evening" | "coop";
 
 export type TopGame = TopGame_Serialize | TopGame_Deserialize;
 

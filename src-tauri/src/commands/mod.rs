@@ -6,6 +6,7 @@ pub mod app;
 pub mod artwork;
 pub mod collections;
 pub mod emulators;
+pub mod home;
 pub mod import;
 pub mod library;
 pub mod play;
@@ -88,6 +89,10 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         emulators::ra_username_get,
         emulators::ra_username_set,
         emulators::game_set_ra_id,
+        home::home_overview,
+        home::home_tonight,
+        home::home_news,
+        home::open_link,
         sources::library_sync,
         sources::sources_status,
         sources::source_set_enabled,

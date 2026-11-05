@@ -1,5 +1,6 @@
 import { Navigate, type RouteObject } from 'react-router-dom';
 import { AppShell } from './AppShell';
+import { HomePage } from '../routes/Home/HomePage';
 import { LibraryPage } from '../routes/Library/LibraryPage';
 import { GameDetailPage } from '../routes/GameDetail/GameDetailPage';
 import { StatsPage } from '../routes/Stats/StatsPage';
@@ -13,7 +14,7 @@ export const routes: RouteObject[] = [
     path: '/',
     element: <AppShell />,
     children: [
-      { index: true, element: <Navigate to="/library" replace /> },
+      { index: true, element: <HomePage /> },
       { path: 'library', element: <LibraryPage /> },
       { path: 'game/:id', element: <GameDetailPage /> },
       { path: 'stats', element: <StatsPage /> },

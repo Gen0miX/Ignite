@@ -28,6 +28,7 @@ export function Sidebar() {
       <AppLogo />
 
       <nav aria-label={fr.nav.label} className={styles.group}>
+        <NavItem to="/" label={fr.nav.home} />
         <NavItem to="/library" label={fr.nav.allGames} trailing={n(counts?.all)} />
         <NavItem
           to="/library?view=installed"
