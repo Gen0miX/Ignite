@@ -114,6 +114,13 @@ fn load(app: &AppHandle, game_id: &str, refresh: bool) -> CommandResult<Achievem
     let db = app.state::<Db>();
     let sources = game_sources::list_for_game(&db.conn(), game_id)?;
     let Some(source) = sources.iter().find(|s| s.kind == SourceKind::Steam) else {
+        // Other platforms (GOG) fill the cache during the sync.
+        for s in &sources {
+            if let Some((synced_at, _)) = achievements::sync_state(&db.conn(), &s.id)? {
+                let rows = achievements::list_for_source(&db.conn(), &s.id)?;
+                return Ok(view(rows, Some(synced_at), None));
+            }
+        }
         return Ok(empty(AchievementsState::Unsupported));
     };
     let appid: u64 = source

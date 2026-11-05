@@ -216,7 +216,22 @@ export const fr = {
     loading: 'Chargement…',
     optionalNote:
       "Chaque launcher est facultatif : s'il n'est pas installé, il est simplement ignoré et le reste de l'app fonctionne normalement.",
-    otherSources: 'Epic Games, GOG, Battle.net et les exécutables arrivent au jalon J3.',
+    otherSources: 'Battle.net, Ubisoft Connect, EA app et Riot arrivent au jalon J5.',
+    enable: (name: string) => `Activer ${name}`,
+    disable: (name: string) => `Désactiver ${name}`,
+    disabledHint:
+      'Source désactivée : ses jeux ne sont pas importés. Active-la ici ou passe par « Importer des jeux » pour choisir ce qui entre dans la bibliothèque.',
+    notInstalledHint: (name: string) =>
+      `${name} n'est pas installé sur ce PC : la source est simplement ignorée.`,
+    location: 'Emplacement',
+    gog: {
+      provides: 'Bibliothèque · temps de jeu · succès · jaquettes',
+      note: 'Lecture seule : la base de GOG Galaxy est copiée avant lecture, jamais modifiée.',
+    },
+    epic: {
+      provides: 'Jeux installés · lancement',
+      note: "Temps de jeu suivi par Ludothèque (Epic n'en fournit pas localement). Les jeux possédés non installés demandent la connexion à Epic : plus tard.",
+    },
     status: {
       connected: 'Connecté',
       not_installed: 'Non installé',

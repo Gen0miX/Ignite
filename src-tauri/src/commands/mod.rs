@@ -58,6 +58,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         library::launch_game,
         sources::library_sync,
         sources::sources_status,
+        sources::source_set_enabled,
         sources::steam_settings_get,
         sources::steam_settings_set,
         play::tracker_active,

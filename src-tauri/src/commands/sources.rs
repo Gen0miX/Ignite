@@ -17,6 +17,8 @@ use crate::library::sync::{self, ArtworkJob, SyncReport};
 use crate::metadata::artwork;
 use crate::models::SourceKind;
 use crate::secrets::{SecretKind, Secrets};
+use crate::sources::epic::{self, EpicSource};
+use crate::sources::gog::{self, GogSource};
 use crate::sources::steam::{local, SteamConfig, SteamSource};
 use crate::sources::{scan_all, Source, SourceStatus};
 
@@ -56,10 +58,54 @@ pub(crate) fn steam_config(db: &Db, secrets: &Secrets) -> SteamConfig {
     }
 }
 
+/// Sources scanned by the sync, in display order.
+pub const SCANNED_SOURCES: &[SourceKind] = &[SourceKind::Steam, SourceKind::Gog, SourceKind::Epic];
+
+fn enabled_key(kind: SourceKind) -> String {
+    format!("sources.{}.enabled", kind.as_str())
+}
+
+/// Steam is on by default; other launchers are off until the user enables
+/// them (Settings › Sources or the import wizard), so nothing is imported
+/// without being asked.
+pub fn is_enabled(db: &Db, kind: SourceKind) -> bool {
+    settings::get::<bool>(&db.conn(), &enabled_key(kind))
+        .ok()
+        .flatten()
+        .unwrap_or(kind == SourceKind::Steam)
+}
+
+pub fn set_enabled(db: &Db, kind: SourceKind, enabled: bool) -> AppResult<()> {
+    settings::set(&db.conn(), &enabled_key(kind), &enabled)
+}
+
+fn make_source(db: &Db, secrets: &Secrets, kind: SourceKind) -> Option<Box<dyn Source>> {
+    match kind {
+        SourceKind::Steam => Some(Box::new(SteamSource::new(steam_config(db, secrets)))),
+        SourceKind::Gog => Some(Box::new(GogSource::new(gog::locate_db()))),
+        SourceKind::Epic => Some(Box::new(EpicSource::new(epic::locate_manifests()))),
+        _ => None,
+    }
+}
+
 /// Every source the app knows. Launchers that are not installed are kept in
 /// the list: they report `NotInstalled` and are skipped by the scan.
-fn build_sources(db: &Db, secrets: &Secrets) -> Vec<Box<dyn Source>> {
-    vec![Box::new(SteamSource::new(steam_config(db, secrets)))]
+pub fn build_sources(db: &Db, secrets: &Secrets, only_enabled: bool) -> Vec<Box<dyn Source>> {
+    SCANNED_SOURCES
+        .iter()
+        .filter(|k| !only_enabled || is_enabled(db, **k))
+        .filter_map(|k| make_source(db, secrets, *k))
+        .collect()
+}
+
+fn location(kind: SourceKind, db: &Db, secrets: &Secrets) -> Option<String> {
+    let path = match kind {
+        SourceKind::Steam => steam_config(db, secrets).root,
+        SourceKind::Gog => gog::locate_db(),
+        SourceKind::Epic => epic::locate_manifests(),
+        _ => None,
+    };
+    path.map(|p| p.display().to_string())
 }
 
 /// Scans every source and writes the results. Runs on a blocking thread.
@@ -80,7 +126,7 @@ fn sync_inner(app: &AppHandle) -> AppResult<Vec<SyncReport>> {
     let secrets = app.state::<Secrets>();
     let data_dir = app.state::<AppPaths>().data_dir.clone();
 
-    let sources = build_sources(&db, &secrets);
+    let sources = build_sources(&db, &secrets, true);
     let mut reports = Vec::new();
     let mut jobs: Vec<ArtworkJob> = Vec::new();
     for scan in scan_all(&sources) {
@@ -165,6 +211,7 @@ pub struct SourceCard {
     pub status: SourceStatus,
     /// Where the launcher was found, when relevant.
     pub location: Option<String>,
+    pub enabled: bool,
     pub last_sync: Option<SyncReport>,
     pub syncing: bool,
 }
@@ -176,23 +223,42 @@ pub fn sources_status(
     secrets: tauri::State<'_, Secrets>,
     sync_state: tauri::State<'_, SyncState>,
 ) -> CommandResult<Vec<SourceCard>> {
-    let config = steam_config(&db, &secrets);
-    let location = config.root.as_ref().map(|p| p.display().to_string());
-    let source = SteamSource::new(config);
     let last = sync_state.last.lock().unwrap_or_else(|e| e.into_inner());
-    let last_sync = last.get(&SourceKind::Steam).cloned();
-    // A failed Web API call is only visible in the last sync report.
-    let status = match &last_sync {
-        Some(r) if matches!(r.status, SourceStatus::Error(_)) => r.status.clone(),
-        _ => source.status(),
-    };
-    Ok(vec![SourceCard {
-        kind: SourceKind::Steam,
-        status,
-        location,
-        last_sync,
-        syncing: sync_state.running.load(Ordering::SeqCst),
-    }])
+    let syncing = sync_state.running.load(Ordering::SeqCst);
+    Ok(build_sources(&db, &secrets, false)
+        .into_iter()
+        .map(|source| {
+            let kind = source.kind();
+            let last_sync = last.get(&kind).cloned();
+            // A failed scan (e.g. Web API error) is only visible in the last report.
+            let status = match &last_sync {
+                Some(r) if matches!(r.status, SourceStatus::Error(_)) => r.status.clone(),
+                _ => source.status(),
+            };
+            SourceCard {
+                kind,
+                status,
+                location: location(kind, &db, &secrets),
+                enabled: is_enabled(&db, kind),
+                last_sync,
+                syncing,
+            }
+        })
+        .collect())
+}
+
+/// Turns a source on or off. Disabling keeps its games in the library.
+#[tauri::command]
+#[specta::specta]
+pub fn source_set_enabled(
+    db: tauri::State<'_, Db>,
+    kind: SourceKind,
+    enabled: bool,
+) -> CommandResult<()> {
+    if !SCANNED_SOURCES.contains(&kind) {
+        return Err(AppError::Invalid(format!("{} cannot be toggled", kind.as_str())).into());
+    }
+    Ok(set_enabled(&db, kind, enabled)?)
 }
 
 #[derive(Debug, Serialize, specta::Type)]

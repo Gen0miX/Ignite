@@ -9,6 +9,7 @@ import {
   type LibraryQuery,
   type SecretKind,
   type SessionInput,
+  type SourceKind,
 } from './client';
 
 export const keys = {
@@ -106,6 +107,22 @@ export function useSourcesStatus() {
     enabled: isTauri(),
     // Refresh while a background sync is running.
     refetchInterval: (q) => (q.state.data?.some((s) => s.syncing) ? 1500 : false),
+  });
+}
+
+export function useSetSourceEnabled() {
+  const client = useQueryClient();
+  const invalidate = useInvalidateLibrary();
+  return useMutation({
+    mutationFn: async ({ kind, enabled }: { kind: SourceKind; enabled: boolean }) => {
+      await unwrap(commands.sourceSetEnabled(kind, enabled));
+      // Import right away when a source is turned on.
+      if (enabled) await unwrap(commands.librarySync());
+    },
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: keys.sources });
+      void invalidate();
+    },
   });
 }
 

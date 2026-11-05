@@ -4,6 +4,7 @@ import { commands, isTauri, type SourceCard, type SourceStatus } from '../../api
 import {
   useClearSecret,
   useSetSecret,
+  useSetSourceEnabled,
   useSetSteamId,
   useSourcesStatus,
   useSteamSettings,
@@ -14,6 +15,7 @@ import buttons from '../../components/Button/Button.module.css';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { SourceChip } from '../../components/SourceBadge/SourceBadge';
+import { Switch } from '../../components/Switch/Switch';
 import { fr } from '../../i18n/fr';
 import { formatLastPlayed } from '../../lib/format';
 import styles from './SettingsSourcesPage.module.css';
@@ -45,6 +47,7 @@ function SteamCard({ card }: { card: SourceCard }) {
           <span className={styles.muted}>{t.steam.provides}</span>
         </div>
         <StatusPill status={card.status} />
+        <SourceSwitch card={card} />
       </header>
 
       {card.status.state === 'error' && (
@@ -83,6 +86,81 @@ function SteamCard({ card }: { card: SourceCard }) {
           {syncing ? t.syncing : t.resync}
         </button>
       </div>
+    </section>
+  );
+}
+
+function SourceSwitch({ card }: { card: SourceCard }) {
+  const toggle = useSetSourceEnabled();
+  const name = fr.sources[card.kind];
+  return (
+    <Switch
+      label={card.enabled ? t.disable(name) : t.enable(name)}
+      checked={card.enabled}
+      disabled={toggle.isPending || card.syncing}
+      onChange={(enabled) => toggle.mutate({ kind: card.kind, enabled })}
+    />
+  );
+}
+
+const DETAILS: Partial<Record<SourceCard['kind'], { provides: string; note: string }>> = {
+  gog: t.gog,
+  epic: t.epic,
+};
+
+/** Card for launchers without extra settings (GOG, Epic). */
+function GenericSourceCard({ card }: { card: SourceCard }) {
+  const sync = useSync();
+  const name = fr.sources[card.kind];
+  const info = DETAILS[card.kind];
+  const report = card.lastSync;
+  const installed = card.status.state !== 'not_installed';
+  return (
+    <section className={styles.card} aria-labelledby={`source-${card.kind}`}>
+      <header className={styles.cardHeader}>
+        <SourceChip kind={card.kind} />
+        <div className={styles.cardTitle}>
+          <h2 id={`source-${card.kind}`}>{name}</h2>
+          {info && <span className={styles.muted}>{info.provides}</span>}
+        </div>
+        <StatusPill status={card.status} />
+        {installed && <SourceSwitch card={card} />}
+      </header>
+      {!installed ? (
+        <p className={styles.muted}>{t.notInstalledHint(name)}</p>
+      ) : (
+        <>
+          {card.status.state === 'error' && (
+            <p role="alert" className={styles.errorText}>
+              {card.status.detail}
+            </p>
+          )}
+          <dl className={styles.details}>
+            <dt>{t.location}</dt>
+            <dd className="mono">{card.location ?? '—'}</dd>
+            <dt>{t.lastSync}</dt>
+            <dd>
+              {report
+                ? `${t.syncSummary(report.total, report.added)} · ${formatLastPlayed(report.finishedAt)}`
+                : t.neverSynced}
+            </dd>
+          </dl>
+          {!card.enabled && <p className={styles.muted}>{t.disabledHint}</p>}
+          {info && <p className={styles.muted}>{info.note}</p>}
+          {card.enabled && (
+            <div>
+              <button
+                type="button"
+                className={buttons.secondary}
+                onClick={() => sync.mutate()}
+                disabled={sync.isPending || card.syncing}
+              >
+                {sync.isPending || card.syncing ? t.syncing : t.resync}
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </section>
   );
 }
@@ -270,7 +348,11 @@ export function SettingsSourcesPage() {
       <p className={styles.intro}>{t.optionalNote}</p>
       {isTauri() ? (
         sources.data?.map((card) =>
-          card.kind === 'steam' ? <SteamCard key={card.kind} card={card} /> : null,
+          card.kind === 'steam' ? (
+            <SteamCard key={card.kind} card={card} />
+          ) : (
+            <GenericSourceCard key={card.kind} card={card} />
+          ),
         )
       ) : (
         <EmptyState>{t.backendUnavailable}</EmptyState>

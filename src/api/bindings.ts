@@ -20,6 +20,8 @@ export const commands = {
 	launchGame: (gameId: string) => typedError<null, CommandError>(__TAURI_INVOKE("launch_game", { gameId })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
 	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
+	/**  Turns a source on or off. Disabling keeps its games in the library. */
+	sourceSetEnabled: (kind: SourceKind, enabled: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("source_set_enabled", { kind, enabled })),
 	steamSettingsGet: () => typedError<SteamSettings_Serialize, CommandError>(__TAURI_INVOKE("steam_settings_get")),
 	/**  Sets the SteamID64 to use; `None` goes back to automatic detection. */
 	steamSettingsSet: (steamId: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("steam_settings_set", { steamId })),
@@ -327,6 +329,7 @@ export type SourceCard_Deserialize = {
 	status: SourceStatus,
 	/**  Where the launcher was found, when relevant. */
 	location?: string | null,
+	enabled: boolean,
 	lastSync?: SyncReport | null,
 	syncing: boolean,
 };
@@ -336,6 +339,7 @@ export type SourceCard_Serialize = {
 	status: SourceStatus,
 	/**  Where the launcher was found, when relevant. */
 	location: string | null,
+	enabled: boolean,
 	lastSync: SyncReport | null,
 	syncing: boolean,
 };
