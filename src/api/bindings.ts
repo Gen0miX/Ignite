@@ -135,6 +135,11 @@ export type CommandError = {
 	message: string,
 };
 
+export type CoverlessGame = {
+	id: string,
+	title: string,
+};
+
 export type GameDetail = GameDetail_Serialize | GameDetail_Deserialize;
 
 export type GameDetail_Deserialize = {
@@ -308,7 +313,7 @@ export type ImportReport = {
 	merged: number,
 	skipped: number,
 	/**  Imported games still without a cover (to pick one from SteamGridDB). */
-	withoutCover: string[],
+	withoutCover: CoverlessGame[],
 };
 
 export type ImportScan = ImportScan_Serialize | ImportScan_Deserialize;

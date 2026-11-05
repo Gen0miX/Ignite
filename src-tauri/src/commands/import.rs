@@ -74,7 +74,13 @@ pub struct ImportReport {
     pub merged: u32,
     pub skipped: u32,
     /// Imported games still without a cover (to pick one from SteamGridDB).
-    pub without_cover: Vec<String>,
+    pub without_cover: Vec<CoverlessGame>,
+}
+
+#[derive(Debug, Serialize, specta::Type)]
+pub struct CoverlessGame {
+    pub id: String,
+    pub title: String,
 }
 
 /// Records the choices, enables the sources, syncs, then performs merges.
@@ -126,14 +132,23 @@ pub async fn import_commit(app: AppHandle, commit: ImportCommit) -> CommandResul
 }
 
 /// Visible games of these sources that have neither a cover nor a header.
-fn games_without_cover(db: &Db, kinds: &[SourceKind]) -> AppResult<Vec<String>> {
+fn games_without_cover(db: &Db, kinds: &[SourceKind]) -> AppResult<Vec<CoverlessGame>> {
     let conn = db.conn();
     let mut stmt = conn.prepare(
-        "SELECT g.id FROM games g JOIN game_sources s ON s.game_id = g.id          WHERE s.kind IN (SELECT value FROM json_each(?1)) AND g.hidden = 0          AND NOT EXISTS (SELECT 1 FROM artwork a WHERE a.game_id = g.id AND a.kind IN ('cover', 'header'))          GROUP BY g.id",
+        "SELECT g.id, g.title FROM games g JOIN game_sources s ON s.game_id = g.id \
+         WHERE s.kind IN (SELECT value FROM json_each(?1)) AND g.hidden = 0 \
+         AND NOT EXISTS (SELECT 1 FROM artwork a WHERE a.game_id = g.id \
+           AND a.kind IN ('cover', 'header')) \
+         GROUP BY g.id ORDER BY g.sort_title",
     )?;
     let kinds = serde_json::to_string(kinds)?;
-    let ids = stmt
-        .query_map([kinds], |r| r.get::<_, String>(0))?
+    let games = stmt
+        .query_map([kinds], |r| {
+            Ok(CoverlessGame {
+                id: r.get(0)?,
+                title: r.get(1)?,
+            })
+        })?
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(ids)
+    Ok(games)
 }

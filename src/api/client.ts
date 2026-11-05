@@ -30,6 +30,10 @@ export type AchievementsView = b.AchievementsView_Serialize;
 export type AchievementItem = b.AchievementItem_Serialize;
 export type ActiveGame = b.ActiveGame;
 export type Progress = b.Progress;
+export type ImportScan = b.ImportScan_Serialize;
+export type ImportCandidate = b.ImportCandidate_Serialize;
+export type ImportDecision = b.ImportDecision;
+export type ImportReport = b.ImportReport;
 
 export class BackendError extends Error {
   readonly kind: string;
