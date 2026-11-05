@@ -5,19 +5,12 @@ import { useAchievements, useRefreshAchievements } from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
 import { fr } from '../../i18n/fr';
 import { formatLastPlayed } from '../../lib/format';
+import { closest } from '../../lib/achievements';
 import styles from './GameDetailPage.module.css';
 
 const t = fr.game;
 const pct = (p: number) =>
   `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(p)} %`;
-
-/** Locked achievements most players have: the easiest next targets. */
-export function closest(items: AchievementItem[], n = 5): AchievementItem[] {
-  return items
-    .filter((i) => !i.unlockedAt)
-    .sort((a, b) => (b.globalPercent ?? -1) - (a.globalPercent ?? -1))
-    .slice(0, n);
-}
 
 function Item({ a }: { a: AchievementItem }) {
   const unlocked = !!a.unlockedAt;

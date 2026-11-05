@@ -4,7 +4,7 @@ import type { GameDetail, PlaySession, SessionOrigin } from '../../api/client';
 import { useDeleteSession, useSaveSession } from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
 import { fr } from '../../i18n/fr';
-import { formatPlaytimeLong } from '../../lib/format';
+import { formatPlaytimeLong, toLocalInput } from '../../lib/format';
 import styles from './GameDetailPage.module.css';
 
 const t = fr.game;
@@ -14,12 +14,6 @@ const dateFmt = new Intl.DateTimeFormat('fr-FR', {
   year: 'numeric',
 });
 const timeFmt = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
-/** `<input type="datetime-local">` value for a date, in local time. */
-export function toLocalInput(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 type Draft = {
   id: string | null;

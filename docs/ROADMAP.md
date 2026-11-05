@@ -47,11 +47,11 @@ Chaque tâche = une PR ou un commit, avec ses tests. Ne passe au jalon suivant q
 
 ## J4 — Filtres avancés & statistiques
 
-- [ ] Parseur de recherche (`source:`, `tag:`, `heures:>`, `statut:`…), avec des tests.
-- [ ] Collections intelligentes : éditeur de règles et calcul.
-- [ ] Pastilles de filtre (genre via IGDB, durée de session, joueurs).
-- [ ] Écran Statistiques : chiffres clés, calendrier annuel, jeux les plus joués, répartition par source, état de la bibliothèque.
-- [ ] Réglages › Sources & suivi : cartes de source et règles du chrono.
+- [x] Parseur de recherche (`source:`, `tag:`, `heures:>`, `statut:`…), avec des tests.
+- [x] Collections intelligentes : éditeur de règles et calcul.
+- [x] Pastilles de filtre (genre via IGDB, durée de session, joueurs).
+- [x] Écran Statistiques : chiffres clés, calendrier annuel, jeux les plus joués, répartition par source, état de la bibliothèque.
+- [x] Réglages › Sources & suivi : cartes de source et règles du chrono.
 
 ## J5 — Sources secondaires & finitions
 

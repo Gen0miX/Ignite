@@ -57,3 +57,9 @@ export function titleTint(title: string): string {
   const hue = Math.abs(hash) % 360;
   return `hsl(${hue} 28% 18%)`;
 }
+
+/** `<input type="datetime-local">` value for a date, in local time. */
+export function toLocalInput(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
