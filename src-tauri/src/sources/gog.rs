@@ -365,6 +365,8 @@ pub fn to_detected(g: GogGame) -> DetectedGame {
         installed: g.install_path.is_some(),
         install_path: g.install_path,
         exe_path: g.exe_path,
+        launch_args: None,
+        process_matchers: None,
         size_bytes: None,
         launch_uri: None,
         playtime_minutes: g.minutes,

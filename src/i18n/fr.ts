@@ -419,7 +419,14 @@ export const fr = {
     loading: 'Chargement…',
     optionalNote:
       "Chaque launcher est facultatif : s'il n'est pas installé, il est simplement ignoré et le reste de l'app fonctionne normalement.",
-    otherSources: 'Battle.net, Ubisoft Connect, EA app et Riot arrivent au jalon J5.',
+    otherSources:
+      'Les jeux de ces launchers sont détectés via la liste des programmes installés de Windows ; leur temps de jeu est suivi par Ludothèque.',
+    secondary: {
+      provides: 'Jeux installés · lancement · temps suivi par Ludothèque',
+      note: 'Lecture seule de la liste des programmes installés de Windows.',
+      riotNote:
+        'Lancement via le client Riot. Pour League of Legends, seul le processus de la partie est chronométré, pas le client.',
+    },
     trackingTitle: 'Règles de suivi',
     tracking: {
       method: 'Méthode',

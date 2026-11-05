@@ -115,6 +115,10 @@ function SourceSwitch({ card }: { card: SourceCard }) {
 const DETAILS: Partial<Record<SourceCard['kind'], { provides: string; note: string }>> = {
   gog: t.gog,
   epic: t.epic,
+  riot: { provides: t.secondary.provides, note: t.secondary.riotNote },
+  battlenet: t.secondary,
+  ea: t.secondary,
+  ubisoft: t.secondary,
 };
 
 /** Card for launchers without extra settings (GOG, Epic). */

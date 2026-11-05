@@ -74,7 +74,7 @@ pub fn apply_scan(
             exe_path: g.exe_path.clone(),
             size_bytes: g.size_bytes,
             launch_uri: g.launch_uri.clone(),
-            process_matchers: None,
+            process_matchers: g.process_matchers.clone(),
             source_playtime_minutes: g.playtime_minutes,
             source_last_played: g.last_played.clone(),
         };
@@ -82,7 +82,7 @@ pub fn apply_scan(
             Some(prev) => {
                 // Keep what this scan could not provide (e.g. API offline this time).
                 data.exe_path = data.exe_path.or(prev.exe_path);
-                data.process_matchers = prev.process_matchers;
+                data.process_matchers = prev.process_matchers.or(data.process_matchers);
                 data.install_path = data.install_path.or(prev.install_path);
                 data.size_bytes = data.size_bytes.or(prev.size_bytes);
                 data.source_playtime_minutes = data
@@ -113,6 +113,23 @@ pub fn apply_scan(
             let source = game_sources::find_by_external(&tx, scan.kind, &g.external_id)?;
             if let Some(source) = source {
                 achievements::replace_for_source_tx(&tx, &source.id, Some(list))?;
+            }
+        }
+
+        if let Some(args) = g.launch_args.as_deref() {
+            if let Some(src) = game_sources::find_by_external(&tx, scan.kind, &g.external_id)? {
+                let has_profile: bool = tx.query_row(
+                    "SELECT EXISTS(SELECT 1 FROM launch_profiles WHERE game_source_id = ?1)",
+                    [&src.id],
+                    |r| r.get(0),
+                )?;
+                if !has_profile {
+                    tx.execute(
+                        "INSERT INTO launch_profiles (id, game_source_id, name, is_default, mode, args) \
+                         VALUES (?1, ?2, 'Par défaut', 1, 'auto', ?3)",
+                        rusqlite::params![crate::db::new_id(), src.id, args],
+                    )?;
+                }
             }
         }
 

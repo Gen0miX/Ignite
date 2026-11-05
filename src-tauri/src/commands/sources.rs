@@ -60,7 +60,15 @@ pub(crate) fn steam_config(db: &Db, secrets: &Secrets) -> SteamConfig {
 }
 
 /// Sources scanned by the sync, in display order.
-pub const SCANNED_SOURCES: &[SourceKind] = &[SourceKind::Steam, SourceKind::Gog, SourceKind::Epic];
+pub const SCANNED_SOURCES: &[SourceKind] = &[
+    SourceKind::Steam,
+    SourceKind::Gog,
+    SourceKind::Epic,
+    SourceKind::Battlenet,
+    SourceKind::Ubisoft,
+    SourceKind::Ea,
+    SourceKind::Riot,
+];
 
 fn enabled_key(kind: SourceKind) -> String {
     format!("sources.{}.enabled", kind.as_str())
@@ -85,6 +93,9 @@ fn make_source(db: &Db, secrets: &Secrets, kind: SourceKind) -> Option<Box<dyn S
         SourceKind::Steam => Some(Box::new(SteamSource::new(steam_config(db, secrets)))),
         SourceKind::Gog => Some(Box::new(GogSource::new(gog::locate_db()))),
         SourceKind::Epic => Some(Box::new(EpicSource::new(epic::locate_manifests()))),
+        SourceKind::Battlenet | SourceKind::Ubisoft | SourceKind::Ea | SourceKind::Riot => {
+            Some(Box::new(crate::sources::others::OtherSource::new(kind)))
+        }
         _ => None,
     }
 }
@@ -104,6 +115,7 @@ fn location(kind: SourceKind, db: &Db, secrets: &Secrets) -> Option<String> {
         SourceKind::Steam => steam_config(db, secrets).root,
         SourceKind::Gog => gog::locate_db(),
         SourceKind::Epic => epic::locate_manifests(),
+        SourceKind::Riot => crate::sources::others::riot_client().map(std::path::PathBuf::from),
         _ => None,
     };
     path.map(|p| p.display().to_string())

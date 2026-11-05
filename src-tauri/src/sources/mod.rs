@@ -7,7 +7,9 @@
 pub mod epic;
 pub mod gog;
 pub mod local;
+pub mod others;
 pub mod steam;
+pub mod uninstall;
 pub mod vdf;
 
 use serde::Serialize;
@@ -73,8 +75,12 @@ pub struct DetectedGame {
     pub title: String,
     pub installed: bool,
     pub install_path: Option<String>,
-    /// Executable to start (direct launch / GOG play task).
+    /// Executable to start (direct launch / GOG play task / launcher client).
     pub exe_path: Option<String>,
+    /// Arguments for `exe_path` (e.g. Riot's `--launch-product=...`).
+    pub launch_args: Option<String>,
+    /// Process matchers JSON suggested by the source (user choices win).
+    pub process_matchers: Option<String>,
     pub size_bytes: Option<i64>,
     pub launch_uri: Option<String>,
     /// Playtime counted by the platform itself, in minutes.

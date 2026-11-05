@@ -158,6 +158,8 @@ pub fn merge(
                 installed: m.fully_installed,
                 install_path: Some(m.install_path.display().to_string()),
                 exe_path: None,
+                launch_args: None,
+                process_matchers: None,
                 size_bytes: m.size_bytes.map(|s| s as i64),
                 launch_uri: Some(launch_uri(m.appid)),
                 playtime_minutes: local.minutes.map(|m| m as i64),
