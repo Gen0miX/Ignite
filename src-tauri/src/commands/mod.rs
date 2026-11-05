@@ -3,6 +3,7 @@
 
 pub mod achievements;
 pub mod app;
+pub mod import;
 pub mod library;
 pub mod play;
 pub mod secrets;
@@ -62,6 +63,8 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         sources::library_sync,
         sources::sources_status,
         sources::source_set_enabled,
+        import::import_scan,
+        import::import_commit,
         sources::steam_settings_get,
         sources::steam_settings_set,
         play::tracker_active,

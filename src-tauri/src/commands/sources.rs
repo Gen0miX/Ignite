@@ -129,7 +129,9 @@ fn sync_inner(app: &AppHandle) -> AppResult<Vec<SyncReport>> {
     let sources = build_sources(&db, &secrets, true);
     let mut reports = Vec::new();
     let mut jobs: Vec<ArtworkJob> = Vec::new();
+    let ignored = crate::library::import::ignored(&db.conn())?;
     for scan in scan_all(&sources) {
+        let scan = crate::library::import::without_ignored(scan, &ignored);
         let (report, mut source_jobs) = {
             let mut conn = db.conn();
             sync::apply_scan(&mut conn, &scan)?

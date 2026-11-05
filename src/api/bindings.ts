@@ -28,6 +28,10 @@ export const commands = {
 	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
 	/**  Turns a source on or off. Disabling keeps its games in the library. */
 	sourceSetEnabled: (kind: SourceKind, enabled: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("source_set_enabled", { kind, enabled })),
+	/**  Scans the given sources (enabled or not) without writing anything. */
+	importScan: (kinds: SourceKind[]) => typedError<ImportScan_Serialize, CommandError>(__TAURI_INVOKE("import_scan", { kinds })),
+	/**  Records the choices, enables the sources, syncs, then performs merges. */
+	importCommit: (commit: ImportCommit) => typedError<ImportReport, CommandError>(__TAURI_INVOKE("import_commit", { commit })),
 	steamSettingsGet: () => typedError<SteamSettings_Serialize, CommandError>(__TAURI_INVOKE("steam_settings_get")),
 	/**  Sets the SteamID64 to use; `None` goes back to automatic detection. */
 	steamSettingsSet: (steamId: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("steam_settings_set", { steamId })),
@@ -108,6 +112,20 @@ export type AppInfo = {
 	dataDir: string,
 	dbPath: string,
 };
+
+export type CandidateNote = 
+/**  Playtest, beta, demo, DLC variant... */
+"notAGame" | 
+/**  Unticked in a previous import. */
+"previouslyIgnored";
+
+export type CandidateState = 
+/**  Not in the library yet. */
+{ kind: "new" } | 
+/**  This exact source is already imported. */
+{ kind: "imported"; gameId: string } | 
+/**  Looks like a game already in the library on another platform. */
+{ kind: "duplicate"; gameId: string; title: string };
 
 /**  Error shape returned to the frontend by every command. */
 export type CommandError = {
@@ -235,6 +253,76 @@ export type Goal_Serialize = {
 	doneAt: string | null,
 };
 
+/**  What the user decided for one candidate. */
+export type ImportAction = { type: "import" } | 
+/**  Import and merge into an existing game. */
+{ type: "merge"; gameId: string } | { type: "skip" };
+
+export type ImportCandidate = ImportCandidate_Serialize | ImportCandidate_Deserialize;
+
+export type ImportCandidate_Deserialize = {
+	key: string,
+	source: SourceKind,
+	externalId: string,
+	title: string,
+	installed: boolean,
+	installPath?: string | null,
+	sizeBytes?: number | null,
+	playtimeMinutes?: number | null,
+	achievements?: number | null,
+	state: CandidateState,
+	note?: CandidateNote | null,
+	/**  Ticked by default in the wizard. */
+	selected: boolean,
+};
+
+export type ImportCandidate_Serialize = {
+	key: string,
+	source: SourceKind,
+	externalId: string,
+	title: string,
+	installed: boolean,
+	installPath: string | null,
+	sizeBytes: number | null,
+	playtimeMinutes: number | null,
+	achievements: number | null,
+	state: CandidateState,
+	note: CandidateNote | null,
+	/**  Ticked by default in the wizard. */
+	selected: boolean,
+};
+
+export type ImportCommit = {
+	/**  Sources to turn on (their games are then kept in sync). */
+	enable: SourceKind[],
+	decisions: ImportDecision[],
+};
+
+export type ImportDecision = {
+	key: string,
+	action: ImportAction,
+};
+
+export type ImportReport = {
+	added: number,
+	merged: number,
+	skipped: number,
+	/**  Imported games still without a cover (to pick one from SteamGridDB). */
+	withoutCover: string[],
+};
+
+export type ImportScan = ImportScan_Serialize | ImportScan_Deserialize;
+
+export type ImportScan_Deserialize = {
+	sources: ScannedSource[],
+	candidates: ImportCandidate_Deserialize[],
+};
+
+export type ImportScan_Serialize = {
+	sources: ScannedSource[],
+	candidates: ImportCandidate_Serialize[],
+};
+
 export type LibraryCounts = {
 	all: number,
 	installed: number,
@@ -295,6 +383,13 @@ export type PlaySession_Serialize = {
 export type Progress = {
 	done: number,
 	total: number,
+};
+
+export type ScannedSource = {
+	kind: SourceKind,
+	status: SourceStatus,
+	detected: number,
+	warnings: string[],
 };
 
 /**  Every secret the app knows about. */
