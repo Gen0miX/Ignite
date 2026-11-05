@@ -129,3 +129,25 @@
   color: var(--color-warn);
   font-size: var(--text-base);
 }
+
+.toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.toc a {
+  display: inline-flex;
+  align-items: center;
+  height: var(--h-control-sm);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-field);
+  font-size: var(--text-base);
+}
+
+.toc a:hover {
+  border-color: var(--color-accent-ink);
+  color: var(--color-accent-ink);
+}

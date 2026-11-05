@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, Settings } from 'lucide-react';
 import type { GameStatus } from '../../api/client';
 import { useCollections, useLibraryCounts, useSourcesStatus } from '../../api/hooks';
 import { CollectionEditor } from '../CollectionEditor/CollectionEditor';
@@ -40,6 +40,11 @@ export function Sidebar() {
           trailing={n(counts?.favorites)}
         />
         <NavItem to="/stats" label={fr.nav.stats} trailing="→" />
+        <NavItem
+          to="/settings/sources"
+          label={fr.nav.settings}
+          trailing={<Settings size={15} aria-hidden="true" />}
+        />
       </nav>
 
       <section aria-labelledby="sidebar-sources">

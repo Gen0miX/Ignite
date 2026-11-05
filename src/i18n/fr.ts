@@ -10,6 +10,7 @@ export const fr = {
     installed: 'Installés',
     favorites: 'Favoris',
     stats: 'Statistiques',
+    settings: 'Réglages',
   },
   sidebar: {
     sources: 'Sources',
@@ -408,7 +409,8 @@ export const fr = {
     },
   },
   settings: {
-    sourcesTitle: 'Sources & suivi',
+    sourcesTitle: 'Réglages',
+    sourcesSection: 'Sources',
     about: 'À propos',
     version: 'Version',
     database: 'Base de données',

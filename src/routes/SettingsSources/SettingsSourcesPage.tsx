@@ -501,6 +501,15 @@ export function SettingsSourcesPage() {
   return (
     <PageMain>
       <PageHeader title={t.sourcesTitle} />
+      <nav className={styles.toc} aria-label={t.sourcesTitle}>
+        <a href="#settings-sources">{t.sourcesSection}</a>
+        <a href="#tracking-title">{t.trackingTitle}</a>
+        <a href="#metadata-title">{t.metadataTitle}</a>
+        <a href="#settings-about">{t.about}</a>
+      </nav>
+      <h2 id="settings-sources" className="section-label">
+        {t.sourcesSection}
+      </h2>
       <p className={styles.intro}>{t.optionalNote}</p>
       {isTauri() ? (
         sources.data?.map((card) =>

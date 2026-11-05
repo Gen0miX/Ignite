@@ -17,6 +17,7 @@ export const routes: RouteObject[] = [
       { path: 'library', element: <LibraryPage /> },
       { path: 'game/:id', element: <GameDetailPage /> },
       { path: 'stats', element: <StatsPage /> },
+      { path: 'settings', element: <Navigate to="/settings/sources" replace /> },
       { path: 'settings/sources', element: <SettingsSourcesPage /> },
       { path: 'import', element: <ImportPage /> },
       { path: '*', element: <NotFoundPage /> },

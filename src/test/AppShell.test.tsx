@@ -37,8 +37,8 @@ describe('app shell', () => {
     await user.click(screen.getByRole('link', { name: /Statistiques/ }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Statistiques' })).toBeVisible();
 
-    await user.click(screen.getByRole('link', { name: 'Gérer les sources' }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Sources & suivi' })).toBeVisible();
+    await user.click(screen.getByRole('link', { name: /Réglages/ }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Réglages' })).toBeVisible();
     expect(router.state.location.pathname).toBe('/settings/sources');
 
     await user.click(screen.getByRole('link', { name: /Installés/ }));
