@@ -11,7 +11,10 @@ import { SourceBadge } from '../../components/SourceBadge/SourceBadge';
 import { fr } from '../../i18n/fr';
 import { formatPlaytimeLong, titleTint } from '../../lib/format';
 import { sessionStats } from '../../lib/sessions';
+import { useState } from 'react';
+import { ImageIcon } from 'lucide-react';
 import { AchievementsSection } from './AchievementsSection';
+import { ArtworkPicker } from './ArtworkPicker';
 import { DailyChart } from './DailyChart';
 import { GoalsSection } from './GoalsSection';
 import { LaunchSection } from './LaunchSection';
@@ -61,6 +64,7 @@ function Sheet({ game }: { game: GameDetail }) {
   const banner = artworkSrc(game.hero ?? s.header ?? s.cover);
   const playSource = game.sources.find((src) => src.id === game.playSourceId);
   const steamCounted = game.timeBySource.some((p) => p.fromPlatform);
+  const [picking, setPicking] = useState(false);
 
   return (
     <PageMain>
@@ -96,6 +100,10 @@ function Sheet({ game }: { game: GameDetail }) {
               onClick={() => update.mutate({ favorite: !s.favorite })}
             >
               <Star size={18} fill={s.favorite ? 'currentColor' : 'none'} aria-hidden="true" />
+            </button>
+            <button type="button" className={buttons.secondary} onClick={() => setPicking(true)}>
+              <ImageIcon size={16} aria-hidden="true" />
+              {fr.artwork.open}
             </button>
           </div>
           {launch.isError && (
@@ -152,6 +160,7 @@ function Sheet({ game }: { game: GameDetail }) {
           <LaunchSection game={game} />
         </div>
       </div>
+      {picking && <ArtworkPicker gameId={s.id} title={s.title} onClose={() => setPicking(false)} />}
     </PageMain>
   );
 }

@@ -41,6 +41,18 @@ fn write_image(dir: &Path, kind: ArtworkKind, bytes: &[u8]) -> AppResult<PathBuf
     Ok(path)
 }
 
+/// Downloads an image to `<dir>/<name>.<ext>` (extension from its content).
+pub fn download_named(dir: &Path, name: &str, url: &str) -> AppResult<PathBuf> {
+    let bytes = download(url)?;
+    let ext = image_extension(&bytes).ok_or_else(|| AppError::Invalid("not an image".into()))?;
+    std::fs::create_dir_all(dir)?;
+    let path = dir.join(format!("{name}.{ext}"));
+    let tmp = dir.join(format!("{name}.{ext}.part"));
+    std::fs::write(&tmp, &bytes)?;
+    std::fs::rename(&tmp, &path)?;
+    Ok(path)
+}
+
 fn download(url: &str) -> AppResult<Vec<u8>> {
     let mut response = http::agent()
         .get(url)

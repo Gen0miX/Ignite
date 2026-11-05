@@ -159,6 +159,14 @@ export function useSplitSource() {
   });
 }
 
+export function useSecretsStatus() {
+  return useQuery({
+    queryKey: keys.secrets,
+    queryFn: () => unwrap(commands.secretsStatus()),
+    enabled: isTauri(),
+  });
+}
+
 export function useSteamSettings() {
   return useQuery({
     queryKey: keys.steamSettings,

@@ -3,6 +3,7 @@
 
 pub mod achievements;
 pub mod app;
+pub mod artwork;
 pub mod import;
 pub mod library;
 pub mod play;
@@ -62,6 +63,8 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         library::game_split,
         library::exe_inspect,
         library::add_executable,
+        artwork::artwork_search,
+        artwork::artwork_set,
         sources::library_sync,
         sources::sources_status,
         sources::source_set_enabled,

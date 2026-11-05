@@ -1,9 +1,16 @@
 import { useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { commands, isTauri, type SourceCard, type SourceStatus } from '../../api/client';
+import {
+  commands,
+  isTauri,
+  type SecretKind,
+  type SourceCard,
+  type SourceStatus,
+} from '../../api/client';
 import {
   useClearSecret,
   useSetSecret,
+  useSecretsStatus,
   useSetSourceEnabled,
   useSetSteamId,
   useSourcesStatus,
@@ -304,6 +311,84 @@ function SteamApiKey({ present }: { present: boolean }) {
   );
 }
 
+/** Write-only key field: the value is never read back from the vault. */
+function SecretKeyField({ kind, labelId }: { kind: SecretKind; labelId: string }) {
+  const status = useSecretsStatus();
+  const setSecret = useSetSecret();
+  const clearSecret = useClearSecret();
+  const [value, setValue] = useState('');
+  const present = status.data?.find((s) => s.kind === kind)?.present ?? false;
+
+  const onSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!value.trim()) return;
+    setSecret.mutate({ kind, value }, { onSuccess: () => setValue('') });
+  };
+
+  return (
+    <>
+      <span className={`${styles.pill} ${present ? styles.ok : styles.neutral}`}>
+        {present ? t.key.present : t.key.missing}
+      </span>
+      <form className={styles.inline} onSubmit={onSubmit} aria-labelledby={labelId}>
+        <label className="visually-hidden" htmlFor={`${kind}-input`}>
+          {t.key.input}
+        </label>
+        <input
+          id={`${kind}-input`}
+          className={`${styles.input} mono`}
+          type="password"
+          autoComplete="off"
+          spellCheck={false}
+          placeholder={t.key.input}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+        />
+        <button
+          type="submit"
+          className={buttons.primary}
+          disabled={!value.trim() || setSecret.isPending}
+        >
+          {t.key.save}
+        </button>
+        {present && (
+          <button
+            type="button"
+            className={buttons.secondary}
+            onClick={() => clearSecret.mutate(kind)}
+            disabled={clearSecret.isPending}
+          >
+            {t.key.clear}
+          </button>
+        )}
+      </form>
+      {setSecret.isError && (
+        <p role="alert" className={styles.errorText}>
+          {t.key.error}
+        </p>
+      )}
+    </>
+  );
+}
+
+function MetadataCard() {
+  return (
+    <section className={styles.card} aria-labelledby="metadata-title">
+      <h2 id="metadata-title" className="section-label">
+        {t.metadataTitle}
+      </h2>
+      <div className={styles.field}>
+        <span className={styles.label} id="sgdb-label">
+          {t.sgdb.title}
+        </span>
+        <span className={styles.muted}>{t.sgdb.provides}</span>
+        <p className={styles.muted}>{t.sgdb.help}</p>
+        <SecretKeyField kind="steamgriddb_api_key" labelId="sgdb-label" />
+      </div>
+    </section>
+  );
+}
+
 function AboutCard() {
   const info = useQuery({
     queryKey: ['app-info'],
@@ -358,6 +443,7 @@ export function SettingsSourcesPage() {
         <EmptyState>{t.backendUnavailable}</EmptyState>
       )}
       <p className={styles.muted}>{t.otherSources}</p>
+      {isTauri() && <MetadataCard />}
       <AboutCard />
     </PageMain>
   );

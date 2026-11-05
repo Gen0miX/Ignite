@@ -28,6 +28,10 @@ export const commands = {
 	exeInspect: (path: string) => typedError<ExeInfo_Serialize, CommandError>(__TAURI_INVOKE("exe_inspect", { path })),
 	/**  Adds a game from an executable or a launcher link. */
 	addExecutable: (input: AddExeInput_Deserialize) => typedError<GameDetail_Serialize, CommandError>(__TAURI_INVOKE("add_executable", { input })),
+	/**  Finds artwork options for a game on SteamGridDB. */
+	artworkSearch: (gameId: string, slot: ArtworkSlot, sgdbGameId: number | null, query: string | null) => typedError<ArtworkSearch_Serialize, CommandError>(__TAURI_INVOKE("artwork_search", { gameId, slot, sgdbGameId, query })),
+	/**  Downloads the chosen image into the cache and uses it for the game. */
+	artworkSet: (gameId: string, slot: ArtworkSlot, url: string, sgdbGameId: number | null) => typedError<GameDetail_Serialize, CommandError>(__TAURI_INVOKE("artwork_set", { gameId, slot, url, sgdbGameId })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
 	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
 	/**  Turns a source on or off. Disabling keeps its games in the library. */
@@ -138,6 +142,52 @@ export type AppInfo = {
 	dataDir: string,
 	dbPath: string,
 };
+
+export type ArtworkOption = ArtworkOption_Serialize | ArtworkOption_Deserialize;
+
+export type ArtworkOption_Deserialize = {
+	url: string,
+	/**  Local copy of the thumbnail (served via `asset:`), when downloaded. */
+	thumb?: string | null,
+	width?: number | null,
+	height?: number | null,
+	style?: string | null,
+};
+
+export type ArtworkOption_Serialize = {
+	url: string,
+	/**  Local copy of the thumbnail (served via `asset:`), when downloaded. */
+	thumb: string | null,
+	width: number | null,
+	height: number | null,
+	style: string | null,
+};
+
+export type ArtworkSearch = ArtworkSearch_Serialize | ArtworkSearch_Deserialize;
+
+export type ArtworkSearchState = "ok" | 
+/**  No SteamGridDB key in the vault. */
+"needsKey" | 
+/**  No game found for this title. */
+"noMatch";
+
+export type ArtworkSearch_Deserialize = {
+	state: ArtworkSearchState,
+	/**  Matching SteamGridDB games, to pick another one if the guess is wrong. */
+	games: SgdbGameOption_Deserialize[],
+	selectedGame?: number | null,
+	options: ArtworkOption_Deserialize[],
+};
+
+export type ArtworkSearch_Serialize = {
+	state: ArtworkSearchState,
+	/**  Matching SteamGridDB games, to pick another one if the guess is wrong. */
+	games: SgdbGameOption_Serialize[],
+	selectedGame: number | null,
+	options: ArtworkOption_Serialize[],
+};
+
+export type ArtworkSlot = "cover" | "hero" | "logo";
 
 export type CandidateNote = 
 /**  Playtest, beta, demo, DLC variant... */
@@ -490,6 +540,20 @@ export type SessionInput_Serialize = {
 };
 
 export type SessionOrigin = "auto" | "manual" | "imported" | "estimate";
+
+export type SgdbGameOption = SgdbGameOption_Serialize | SgdbGameOption_Deserialize;
+
+export type SgdbGameOption_Deserialize = {
+	id: number,
+	name: string,
+	year?: number | null,
+};
+
+export type SgdbGameOption_Serialize = {
+	id: number,
+	name: string,
+	year: number | null,
+};
 
 export type SortKey = "lastPlayed" | "name" | "playtime" | "added";
 
