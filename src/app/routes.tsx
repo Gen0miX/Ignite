@@ -7,9 +7,12 @@ import { StatsPage } from '../routes/Stats/StatsPage';
 import { SettingsSourcesPage } from '../routes/SettingsSources/SettingsSourcesPage';
 import { ImportPage } from '../routes/Import/ImportPage';
 import { NotFoundPage } from '../routes/NotFound/NotFoundPage';
+import { CouchPage } from '../routes/Couch/CouchPage';
 
 /** Route table, shared by the app router and the tests (memory router). */
 export const routes: RouteObject[] = [
+  // Fullscreen, outside the shell (no sidebar).
+  { path: '/couch', element: <CouchPage /> },
   {
     path: '/',
     element: <AppShell />,

@@ -93,6 +93,8 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         home::home_tonight,
         home::home_news,
         home::open_link,
+        home::couch_shelf,
+        home::couch_wheel,
         sources::library_sync,
         sources::sources_status,
         sources::source_set_enabled,

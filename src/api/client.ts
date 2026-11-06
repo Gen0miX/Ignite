@@ -43,6 +43,8 @@ export type FolderCandidate = b.FolderCandidate;
 export type EmulatorConfig = b.EmulatorConfig_Serialize;
 export type HomeGame = b.HomeGame_Serialize;
 export type Tonight = b.Tonight;
+export type Shelf = b.Shelf;
+export type Mood = b.Mood;
 
 export class BackendError extends Error {
   readonly kind: string;

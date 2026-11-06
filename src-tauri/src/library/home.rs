@@ -94,7 +94,7 @@ fn candidate(g: &GameSummary, ctx: &Context) -> Candidate {
     }
 }
 
-fn home_game(g: GameSummary, ctx: &Context) -> HomeGame {
+pub fn home_game(g: GameSummary, ctx: &Context) -> HomeGame {
     let avg = avg_minutes(ctx, &g.id).map(|m| m.round() as u32);
     HomeGame {
         game: g,

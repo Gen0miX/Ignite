@@ -70,6 +70,10 @@ export const commands = {
 	homeNews: () => typedError<HomeNews, CommandError>(__TAURI_INVOKE("home_news")),
 	/**  Opens a news article in the default browser (https only). */
 	openLink: (url: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_link", { url })),
+	/**  Games of a couch-mode shelf. */
+	couchShelf: (shelf: Shelf) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("couch_shelf", { shelf })),
+	/**  Games the random wheel may land on for a mood. */
+	couchWheel: (mood: Mood) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("couch_wheel", { mood })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
 	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
 	/**  Turns a source on or off. Disabling keeps its games in the library. */
@@ -650,6 +654,9 @@ export type LibraryView = { kind: "all" } | { kind: "installed" } | { kind: "fav
 /**  A manual or smart collection, by id. */
 { kind: "collection"; value: string };
 
+/**  Moods of the random wheel. */
+export type Mood = "chill" | "intense" | "coop" | "never";
+
 export type NewsItem = {
 	gameId: string,
 	gameTitle: string,
@@ -765,6 +772,9 @@ export type SgdbGameOption_Serialize = {
 	name: string,
 	year: number | null,
 };
+
+/**  Carousel shelves, switched with LB / RB. */
+export type Shelf = "recent" | "favorites" | "coop" | "short" | "all";
 
 export type SortKey = "lastPlayed" | "name" | "playtime" | "added";
 

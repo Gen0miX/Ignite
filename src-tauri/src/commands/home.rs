@@ -10,6 +10,7 @@ use super::CommandResult;
 use crate::db::repo::game_sources;
 use crate::db::Db;
 use crate::error::AppError;
+use crate::library::couch::{self, Mood, Shelf};
 use crate::library::home::{self, HomeGame, HomeOverview, Tonight};
 use crate::library::query;
 use crate::metadata::news::{self, NewsItem};
@@ -25,6 +26,20 @@ pub fn home_overview(db: tauri::State<'_, Db>) -> CommandResult<HomeOverview> {
 #[specta::specta]
 pub fn home_tonight(db: tauri::State<'_, Db>, choice: Tonight) -> CommandResult<Vec<HomeGame>> {
     Ok(home::tonight(&db.conn(), choice, chrono::Utc::now())?)
+}
+
+/// Games of a couch-mode shelf.
+#[tauri::command]
+#[specta::specta]
+pub fn couch_shelf(db: tauri::State<'_, Db>, shelf: Shelf) -> CommandResult<Vec<HomeGame>> {
+    Ok(couch::shelf(&db.conn(), shelf)?)
+}
+
+/// Games the random wheel may land on for a mood.
+#[tauri::command]
+#[specta::specta]
+pub fn couch_wheel(db: tauri::State<'_, Db>, mood: Mood) -> CommandResult<Vec<HomeGame>> {
+    Ok(couch::wheel(&db.conn(), mood)?)
 }
 
 #[derive(Debug, Clone, Serialize, specta::Type)]

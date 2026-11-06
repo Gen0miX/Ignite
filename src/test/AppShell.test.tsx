@@ -53,6 +53,7 @@ describe('app shell', () => {
     ['/game/abc', 'Fiche du jeu'],
     ['/import', 'Importer des jeux'],
     ['/nope', 'Page introuvable'],
+    ['/couch', 'Mode Canapé'],
   ])('renders %s', async (path, title) => {
     renderAt(path);
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeVisible();

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { usePad } from '../lib/usePad';
 import { useLibraryEvents } from '../api/hooks';
 import { Sidebar } from '../components/Sidebar/Sidebar';
 import styles from './AppShell.module.css';
@@ -7,6 +8,11 @@ import styles from './AppShell.module.css';
 /** Fluid 3-column layout: sidebar, content, and the page's optional side panel. */
 export function AppShell() {
   useLibraryEvents();
+  const navigate = useNavigate();
+  // The Menu (Start) button of a gamepad opens couch mode from anywhere.
+  usePad((a) => {
+    if (a === 'menu') navigate('/couch');
+  }, false);
   return (
     <div className={styles.shell}>
       <Sidebar />
