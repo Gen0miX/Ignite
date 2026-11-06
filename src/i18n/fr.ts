@@ -196,18 +196,6 @@ export const fr = {
     local: 'Exécutables',
     emulator: 'Émulateurs',
   },
-  sourceAbbr: {
-    steam: 'ST',
-    epic: 'EP',
-    gog: 'GG',
-    battlenet: 'BN',
-    ea: 'EA',
-    ubisoft: 'UB',
-    xbox: 'XB',
-    riot: 'RI',
-    local: 'EX',
-    emulator: 'EM',
-  },
   library: {
     title: 'Tous les jeux',
     installedTitle: 'Installés',
