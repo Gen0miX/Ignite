@@ -385,14 +385,16 @@
 }
 
 /* Quick actions under the Play button. */
+/* 3 actions of equal width, then "⋯" (hide, delete… in the card menu). */
 .actions {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 44px;
   gap: var(--space-2);
 }
 
 .action {
   min-height: 56px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -416,9 +418,8 @@
   color: var(--color-text-2);
 }
 
-.actionDanger,
-.actionDanger svg {
-  color: var(--color-danger);
+.actionMore {
+  padding: 0;
 }
 
 .tagLink:hover {

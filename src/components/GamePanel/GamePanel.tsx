@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, FileText, FolderPlus, ImageIcon, Play, Star, Trash2, X } from 'lucide-react';
+import { FileText, FolderPlus, ImageIcon, MoreHorizontal, Play, Star, X } from 'lucide-react';
 import { artworkSrc, type GameDetail, type GameStatus } from '../../api/client';
 import {
   useAddTag,
@@ -23,9 +23,9 @@ import {
   formatPlaytimeShort,
   titleTint,
 } from '../../lib/format';
-import { isDeletable } from '../../lib/selection';
 import { useGameActions } from '../GameActions/useGameActions';
 import { GameTitle } from '../GameTitle/GameTitle';
+import { Menu } from '../Menu/Menu';
 import { SegmentedControl } from '../SegmentedControl/SegmentedControl';
 import { SourceBadge } from '../SourceBadge/SourceBadge';
 import buttons from '../Button/Button.module.css';
@@ -79,6 +79,7 @@ function PanelContent({ game }: { game: GameDetail }) {
   const update = useUpdateGame(s.id);
   const launch = useLaunchGame();
   const actions = useGameActions();
+  const [menuAt, setMenuAt] = useState<{ x: number; y: number } | null>(null);
   const banner = artworkSrc(game.hero ?? s.header ?? s.cover);
   const playSource = game.sources.find((src) => src.id === game.playSourceId);
   const total = s.playtimeMinutes;
@@ -161,29 +162,28 @@ function PanelContent({ game }: { game: GameDetail }) {
           </button>
           <button
             type="button"
-            className={styles.action}
-            onClick={() => update.mutate({ hidden: !s.hidden })}
-            disabled={update.isPending}
+            className={`${styles.action} ${styles.actionMore}`}
+            aria-label={fr.actions.menu(s.title)}
+            title={fr.panel.moreActions}
+            aria-haspopup="menu"
+            aria-expanded={menuAt !== null}
+            onClick={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              setMenuAt({ x: r.right, y: r.bottom + 4 });
+            }}
           >
-            {s.hidden ? (
-              <Eye size={18} aria-hidden="true" />
-            ) : (
-              <EyeOff size={18} aria-hidden="true" />
-            )}
-            {s.hidden ? fr.actions.unhide : fr.actions.hide}
+            <MoreHorizontal size={18} aria-hidden="true" />
           </button>
-          {isDeletable(s) && (
-            <button
-              type="button"
-              className={`${styles.action} ${styles.actionDanger}`}
-              onClick={() => actions.open({ kind: 'delete', ids: [s.id], titles: [s.title] })}
-            >
-              <Trash2 size={18} aria-hidden="true" />
-              {fr.actions.delete}
-            </button>
-          )}
         </div>
         {actions.element}
+        {menuAt && (
+          <Menu
+            label={fr.actions.menu(s.title)}
+            at={menuAt}
+            items={actions.menuItems(s)}
+            onClose={() => setMenuAt(null)}
+          />
+        )}
 
         <div className={styles.tiles}>
           <StatTile

@@ -232,6 +232,7 @@ export const fr = {
     neverPlayed: 'Jamais lancé',
   },
   panel: {
+    moreActions: "Plus d'actions",
     label: 'Jeu sélectionné',
     close: 'Fermer le panneau',
     play: 'Jouer',
