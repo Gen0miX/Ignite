@@ -105,9 +105,9 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 48px;
-  height: 48px;
-  margin: -24px 0 0 -24px;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
   border-radius: 50%;
   background: var(--color-accent);
   color: var(--color-on-accent);
@@ -146,8 +146,8 @@
 
 .playing {
   position: absolute;
-  top: 12px;
-  left: 48px;
+  top: 7px;
+  left: 38px;
   padding: 2px 8px;
   border-radius: var(--radius-pill);
   background: var(--color-accent);
@@ -160,13 +160,12 @@
 .check,
 .more {
   position: absolute;
-  top: 6px;
-  width: 36px;
-  height: 36px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: rgb(20 16 14 / 78%);
   color: var(--color-text);
   opacity: 0;
@@ -176,19 +175,29 @@
 }
 
 .check {
+  top: 6px;
   left: 6px;
 }
 
 .more {
   right: 6px;
+  bottom: 6px;
+}
+
+/* Small visible buttons, but a 36 px hit area. */
+.check::after,
+.more::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
 }
 
 .check::before {
   content: '';
   position: absolute;
-  inset: 8px;
+  inset: 5px;
   border: 2px solid var(--color-text-2);
-  border-radius: 5px;
+  border-radius: 4px;
 }
 
 .checked .check {
@@ -235,8 +244,8 @@
 
 .hiddenMark {
   position: absolute;
+  top: 6px;
   right: 6px;
-  bottom: 6px;
   display: flex;
   padding: 4px;
   border-radius: var(--radius-sm);

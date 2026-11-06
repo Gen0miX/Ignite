@@ -64,7 +64,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
   const openMenuFromButton = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     const r = e.currentTarget.getBoundingClientRect();
-    onMenu({ x: r.left, y: r.bottom + 4 });
+    onMenu({ x: r.right, y: r.bottom + 4 });
   };
 
   return (
@@ -104,7 +104,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
         {playing && <span className={styles.playing}>{fr.tracking.inGame}</span>}
         {game.hidden && (
           <span className={styles.hiddenMark} title={fr.library.hiddenTitle}>
-            <EyeOff size={14} aria-hidden="true" />
+            <EyeOff size={12} aria-hidden="true" />
           </span>
         )}
         {game.sources[0] && (
@@ -125,7 +125,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
             onToggle(e.shiftKey);
           }}
         >
-          {checked && <Check size={16} strokeWidth={3} aria-hidden="true" />}
+          {checked && <Check size={14} strokeWidth={3} aria-hidden="true" />}
         </button>
         <button
           type="button"
@@ -136,7 +136,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
           onPointerDown={(e) => e.stopPropagation()}
           onClick={openMenuFromButton}
         >
-          <MoreHorizontal size={18} aria-hidden="true" />
+          <MoreHorizontal size={16} aria-hidden="true" />
         </button>
         {!selecting && (
           <button
@@ -150,7 +150,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
               onLaunch();
             }}
           >
-            <Play size={20} fill="currentColor" aria-hidden="true" />
+            <Play size={17} fill="currentColor" aria-hidden="true" />
           </button>
         )}
       </div>
