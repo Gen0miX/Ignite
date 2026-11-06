@@ -43,6 +43,7 @@ export type FolderCandidate = b.FolderCandidate;
 export type EmulatorConfig = b.EmulatorConfig_Serialize;
 export type HomeGame = b.HomeGame_Serialize;
 export type Tonight = b.Tonight;
+export type AppSettings = b.AppSettings;
 export type Shelf = b.Shelf;
 export type Mood = b.Mood;
 

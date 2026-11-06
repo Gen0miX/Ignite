@@ -528,6 +528,17 @@ export const fr = {
         'Lancement via le client Riot. Pour League of Legends, seul le processus de la partie est chronométré, pas le client.',
     },
     trackingTitle: 'Règles de suivi',
+    app: {
+      title: 'Application',
+      closeToTray: 'Garder dans la zone de notification à la fermeture',
+      closeToTrayHint:
+        'Fermer la fenêtre laisse Ludothèque tourner, pour continuer à compter ton temps de jeu.',
+      autostart: 'Démarrer avec Windows',
+      autostartHint: 'Ludothèque démarre réduite dans la zone de notification.',
+      trayHint:
+        'L’icône de la zone de notification affiche le jeu en cours et son minuteur. Clic droit › Quitter pour fermer complètement.',
+      saveError: 'Impossible d’enregistrer ce réglage.',
+    },
     tracking: {
       method: 'Méthode',
       methodValue:

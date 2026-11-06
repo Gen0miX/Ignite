@@ -67,6 +67,15 @@
 - Lancement : `"<GalaxyClient.exe>" /command=runGame /gameId=<productId>`, ou l'exe direct depuis `goggame-<id>.info` dans le dossier du jeu.
 - Temps et succès : présents dans la base Galaxy.
 
+## Sources secondaires — implémentation J5
+
+Battle.net, EA app, Ubisoft Connect et Riot ne lisent que les **jeux installés**, détectés depuis la liste « Programmes installés » de Windows (clés `Uninstall` de HKLM 64 et 32 bits et de HKCU), en lecture seule. Le temps vient du suivi local de Ludothèque. Chaque source est désactivée par défaut et s'active dans Réglages › Sources ou dans l'assistant d'import.
+
+- **Riot — vérifié sur la machine de l'utilisateur (novembre 2026)** : entrées `Riot Game <produit>.<patchline>` (ex. `Riot Game valorant.live`) ; seule la patchline `live` est retenue. `RiotClientServices.exe` est lu dans `C:\ProgramData\Riot Games\RiotClientInstalls.json`. Lancement : `RiotClientServices.exe --launch-product=<produit> --launch-patchline=live`. Le suivi surveille le processus du jeu (`League of Legends.exe`, VALORANT…), pas le client ni le lobby. Trouvés : League of Legends, VALORANT, Teamfight Tactics, 2XKO.
+- **Battle.net — non testé sur une vraie machine** (absent du PC) : entrées `Publisher = Blizzard Entertainment` dont la commande de désinstallation contient `--uid=<code>` ; lancement `battlenet://<code>` (code = partie avant le suffixe de langue). Les copies Steam et l'app Battle.net elle-même sont écartées. `product.db` (protobuf) n'est pas lu.
+- **EA app — non testé** : entrées `Publisher = Electronic Arts` avec un dossier d'installation ; source considérée comme présente si `C:\ProgramData\EA Desktop` existe.
+- **Ubisoft Connect — non testé** : `HKLM\SOFTWARE\WOW6432Node\Ubisoft\Launcher\Installs\<id>\InstallDir`, lancement `uplay://launch/<id>/0`.
+
 ## Battle.net
 
 - Jeux installés : `C:\ProgramData\Battle.net\Agent\product.db` (protobuf). Solution de repli plus simple : les clés de désinstallation dans le registre (`HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*`, `Publisher = Blizzard Entertainment`).
@@ -86,7 +95,12 @@
 - Nom par défaut : `FileDescription` / `ProductName` des métadonnées de version de l'exe, sinon le nom du dossier.
 - Écarter les faux positifs (voir SPEC § 4). Choisir l'exe le plus gros ou le plus proche de la racine quand il y en a plusieurs.
 
-## Émulateurs + RetroAchievements (phase tardive)
+## Émulateurs + RetroAchievements
+
+Implémenté en J5 (non testé sur la machine de l'utilisateur : aucun émulateur configuré). Réglages › Émulateurs : exe, modèle d'arguments avec `{rom}`, dossier, extensions, console RA. Le titre vient du nom du fichier sans balises (`(USA)`, `[!]`). Le jeu lancé depuis Ludothèque est retenu pendant 2 h pour départager plusieurs ROMs du même émulateur. Hash RA calculé automatiquement pour les consoles à cartouche (ids 1–7, 11, 15, 25 : MD5 du fichier, sans l'en-tête de copieur NES/SNES, N64 ramené en .z64), puis comparé à `API_GetGameList` ; pour les consoles à disque, l'ID RA se saisit sur la fiche. Progression : `API_GetGameInfoAndUserProgress`.
+
+Notes de départ :
+
 
 - Configuration : un émulateur (chemin de l'exe + modèle d'arguments, ex. `"{rom}"` ou `-batch -fullscreen "{rom}"`) associé à un dossier de ROMs et à des extensions.
 - Chaque ROM devient un `game_source` de type `emulator` (`external_id` = chemin de la ROM).

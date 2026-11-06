@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { listen } from '@tauri-apps/api/event';
+import { isTauri } from '../api/client';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { usePad } from '../lib/usePad';
 import { useLibraryEvents } from '../api/hooks';
@@ -13,6 +15,12 @@ export function AppShell() {
   usePad((a) => {
     if (a === 'menu') navigate('/couch');
   }, false);
+  // "Mode Canapé" from the notification-area menu.
+  useEffect(() => {
+    if (!isTauri()) return;
+    const off = listen('open-couch', () => navigate('/couch'));
+    return () => void off.then((fn) => fn());
+  }, [navigate]);
   return (
     <div className={styles.shell}>
       <Sidebar />

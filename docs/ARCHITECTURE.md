@@ -193,6 +193,15 @@ Pour chaque `game_source` :
 - Doublons : clé de comparaison = titre sans casse, accents, ™/®, ponctuation ni mots d'édition (GOTY, Remastered, Enhanced Edition…). Deux jeux de la même plateforme ne sont jamais proposés à la fusion. La fusion déplace sources, sessions, objectifs, tags, collections et images manquantes ; la défusion détache une source et ses sessions.
 - Images SteamGridDB : seules les URL `*.steamgriddb.com` sont téléchargées ; les vignettes du sélecteur sont elles aussi copiées dans `artwork/_sgdb/` avant affichage (pas de hotlinking).
 
+## 5 ter. Finitions (J5)
+
+- **Scanner ce PC** (`sources/folder_scan.rs`) : chaque sous-dossier d'un dossier choisi est un jeu candidat ; l'exe principal est deviné, les outils (crash handlers, installeurs, anti-triche, redistribuables) sont écartés.
+- **Accueil** (`library/home.rs`) : « Reprendre », récents, « Ce soir, j'ai… » (score selon le temps disponible, la durée moyenne des sessions, le statut et la fraîcheur), pile à finir, actus Steam (`metadata/news.rs`, cache 30 min, promotions masquées), semaine.
+- **Mode Canapé** (`/couch`, hors de la coque, `library/couch.rs`) : rayons (récents, favoris, coop, sessions courtes, tout) et roue du hasard par humeur (chill / intense selon les genres, coop selon les modes, « jamais lancé ») tirée dans la pile installée, ni terminée ni abandonnée. Manette via l'API Gamepad (mapping standard, polling `requestAnimationFrame`, répétition des directions ; logique pure dans `src/lib/gamepad.ts`), avec équivalents clavier. Plein écran via `setFullscreen` (permission `core:window:allow-set-fullscreen`). Le bouton Menu de la manette ouvre le mode Canapé depuis n'importe quel écran.
+- **Zone de notification** (`tray.rs`) : infobulle et première ligne du menu = jeu en cours et son minuteur (rafraîchis toutes les 15 s) ; menu Afficher / Mode Canapé / Quitter. Fermer la fenêtre la cache (réglage `app.close_to_tray`, actif par défaut) pour que le suivi continue.
+- **Démarrer avec Windows** : `tauri-plugin-autostart` (clé `Run` du registre) avec `--minimized` ; la fenêtre est créée invisible et ne s'affiche pas dans ce cas.
+- **Installeur** : NSIS, installation par utilisateur (sans droits administrateur), en français.
+
 ## 6. Collections intelligentes — format des règles
 
 ```json

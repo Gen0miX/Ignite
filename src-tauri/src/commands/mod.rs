@@ -95,6 +95,8 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         home::open_link,
         home::couch_shelf,
         home::couch_wheel,
+        app::app_settings_get,
+        app::app_settings_set,
         sources::library_sync,
         sources::sources_status,
         sources::source_set_enabled,

@@ -55,9 +55,9 @@ Chaque tâche = une PR ou un commit, avec ses tests. Ne passe au jalon suivant q
 
 ## J5 — Sources secondaires & finitions
 
-- [ ] Battle.net, Ubisoft Connect, EA app, Riot (détection et lancement, suivi local).
-- [ ] Scan de dossiers et filtre des faux jeux.
-- [ ] Émulateurs + RetroAchievements.
-- [ ] Accueil « Cinéma » adapté au thème Braise, avec « Ce soir, j'ai… ».
-- [ ] Mode Canapé (manette).
-- [ ] Installeur, démarrage avec Windows (option), icône dans la zone de notification avec le minuteur.
+- [x] Battle.net, Ubisoft Connect, EA app, Riot (détection et lancement, suivi local).
+- [x] Scan de dossiers et filtre des faux jeux.
+- [x] Émulateurs + RetroAchievements.
+- [x] Accueil « Cinéma » adapté au thème Braise, avec « Ce soir, j'ai… ».
+- [x] Mode Canapé (manette).
+- [x] Installeur, démarrage avec Windows (option), icône dans la zone de notification avec le minuteur.

@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   commands,
   isTauri,
+  unwrap,
+  type AppSettings,
   type SecretKind,
   type SourceCard,
   type SourceStatus,
@@ -447,6 +449,52 @@ function TrackingCard() {
   );
 }
 
+function AppCard() {
+  const client = useQueryClient();
+  const settings = useQuery({
+    queryKey: ['app-settings'],
+    queryFn: () => commands.appSettingsGet(),
+  });
+  const save = useMutation({
+    mutationFn: (s: AppSettings) => unwrap(commands.appSettingsSet(s)),
+    onSettled: () => client.invalidateQueries({ queryKey: ['app-settings'] }),
+  });
+  const data = settings.data;
+  if (!data) return null;
+  const ta = t.app;
+  const rows: { key: keyof AppSettings; label: string; hint: string }[] = [
+    { key: 'closeToTray', label: ta.closeToTray, hint: ta.closeToTrayHint },
+    { key: 'autostart', label: ta.autostart, hint: ta.autostartHint },
+  ];
+  return (
+    <section className={styles.card} aria-labelledby="app-title">
+      <h2 id="app-title" className="section-label">
+        {ta.title}
+      </h2>
+      {rows.map((r) => (
+        <div key={r.key} className={styles.cardHeader}>
+          <div className={styles.cardTitle}>
+            <span className={styles.label}>{r.label}</span>
+            <span className={styles.muted}>{r.hint}</span>
+          </div>
+          <Switch
+            label={r.label}
+            checked={data[r.key]}
+            disabled={save.isPending}
+            onChange={(v) => save.mutate({ ...data, [r.key]: v })}
+          />
+        </div>
+      ))}
+      <p className={styles.muted}>{ta.trayHint}</p>
+      {save.isError && (
+        <p role="alert" className={styles.errorText}>
+          {ta.saveError}
+        </p>
+      )}
+    </section>
+  );
+}
+
 function MetadataCard() {
   return (
     <section className={styles.card} aria-labelledby="metadata-title">
@@ -510,6 +558,7 @@ export function SettingsSourcesPage() {
         <a href="#settings-sources">{t.sourcesSection}</a>
         <a href="#emulators-title">{t.emulators.title}</a>
         <a href="#tracking-title">{t.trackingTitle}</a>
+        <a href="#app-title">{t.app.title}</a>
         <a href="#metadata-title">{t.metadataTitle}</a>
         <a href="#settings-about">{t.about}</a>
       </nav>
@@ -535,6 +584,7 @@ export function SettingsSourcesPage() {
         />
       )}
       {isTauri() && <TrackingCard />}
+      {isTauri() && <AppCard />}
       {isTauri() && <MetadataCard />}
       <AboutCard />
     </PageMain>

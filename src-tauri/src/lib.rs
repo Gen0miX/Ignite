@@ -9,6 +9,7 @@ pub mod models;
 pub mod secrets;
 pub mod sources;
 pub mod tracker;
+pub mod tray;
 
 use tauri::Manager;
 
@@ -29,6 +30,10 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec![tray::MINIMIZED_ARG]),
+        ))
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
@@ -50,6 +55,13 @@ pub fn run() {
             app.manage(commands::sources::SyncState::default());
             app.manage(tracker::TrackerState::default());
             tracker::spawn(app.handle().clone());
+            if let Err(e) = tray::setup(app.handle()) {
+                tracing::warn!(error = %e, "tray icon unavailable");
+            }
+            // Started with Windows: stay in the notification area.
+            if !std::env::args().any(|a| a == tray::MINIMIZED_ARG) {
+                tray::show_main(app.handle());
+            }
 
             // Initial sync in the background: the window opens immediately and
             // the library refreshes when the `library-changed` event fires.
@@ -60,6 +72,14 @@ pub fn run() {
                 }
             });
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "main" && tray::close_to_tray(window.app_handle()) {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
         })
         .build(tauri::generate_context!())
         .expect("error while building Ludothèque")

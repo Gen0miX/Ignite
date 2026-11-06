@@ -74,6 +74,8 @@ export const commands = {
 	couchShelf: (shelf: Shelf) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("couch_shelf", { shelf })),
 	/**  Games the random wheel may land on for a mood. */
 	couchWheel: (mood: Mood) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("couch_wheel", { mood })),
+	appSettingsGet: () => __TAURI_INVOKE<AppSettings>("app_settings_get"),
+	appSettingsSet: (settings: AppSettings) => typedError<null, CommandError>(__TAURI_INVOKE("app_settings_set", { settings })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
 	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
 	/**  Turns a source on or off. Disabling keeps its games in the library. */
@@ -185,6 +187,14 @@ export type AppInfo = {
 	version: string,
 	dataDir: string,
 	dbPath: string,
+};
+
+/**  Application behaviour (Réglages › Application). */
+export type AppSettings = {
+	/**  Closing the window keeps Ludothèque in the notification area. */
+	closeToTray: boolean,
+	/**  Start with Windows, minimized in the notification area. */
+	autostart: boolean,
 };
 
 export type ArtworkOption = ArtworkOption_Serialize | ArtworkOption_Deserialize;
