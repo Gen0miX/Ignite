@@ -38,7 +38,7 @@ export const commands = {
 	 */
 	addScannedGames: (games: ScannedGame[]) => typedError<number, CommandError>(__TAURI_INVOKE("add_scanned_games", { games })),
 	/**  Finds artwork options for a game on SteamGridDB. */
-	artworkSearch: (gameId: string, slot: ArtworkSlot, sgdbGameId: number | null, query: string | null) => typedError<ArtworkSearch_Serialize, CommandError>(__TAURI_INVOKE("artwork_search", { gameId, slot, sgdbGameId, query })),
+	artworkSearch: (gameId: string, sgdbGameId: number | null, query: string | null) => typedError<ArtworkSearch_Serialize, CommandError>(__TAURI_INVOKE("artwork_search", { gameId, sgdbGameId, query })),
 	/**  Downloads the chosen image into the cache and uses it for the game. */
 	artworkSet: (gameId: string, slot: ArtworkSlot, url: string, sgdbGameId: number | null) => typedError<GameDetail_Serialize, CommandError>(__TAURI_INVOKE("artwork_set", { gameId, slot, url, sgdbGameId })),
 	collectionsList: () => typedError<CollectionInfo_Serialize[], CommandError>(__TAURI_INVOKE("collections_list")),
@@ -238,7 +238,8 @@ export type ArtworkSearch_Deserialize = {
 	/**  Matching SteamGridDB games, to pick another one if the guess is wrong. */
 	games: SgdbGameOption_Deserialize[],
 	selectedGame?: number | null,
-	options: ArtworkOption_Deserialize[],
+	/**  Images of every type, fetched together so switching tabs is instant. */
+	options: SlotOptions_Deserialize,
 };
 
 export type ArtworkSearch_Serialize = {
@@ -246,7 +247,8 @@ export type ArtworkSearch_Serialize = {
 	/**  Matching SteamGridDB games, to pick another one if the guess is wrong. */
 	games: SgdbGameOption_Serialize[],
 	selectedGame: number | null,
-	options: ArtworkOption_Serialize[],
+	/**  Images of every type, fetched together so switching tabs is instant. */
+	options: SlotOptions_Serialize,
 };
 
 export type ArtworkSlot = "cover" | "hero" | "logo";
@@ -810,6 +812,20 @@ export type SgdbGameOption_Serialize = {
 
 /**  Carousel shelves, switched with LB / RB. */
 export type Shelf = "recent" | "favorites" | "coop" | "short" | "all";
+
+export type SlotOptions = SlotOptions_Serialize | SlotOptions_Deserialize;
+
+export type SlotOptions_Deserialize = {
+	cover: ArtworkOption_Deserialize[],
+	hero: ArtworkOption_Deserialize[],
+	logo: ArtworkOption_Deserialize[],
+};
+
+export type SlotOptions_Serialize = {
+	cover: ArtworkOption_Serialize[],
+	hero: ArtworkOption_Serialize[],
+	logo: ArtworkOption_Serialize[],
+};
 
 export type SortKey = "lastPlayed" | "name" | "playtime" | "added";
 

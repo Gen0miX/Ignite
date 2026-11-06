@@ -34,10 +34,13 @@ export function ArtworkPicker({ gameId, title, onClose }: ArtworkPickerProps) {
   const [query, setQuery] = useState(title);
   const [submitted, setSubmitted] = useState<string | null>(null);
 
+  // One request brings the three image types: switching tabs never reloads,
+  // and reopening the picker within 30 minutes reuses the result.
   const search = useQuery({
-    queryKey: ['artwork-search', gameId, slot, sgdbGame, submitted],
-    queryFn: () => unwrap(commands.artworkSearch(gameId, slot, sgdbGame, submitted)),
-    staleTime: 10 * 60_000,
+    queryKey: ['artwork-search', gameId, sgdbGame, submitted],
+    queryFn: () => unwrap(commands.artworkSearch(gameId, sgdbGame, submitted)),
+    staleTime: 30 * 60_000,
+    gcTime: 30 * 60_000,
   });
   const [picks, setPicks] = useState<Partial<Record<ArtworkSlot, Pick>>>({});
   const chosen = Object.entries(picks) as [ArtworkSlot, Pick][];
@@ -90,12 +93,12 @@ export function ArtworkPicker({ gameId, title, onClose }: ArtworkPickerProps) {
         {t.needsKey} <Link to="/settings/sources">{t.openSettings}</Link>
       </p>
     );
-  } else if (data.state === 'noMatch' || data.options.length === 0) {
+  } else if (data.state === 'noMatch' || data.options[slot].length === 0) {
     body = <p className={styles.muted}>{t.noResult}</p>;
   } else {
     body = (
       <ul className={`${styles.grid} ${styles[slot]}`}>
-        {data.options.map((o) => {
+        {data.options[slot].map((o) => {
           const src = artworkSrc(o.thumb);
           const picked = picks[slot]?.url === o.url;
           return (

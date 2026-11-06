@@ -77,11 +77,86 @@ pub struct ArtworkSearch {
     /// Matching SteamGridDB games, to pick another one if the guess is wrong.
     pub games: Vec<SgdbGameOption>,
     pub selected_game: Option<u32>,
-    pub options: Vec<ArtworkOption>,
+    /// Images of every type, fetched together so switching tabs is instant.
+    pub options: SlotOptions,
+}
+
+#[derive(Debug, Clone, Default, Serialize, specta::Type)]
+pub struct SlotOptions {
+    pub cover: Vec<ArtworkOption>,
+    pub hero: Vec<ArtworkOption>,
+    pub logo: Vec<ArtworkOption>,
+}
+
+const SLOTS: [ArtworkSlot; 3] = [ArtworkSlot::Cover, ArtworkSlot::Hero, ArtworkSlot::Logo];
+
+/// Image list of one type, with local thumbnails (reused when already cached).
+fn slot_options(
+    key: &str,
+    sgdb_game: u32,
+    slot: ArtworkSlot,
+    thumbs_dir: &std::path::Path,
+) -> AppResult<Vec<ArtworkOption>> {
+    let images: Vec<_> = sgdb::images(key, sgdb_game, slot.kind())?
+        .into_iter()
+        .filter(|i| sgdb::is_sgdb_url(&i.url) && sgdb::is_sgdb_url(&i.thumb))
+        .take(MAX_OPTIONS)
+        .collect();
+    // A few downloads at a time, to stay polite with SteamGridDB.
+    let thumbs: Vec<Option<String>> = images
+        .chunks(THUMB_BATCH)
+        .flat_map(|batch| {
+            std::thread::scope(|scope| {
+                let handles: Vec<_> = batch
+                    .iter()
+                    .map(|i| {
+                        let name = format!("{}-{}", slot.as_str(), i.id);
+                        scope.spawn(move || cached_thumb(thumbs_dir, &name, &i.thumb))
+                    })
+                    .collect();
+                handles
+                    .into_iter()
+                    .map(|h| h.join().ok().flatten())
+                    .collect::<Vec<_>>()
+            })
+        })
+        .collect();
+    Ok(images
+        .into_iter()
+        .zip(thumbs)
+        .map(|(i, thumb)| ArtworkOption {
+            url: i.url,
+            thumb,
+            width: i.width,
+            height: i.height,
+            style: i.style,
+        })
+        .collect())
+}
+
+/// Thumbnail already in the cache (any extension), else downloaded.
+fn cached_thumb(dir: &std::path::Path, name: &str, url: &str) -> Option<String> {
+    let prefix = format!("{name}.");
+    let existing = std::fs::read_dir(dir).ok().and_then(|entries| {
+        entries.flatten().map(|e| e.path()).find(|p| {
+            p.file_name()
+                .and_then(|f| f.to_str())
+                .is_some_and(|f| f.starts_with(&prefix) && !f.ends_with(".part"))
+        })
+    });
+    let path = match existing {
+        Some(p) => p,
+        None => download_named(dir, name, url)
+            .map_err(|e| tracing::debug!(error = %e, "thumbnail download failed"))
+            .ok()?,
+    };
+    Some(path.display().to_string())
 }
 
 /// Thumbnails shown in the picker (more = slower; they are downloaded).
 const MAX_OPTIONS: usize = 18;
+/// Thumbnails downloaded at the same time, per image type.
+const THUMB_BATCH: usize = 6;
 
 fn key(app: &AppHandle) -> AppResult<Option<String>> {
     app.state::<Secrets>().get(SecretKind::SteamGridDbApiKey)
@@ -96,7 +171,6 @@ fn year(ts: Option<i64>) -> Option<u32> {
 fn search_blocking(
     app: &AppHandle,
     game_id: &str,
-    slot: ArtworkSlot,
     sgdb_game_id: Option<u32>,
     query: Option<String>,
 ) -> AppResult<ArtworkSearch> {
@@ -105,7 +179,7 @@ fn search_blocking(
             state: ArtworkSearchState::NeedsKey,
             games: vec![],
             selected_game: None,
-            options: vec![],
+            options: SlotOptions::default(),
         });
     };
     let db = app.state::<Db>();
@@ -149,33 +223,25 @@ fn search_blocking(
             state: ArtworkSearchState::NoMatch,
             games,
             selected_game: None,
-            options: vec![],
+            options: SlotOptions::default(),
         });
     };
 
     let thumbs_dir = cache_root(&app.state::<AppPaths>().data_dir).join("_sgdb");
-    let options = sgdb::images(&key, selected, slot.kind())?
-        .into_iter()
-        .filter(|i| sgdb::is_sgdb_url(&i.url) && sgdb::is_sgdb_url(&i.thumb))
-        .take(MAX_OPTIONS)
-        .map(|i| {
-            let thumb = download_named(
-                &thumbs_dir,
-                &format!("{}-{}", slot.as_str(), i.id),
-                &i.thumb,
-            )
-            .map_err(|e| tracing::debug!(error = %e, "thumbnail download failed"))
-            .ok()
-            .map(|p| p.display().to_string());
-            ArtworkOption {
-                url: i.url,
-                thumb,
-                width: i.width,
-                height: i.height,
-                style: i.style,
-            }
-        })
-        .collect();
+    // The three types in parallel, each downloading its thumbnails in parallel.
+    let [cover, hero, logo] = std::thread::scope(|scope| {
+        SLOTS
+            .map(|slot| {
+                let (key, dir) = (&key, &thumbs_dir);
+                scope.spawn(move || slot_options(key, selected, slot, dir))
+            })
+            .map(|h| h.join().unwrap_or_else(|_| Ok(vec![])))
+    });
+    let options = SlotOptions {
+        cover: cover?,
+        hero: hero?,
+        logo: logo?,
+    };
     Ok(ArtworkSearch {
         state: ArtworkSearchState::Ok,
         games,
@@ -190,12 +256,11 @@ fn search_blocking(
 pub async fn artwork_search(
     app: AppHandle,
     game_id: String,
-    slot: ArtworkSlot,
     sgdb_game_id: Option<u32>,
     query: Option<String>,
 ) -> CommandResult<ArtworkSearch> {
     let result = tauri::async_runtime::spawn_blocking(move || {
-        search_blocking(&app, &game_id, slot, sgdb_game_id, query)
+        search_blocking(&app, &game_id, sgdb_game_id, query)
     })
     .await
     .map_err(|e| AppError::Invalid(format!("artwork task failed: {e}")))?;
