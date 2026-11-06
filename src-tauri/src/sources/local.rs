@@ -394,6 +394,7 @@ pub fn create(conn: &mut Connection, input: &AddExeInput) -> AppResult<String> {
                 idle_seconds: 0,
                 origin: SessionOrigin::Estimate,
                 note: None,
+                rating: None,
             },
         )?;
     }

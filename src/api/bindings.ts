@@ -786,6 +786,11 @@ export type PlaySession_Deserialize = {
 	idleSeconds: number,
 	origin: SessionOrigin,
 	note?: string | null,
+	/**
+	 *  1 to 5 flames from the end-of-session recap (read-only here: `save`
+	 *  leaves it alone, `set_rating` writes it).
+	 */
+	rating?: number | null,
 };
 
 export type PlaySession_Serialize = {
@@ -800,6 +805,11 @@ export type PlaySession_Serialize = {
 	idleSeconds: number,
 	origin: SessionOrigin,
 	note: string | null,
+	/**
+	 *  1 to 5 flames from the end-of-session recap (read-only here: `save`
+	 *  leaves it alone, `set_rating` writes it).
+	 */
+	rating: number | null,
 };
 
 export type Progress = {

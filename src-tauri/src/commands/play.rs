@@ -104,6 +104,7 @@ pub fn build_session(
         idle_seconds: existing.map(|s| s.idle_seconds).unwrap_or(0),
         origin,
         note,
+        rating: existing.and_then(|s| s.rating),
     })
 }
 
@@ -247,6 +248,7 @@ mod tests {
             idle_seconds: 300,
             origin: SessionOrigin::Auto,
             note: None,
+            rating: None,
         };
         let mut edit = input(SessionOrigin::Manual, Some("2026-11-05T10:00:00Z"), 45);
         edit.id = Some("s1".into());

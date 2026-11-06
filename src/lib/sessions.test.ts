@@ -16,6 +16,7 @@ const session = (
   idleSeconds: 0,
   origin,
   note: null,
+  rating: null,
 });
 
 describe('dailyMinutes', () => {

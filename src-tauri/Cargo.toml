@@ -3,7 +3,7 @@ name = "ludotheque"
 version = "0.1.0"
 description = "Unified PC game library and launcher"
 edition = "2021"
-rust-version = "1.85"
+rust-version = "1.89"
 
 [lib]
 name = "ludotheque_lib"
@@ -35,6 +35,7 @@ tauri-specta = { version = "=2.0.0-rc.26", features = ["derive", "typescript"] }
 specta-typescript = "=0.0.13"
 tauri-plugin-autostart = "2.7.0"
 tauri-plugin-notification = "2"
+tauri-plugin-single-instance = "2"
 
 [profile.dev]
 incremental = true

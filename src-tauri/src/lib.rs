@@ -28,8 +28,19 @@ pub fn run() {
     #[cfg(debug_assertions)]
     commands::export_bindings();
 
-    tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
+    #[allow(unused_mut)]
+    let mut app = tauri::Builder::default();
+    // A second launch (shortcut, autostart) shows the running Ignite instead
+    // of starting another one, which would track every session twice. Not in
+    // dev, so `pnpm tauri dev` still runs next to the installed app (the
+    // tracker lock then keeps a single tracker).
+    #[cfg(not(debug_assertions))]
+    {
+        app = app.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            tray::show_main(app);
+        }));
+    }
+    app.plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,

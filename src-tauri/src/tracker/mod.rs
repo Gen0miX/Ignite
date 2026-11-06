@@ -25,6 +25,8 @@ pub const SESSION_ENDED_EVENT: &str = "session-ended";
 
 const POLL: Duration = Duration::from_secs(3);
 const RELOAD: Duration = Duration::from_secs(30);
+const LOCK_FILE: &str = "tracker.lock";
+const LOCK_RETRY: Duration = Duration::from_secs(10);
 
 pub const MIN_SESSION_KEY: &str = "tracking.min_session_minutes";
 pub const IDLE_KEY: &str = "tracking.idle_minutes";
@@ -103,6 +105,7 @@ fn to_row(s: &ActiveSession) -> PlaySession {
         idle_seconds: s.idle_seconds.clamp(0, u32::MAX as i64) as u32,
         origin: SessionOrigin::Auto,
         note: None,
+        rating: None,
     }
 }
 
@@ -234,12 +237,59 @@ pub fn spawn(app: AppHandle) {
         .expect("failed to start the tracker thread");
 }
 
+/// Only one Ignite process tracks sessions (an installed app and a dev build
+/// can run side by side on the same database): an exclusive lock on a file
+/// in the data folder, released when the process exits. `Err` = stopping;
+/// `Ok(None)` = no lock possible (read-only folder…), tracking anyway.
+fn acquire_lock(app: &AppHandle, state: &TrackerState) -> Result<Option<std::fs::File>, ()> {
+    let path = app
+        .state::<crate::commands::app::AppPaths>()
+        .data_dir
+        .join(LOCK_FILE);
+    let mut warned = false;
+    while !state.stop.load(Ordering::SeqCst) {
+        let file = match std::fs::OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .write(true)
+            .open(&path)
+        {
+            Ok(file) => file,
+            Err(e) => {
+                tracing::warn!(error = %e, "tracker lock unavailable");
+                return Ok(None);
+            }
+        };
+        if file.try_lock().is_ok() {
+            if warned {
+                tracing::info!("tracker lock acquired");
+            }
+            return Ok(Some(file));
+        }
+        if !warned {
+            tracing::warn!("another Ignite is tracking sessions: waiting for it to exit");
+            warned = true;
+        }
+        std::thread::sleep(LOCK_RETRY);
+    }
+    Err(())
+}
+
 fn run(app: AppHandle) {
     let state = app.state::<TrackerState>();
+    let Ok(_lock) = acquire_lock(&app, &state) else {
+        mark_stopped(&state);
+        return;
+    };
     let mut processes = system::ProcessProbe::new();
     let mut idle = system::IdleProbe::new();
     let config = load_config(&app.state::<Db>());
     purge_short_sessions(&app.state::<Db>(), &config);
+    match sessions::dedupe_overlapping_auto(&app.state::<Db>().conn()) {
+        Ok(0) => {}
+        Ok(n) => tracing::info!(removed = n, "tracker: duplicate sessions removed"),
+        Err(e) => tracing::warn!(error = %e, "tracker: cannot remove duplicate sessions"),
+    }
     let mut tracker = SessionTracker::new(config);
     let mut watch = load_watch_list(&app.state::<Db>());
     let mut last_reload = Instant::now();
@@ -274,10 +324,14 @@ fn run(app: AppHandle) {
 
     // Closing the app: write what is open.
     persist(&app, tracker.stop_all(), false);
+    mark_stopped(&state);
+    tracing::info!("tracker stopped");
+}
+
+fn mark_stopped(state: &TrackerState) {
     let (lock, cvar) = &*state.stopped;
     *lock.lock().unwrap_or_else(|e| e.into_inner()) = true;
     cvar.notify_all();
-    tracing::info!("tracker stopped");
 }
 
 #[cfg(test)]
@@ -341,6 +395,7 @@ mod tests {
             idle_seconds: 0,
             origin,
             note: None,
+            rating: None,
         };
         for s in [
             row("a", 20, SessionOrigin::Auto),

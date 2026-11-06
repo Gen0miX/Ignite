@@ -390,6 +390,7 @@ mod tests {
             idle_seconds: 0,
             origin: SessionOrigin::Auto,
             note: None,
+            rating: None,
         }
     }
 

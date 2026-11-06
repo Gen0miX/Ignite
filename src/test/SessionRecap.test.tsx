@@ -32,6 +32,7 @@ const recap: SessionRecap = {
     idleSeconds: 480,
     origin: 'auto',
     note: null,
+    rating: null,
   },
   game: { id: 'g1', title: 'Satisfactory', logo: null, hero: null, header: null },
   activeSeconds: 8040,

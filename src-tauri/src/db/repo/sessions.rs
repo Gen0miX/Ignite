@@ -54,10 +54,13 @@ pub struct PlaySession {
     pub idle_seconds: u32,
     pub origin: SessionOrigin,
     pub note: Option<String>,
+    /// 1 to 5 flames from the end-of-session recap (read-only here: `save`
+    /// leaves it alone, `set_rating` writes it).
+    pub rating: Option<u8>,
 }
 
 const COLUMNS: &str = "id, game_id, game_source_id, started_at, ended_at, duration_seconds, \
-     idle_seconds, origin, note";
+     idle_seconds, origin, note, rating";
 
 fn from_row(r: &Row<'_>) -> rusqlite::Result<PlaySession> {
     let to_u32 = |v: i64| v.clamp(0, u32::MAX as i64) as u32;
@@ -71,6 +74,7 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<PlaySession> {
         idle_seconds: to_u32(r.get(6)?),
         origin: SessionOrigin::parse(&r.get::<_, String>(7)?)?,
         note: r.get(8)?,
+        rating: r.get(9)?,
     })
 }
 
@@ -186,6 +190,63 @@ pub fn set_note(conn: &Connection, id: &str, note: Option<&str>) -> AppResult<()
     Ok(())
 }
 
+/// `(game, group end, kept id, kept score)` while scanning overlaps.
+type OverlapGroup = (
+    String,
+    chrono::DateTime<chrono::FixedOffset>,
+    String,
+    (bool, i64),
+);
+
+/// Removes automatic sessions of a game that overlap another one (several
+/// Ignite processes tracked the same play). Keeps, per overlapping group, the
+/// session with a note or rating, else the longest; returns how many went.
+pub fn dedupe_overlapping_auto(conn: &Connection) -> AppResult<usize> {
+    let mut stmt = conn.prepare(
+        "SELECT id, game_id, started_at, ended_at, duration_seconds, \
+           (note IS NOT NULL OR rating IS NOT NULL) FROM play_sessions \
+         WHERE origin = 'auto' AND started_at IS NOT NULL AND ended_at IS NOT NULL \
+         ORDER BY game_id, started_at",
+    )?;
+    let rows: Vec<(String, String, String, String, i64, bool)> = stmt
+        .query_map([], |r| {
+            Ok((
+                r.get(0)?,
+                r.get(1)?,
+                r.get(2)?,
+                r.get(3)?,
+                r.get(4)?,
+                r.get(5)?,
+            ))
+        })?
+        .collect::<Result<_, _>>()?;
+    let parse = |t: &str| chrono::DateTime::parse_from_rfc3339(t).ok();
+    let mut drop: Vec<String> = Vec::new();
+    let mut group: Option<OverlapGroup> = None;
+    for (id, game, start, end, secs, annotated) in rows {
+        let (Some(start), Some(end)) = (parse(&start), parse(&end)) else {
+            continue;
+        };
+        let score = (annotated, secs);
+        match &mut group {
+            Some((g, g_end, kept, kept_score)) if *g == game && start < *g_end => {
+                *g_end = (*g_end).max(end);
+                if score > *kept_score {
+                    drop.push(std::mem::replace(kept, id));
+                    *kept_score = score;
+                } else {
+                    drop.push(id);
+                }
+            }
+            _ => group = Some((game, end, id, score)),
+        }
+    }
+    for id in &drop {
+        delete(conn, id)?;
+    }
+    Ok(drop.len())
+}
+
 /// Deletes automatic sessions shorter than `min_secs`; returns how many.
 pub fn purge_short_auto(conn: &Connection, min_secs: i64) -> AppResult<usize> {
     Ok(conn.execute(
@@ -253,6 +314,7 @@ mod tests {
             idle_seconds: 0,
             origin,
             note: None,
+            rating: None,
         }
     }
 
@@ -305,5 +367,72 @@ mod tests {
 
         delete(&conn, "b").unwrap();
         assert!(matches!(get(&conn, "b"), Err(AppError::NotFound(_))));
+    }
+
+    #[test]
+    fn overlapping_auto_sessions_are_merged_into_one() {
+        let db = Db::open_in_memory().unwrap();
+        let conn = db.conn();
+        let g = games::insert(&conn, "Satisfactory").unwrap();
+        let other = games::insert(&conn, "Hades").unwrap();
+        let row = |id: &str, game: &str, start: &str, end: &str, secs: u32| PlaySession {
+            ended_at: Some(end.into()),
+            ..session(id, game, Some(start), secs, SessionOrigin::Auto)
+        };
+        // Three Ignite processes tracked the same 3 minutes.
+        for s in [
+            row(
+                "a",
+                &g.id,
+                "2026-11-06T21:11:29Z",
+                "2026-11-06T21:14:48Z",
+                199,
+            ),
+            row(
+                "b",
+                &g.id,
+                "2026-11-06T21:11:27Z",
+                "2026-11-06T21:14:46Z",
+                199,
+            ),
+            row(
+                "c",
+                &g.id,
+                "2026-11-06T21:11:00Z",
+                "2026-11-06T21:14:00Z",
+                180,
+            ),
+            // Earlier session of the same game, and another game at the same time.
+            row(
+                "d",
+                &g.id,
+                "2026-11-06T17:31:32Z",
+                "2026-11-06T19:05:24Z",
+                5632,
+            ),
+            row(
+                "e",
+                &other.id,
+                "2026-11-06T21:12:00Z",
+                "2026-11-06T21:13:00Z",
+                60,
+            ),
+        ] {
+            save(&conn, &s).unwrap();
+        }
+        // The one the user annotated in the recap is kept.
+        set_rating(&conn, "c", Some(5)).unwrap();
+
+        assert_eq!(dedupe_overlapping_auto(&conn).unwrap(), 2);
+        let mut ids: Vec<_> = list_for_game(&conn, &g.id)
+            .unwrap()
+            .into_iter()
+            .map(|s| s.id)
+            .collect();
+        ids.sort();
+        assert_eq!(ids, ["c", "d"]);
+        assert_eq!(list_for_game(&conn, &other.id).unwrap().len(), 1);
+        assert_eq!(get(&conn, "c").unwrap().rating, Some(5));
+        assert_eq!(dedupe_overlapping_auto(&conn).unwrap(), 0);
     }
 }
