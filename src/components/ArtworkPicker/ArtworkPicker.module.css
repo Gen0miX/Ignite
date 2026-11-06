@@ -128,6 +128,26 @@
   object-fit: cover;
 }
 
+/* Fixed boxes so the grid does not jump while thumbnails load. */
+.hero .option {
+  aspect-ratio: 96 / 31;
+}
+
+.hero .option img {
+  height: 100%;
+  object-fit: cover;
+}
+
+.logo .option {
+  aspect-ratio: 2 / 1;
+  padding: var(--space-2);
+}
+
+.logo .option img {
+  height: 100%;
+  object-fit: contain;
+}
+
 .noThumb {
   display: flex;
   align-items: center;

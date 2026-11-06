@@ -5,10 +5,15 @@ import { Check, X } from 'lucide-react';
 import { artworkSrc, commands, unwrap, type ArtworkSlot } from '../../api/client';
 import buttons from '../../components/Button/Button.module.css';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
+import { Skeleton, SkeletonGroup } from '../Skeleton/Skeleton';
+import { SkeletonImage } from '../Skeleton/SkeletonImage';
 import { fr } from '../../i18n/fr';
 import styles from './ArtworkPicker.module.css';
 
 const t = fr.artwork;
+/** Placeholders shown per type while SteamGridDB answers. */
+const SKELETONS: Record<ArtworkSlot, number> = { cover: 12, hero: 6, logo: 8 };
+const RATIO: Record<ArtworkSlot, string> = { cover: '2 / 3', hero: '96 / 31', logo: '2 / 1' };
 
 interface ArtworkPickerProps {
   gameId: string;
@@ -84,7 +89,15 @@ export function ArtworkPicker({ gameId, title, onClose }: ArtworkPickerProps) {
   const data = search.data;
   let body;
   if (search.isPending) {
-    body = <p className={styles.muted}>{t.loading}</p>;
+    body = (
+      <SkeletonGroup label={t.loading}>
+        <span className={`${styles.grid} ${styles[slot]}`}>
+          {Array.from({ length: SKELETONS[slot] }, (_, i) => (
+            <Skeleton key={i} aspectRatio={RATIO[slot]} radius="var(--radius-md)" />
+          ))}
+        </span>
+      </SkeletonGroup>
+    );
   } else if (search.isError || !data) {
     body = <p className={styles.error}>{t.error}</p>;
   } else if (data.state === 'needsKey') {
@@ -105,7 +118,7 @@ export function ArtworkPicker({ gameId, title, onClose }: ArtworkPickerProps) {
             <li key={o.url}>
               <button
                 type="button"
-                className={`${styles.option} ${picked ? styles.picked : ''}`}
+                className={`${styles.option} img-host ${picked ? styles.picked : ''}`}
                 disabled={save.isPending}
                 aria-pressed={picked}
                 onClick={() => toggle(o.url)}
@@ -117,7 +130,7 @@ export function ArtworkPicker({ gameId, title, onClose }: ArtworkPickerProps) {
                   </span>
                 )}
                 {src ? (
-                  <img src={src} alt="" loading="lazy" />
+                  <SkeletonImage src={src} loading="lazy" />
                 ) : (
                   <span className={styles.noThumb}>?</span>
                 )}
