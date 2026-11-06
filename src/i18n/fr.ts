@@ -537,6 +537,7 @@ export const fr = {
     loading: 'Chargement…',
     totalTime: 'Temps total',
     estimatedPart: (t: string) => `dont ${t} estimé`,
+    resumeNote: 'Où tu t’es arrêté',
     sessions: 'Sessions',
     sessionsDetail: (n: number, avg: string) =>
       n === 0 ? 'aucune session' : `${n} ${n > 1 ? 'sessions' : 'session'} · ${avg} en moyenne`,

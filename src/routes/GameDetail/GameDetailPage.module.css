@@ -90,6 +90,24 @@
 }
 
 /* Key figures */
+.resume {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 640px;
+  font-size: var(--text-lg);
+  line-height: 1.45;
+  color: var(--color-text-2);
+}
+
+.resumeLabel {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent-ink);
+}
+
 .figures {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));

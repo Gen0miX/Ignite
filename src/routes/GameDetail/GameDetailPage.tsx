@@ -11,7 +11,7 @@ import { GameTitle } from '../../components/GameTitle/GameTitle';
 import { SourceBadge } from '../../components/SourceBadge/SourceBadge';
 import { SkeletonImage } from '../../components/Skeleton/SkeletonImage';
 import { fr } from '../../i18n/fr';
-import { formatPlaytimeLong, titleTint } from '../../lib/format';
+import { formatLastPlayed, formatPlaytimeLong, titleTint } from '../../lib/format';
 import { sessionStats } from '../../lib/sessions';
 import { useState } from 'react';
 import { ImageIcon } from 'lucide-react';
@@ -91,6 +91,15 @@ function Sheet({ game }: { game: GameDetail }) {
             logo={game.logo}
             className={styles.title}
           />
+          {game.resumeNote && (
+            <p className={styles.resume}>
+              <span className={styles.resumeLabel}>
+                {t.resumeNote}
+                {game.resumeNoteAt && ` · ${formatLastPlayed(game.resumeNoteAt)}`}
+              </span>
+              {game.resumeNote}
+            </p>
+          )}
           <div className={styles.heroActions}>
             <button
               type="button"
