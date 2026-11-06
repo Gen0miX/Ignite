@@ -48,6 +48,8 @@ vi.mock('../api/client', async (importOriginal) => {
       genres: [],
       modes: [],
       playSourceId: `src-${id}`,
+      resumeNote: null,
+      resumeNoteAt: null,
       sources: [
         {
           id: `src-${id}`,
