@@ -331,7 +331,7 @@ export const fr = {
     alreadyAdded: 'Cet exécutable est déjà dans la bibliothèque.',
   },
   artwork: {
-    title: 'Choisir une image',
+    title: 'Choisir les images',
     close: 'Fermer',
     open: 'Changer les images',
     slotLabel: "Type d'image",
@@ -346,7 +346,11 @@ export const fr = {
     noResult: 'Aucune image trouvée. Essaie un autre titre ou un autre jeu dans la liste.',
     choose: (size: string) => `Utiliser cette image ${size}`.trim(),
     setError: "L'image n'a pas pu être téléchargée.",
-    credit: 'Images de la communauté SteamGridDB, copiées dans le cache local de Ignite.',
+    credit: 'Images de la communauté SteamGridDB, copiées dans le cache local d’Ignite.',
+    chosen: (list: string) => `À enregistrer : ${list}.`,
+    cancel: 'Annuler',
+    save: 'Enregistrer',
+    saving: 'Enregistrement…',
   },
   collections: {
     section: 'Collections',

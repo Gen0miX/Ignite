@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { artworkSrc, commands, unwrap, type ArtworkSlot } from '../../api/client';
 import buttons from '../../components/Button/Button.module.css';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
@@ -16,7 +16,16 @@ interface ArtworkPickerProps {
   onClose: () => void;
 }
 
-/** Pick a cover, hero or logo among SteamGridDB images. */
+/** A chosen image, kept until Save. */
+interface Pick {
+  url: string;
+  sgdbGame: number | null;
+}
+
+/**
+ * Pick a cover, hero and logo among SteamGridDB images: clicks only mark
+ * the choice for the current type; Save downloads every chosen image.
+ */
 export function ArtworkPicker({ gameId, title, onClose }: ArtworkPickerProps) {
   const client = useQueryClient();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -30,15 +39,31 @@ export function ArtworkPicker({ gameId, title, onClose }: ArtworkPickerProps) {
     queryFn: () => unwrap(commands.artworkSearch(gameId, slot, sgdbGame, submitted)),
     staleTime: 10 * 60_000,
   });
-  const set = useMutation({
-    mutationFn: (url: string) =>
-      unwrap(commands.artworkSet(gameId, slot, url, search.data?.selectedGame ?? null)),
+  const [picks, setPicks] = useState<Partial<Record<ArtworkSlot, Pick>>>({});
+  const chosen = Object.entries(picks) as [ArtworkSlot, Pick][];
+  const save = useMutation({
+    mutationFn: async () => {
+      let detail = null;
+      for (const [s, p] of chosen) {
+        detail = await unwrap(commands.artworkSet(gameId, s, p.url, p.sgdbGame));
+      }
+      return detail;
+    },
     onSuccess: (detail) => {
-      client.setQueryData(['game', gameId], detail);
-      for (const queryKey of [['library'], ['game']]) void client.invalidateQueries({ queryKey });
+      if (detail) client.setQueryData(['game', gameId], detail);
+      for (const queryKey of [['library'], ['game'], ['home']]) {
+        void client.invalidateQueries({ queryKey });
+      }
       onClose();
     },
   });
+  const toggle = (url: string) =>
+    setPicks((p) => {
+      const next = { ...p };
+      if (next[slot]?.url === url) delete next[slot];
+      else next[slot] = { url, sgdbGame: search.data?.selectedGame ?? null };
+      return next;
+    });
 
   useEffect(() => {
     dialogRef.current?.querySelector<HTMLElement>('button')?.focus();
@@ -72,15 +97,22 @@ export function ArtworkPicker({ gameId, title, onClose }: ArtworkPickerProps) {
       <ul className={`${styles.grid} ${styles[slot]}`}>
         {data.options.map((o) => {
           const src = artworkSrc(o.thumb);
+          const picked = picks[slot]?.url === o.url;
           return (
             <li key={o.url}>
               <button
                 type="button"
-                className={styles.option}
-                disabled={set.isPending}
-                onClick={() => set.mutate(o.url)}
+                className={`${styles.option} ${picked ? styles.picked : ''}`}
+                disabled={save.isPending}
+                aria-pressed={picked}
+                onClick={() => toggle(o.url)}
                 aria-label={t.choose(o.width && o.height ? `${o.width}×${o.height}` : '')}
               >
+                {picked && (
+                  <span className={styles.pickedMark} aria-hidden="true">
+                    <Check size={16} strokeWidth={3} />
+                  </span>
+                )}
                 {src ? (
                   <img src={src} alt="" loading="lazy" />
                 ) : (
@@ -114,7 +146,7 @@ export function ArtworkPicker({ gameId, title, onClose }: ArtworkPickerProps) {
             label={t.slotLabel}
             options={(['cover', 'hero', 'logo'] as const).map((v) => ({
               value: v,
-              label: t.slots[v],
+              label: picks[v] ? `${t.slots[v]} ✓` : t.slots[v],
             }))}
             value={slot}
             onChange={setSlot}
@@ -147,13 +179,30 @@ export function ArtworkPicker({ gameId, title, onClose }: ArtworkPickerProps) {
         </div>
         <div className={styles.body}>
           {body}
-          {set.isError && (
+          {save.isError && (
             <p role="alert" className={styles.error}>
               {t.setError}
             </p>
           )}
         </div>
-        <footer className={styles.footer}>{t.credit}</footer>
+        <footer className={styles.footer}>
+          <span className={styles.credit}>
+            {chosen.length > 0
+              ? t.chosen(chosen.map(([s]) => t.slots[s].toLowerCase()).join(', '))
+              : t.credit}
+          </span>
+          <button type="button" className={buttons.secondary} onClick={onClose}>
+            {t.cancel}
+          </button>
+          <button
+            type="button"
+            className={buttons.primary}
+            disabled={save.isPending}
+            onClick={() => (chosen.length > 0 ? save.mutate() : onClose())}
+          >
+            {save.isPending ? t.saving : t.save}
+          </button>
+        </footer>
       </div>
     </div>
   );
