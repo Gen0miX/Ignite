@@ -62,6 +62,31 @@ export function useGame(id: string | null) {
   });
 }
 
+/** Steam Store trailers, screenshots and description of a game (cached 6 h backend-side). */
+export function useGameMedia(id: string) {
+  return useQuery({
+    queryKey: ['game-media', id],
+    queryFn: () => unwrap(commands.gameStoreMedia(id)),
+    enabled: isTauri() && !!id,
+    staleTime: 60 * 60_000,
+    retry: 1,
+  });
+}
+
+export function useGameNews(id: string) {
+  return useQuery({
+    queryKey: ['game-news', id],
+    queryFn: () => unwrap(commands.gameNews(id)),
+    enabled: isTauri() && !!id,
+    staleTime: 30 * 60_000,
+    retry: 1,
+  });
+}
+
+export function useOpenLink() {
+  return useMutation({ mutationFn: (url: string) => unwrap(commands.openLink(url)) });
+}
+
 function useInvalidateLibrary() {
   const client = useQueryClient();
   return () => Promise.all(LIBRARY_KEYS.map((queryKey) => client.invalidateQueries({ queryKey })));

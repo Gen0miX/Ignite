@@ -126,11 +126,12 @@ pub fn fetch(
     appid: &str,
     game_id: &str,
     game_title: &str,
+    count: u32,
 ) -> AppResult<(Vec<NewsItem>, Vec<NewsItem>)> {
     let mut resp = http::agent()
         .get("https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/")
         .query("appid", appid)
-        .query("count", "5")
+        .query("count", count.to_string())
         .query("maxlength", "600")
         .query("format", "json")
         .call()

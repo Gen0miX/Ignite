@@ -70,6 +70,10 @@ export const commands = {
 	homeNews: () => typedError<HomeNews, CommandError>(__TAURI_INVOKE("home_news")),
 	/**  Opens a news article in the default browser (https only). */
 	openLink: (url: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_link", { url })),
+	/**  Trailers, screenshots and short description from the Steam Store. */
+	gameStoreMedia: (gameId: string) => typedError<GameMedia_Serialize, CommandError>(__TAURI_INVOKE("game_store_media", { gameId })),
+	/**  Latest Steam news of the game (developer announcements first). */
+	gameNews: (gameId: string) => typedError<GameNews, CommandError>(__TAURI_INVOKE("game_news", { gameId })),
 	/**  Games of a couch-mode shelf. */
 	couchShelf: (shelf: Shelf) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("couch_shelf", { shelf })),
 	/**  Games the random wheel may land on for a mood. */
@@ -457,6 +461,30 @@ export type GameDetail_Serialize = {
 	timeBySource: SourceTime_Serialize[],
 };
 
+export type GameMedia = GameMedia_Serialize | GameMedia_Deserialize;
+
+export type GameMedia_Deserialize = {
+	/**  Steam app the media come from; `None` when no Steam page was found. */
+	steamAppid?: string | null,
+	/**  The page was found by title (game not owned on Steam). */
+	byTitle: boolean,
+	media: StoreMedia_Deserialize,
+};
+
+export type GameMedia_Serialize = {
+	/**  Steam app the media come from; `None` when no Steam page was found. */
+	steamAppid: string | null,
+	/**  The page was found by title (game not owned on Steam). */
+	byTitle: boolean,
+	media: StoreMedia_Serialize,
+};
+
+export type GameNews = {
+	items: NewsItem[],
+	/**  Promotions and press articles, shown on demand. */
+	hidden: NewsItem[],
+};
+
 /**  User-chosen progress status of a game. */
 export type GameStatus = "todo" | "playing" | "done" | "dropped";
 
@@ -752,6 +780,11 @@ export type ScannedSource = {
 	warnings: string[],
 };
 
+export type Screenshot = {
+	thumb: string,
+	full: string,
+};
+
 export type SearchCheck = {
 	/**  Tokens that looked like filters but were not understood. */
 	warnings: string[],
@@ -1009,6 +1042,20 @@ export type SteamSettings_Serialize = {
 	apiKeyPresent: boolean,
 };
 
+export type StoreMedia = StoreMedia_Serialize | StoreMedia_Deserialize;
+
+export type StoreMedia_Deserialize = {
+	description?: string | null,
+	trailers: Trailer[],
+	screenshots: Screenshot[],
+};
+
+export type StoreMedia_Serialize = {
+	description: string | null,
+	trailers: Trailer[],
+	screenshots: Screenshot[],
+};
+
 export type SyncReport = {
 	kind: SourceKind,
 	status: SourceStatus,
@@ -1068,6 +1115,13 @@ export type TrackingSettings = {
 	minSessionMinutes: number,
 	/**  No input for this long pauses the timer. */
 	idleMinutes: number,
+};
+
+export type Trailer = {
+	name: string,
+	thumbnail: string,
+	/**  HLS master playlist (Steam no longer serves plain MP4 trailers). */
+	hls: string,
 };
 
 /* Tauri Specta runtime */

@@ -9,6 +9,7 @@ pub mod emulators;
 pub mod home;
 pub mod import;
 pub mod library;
+pub mod media;
 pub mod play;
 pub mod secrets;
 pub mod sources;
@@ -93,6 +94,8 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         home::home_tonight,
         home::home_news,
         home::open_link,
+        media::game_store_media,
+        media::game_news,
         home::couch_shelf,
         home::couch_wheel,
         app::app_settings_get,

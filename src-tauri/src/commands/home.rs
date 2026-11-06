@@ -101,7 +101,7 @@ pub async fn home_news(app: AppHandle) -> CommandResult<HomeNews> {
         let mut items = Vec::new();
         let mut hidden = Vec::new();
         for (appid, game_id, title) in targets {
-            match news::fetch(&appid, &game_id, &title) {
+            match news::fetch(&appid, &game_id, &title, 5) {
                 Ok((kept, promo)) => {
                     items.extend(kept);
                     hidden.extend(promo);

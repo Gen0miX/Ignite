@@ -110,5 +110,11 @@ Notes de départ :
 
 - **SteamGridDB** (`https://www.steamgriddb.com/api/v2`, Bearer token) : `search/autocomplete/{term}`, `grids/game/{id}?dimensions=600x900`, `heroes/game/{id}`, `logos/game/{id}`. Il existe aussi une correspondance par `steam/{appid}`.
   - **Remplissage automatique** (après chaque synchro et chaque ajout manuel, en tâche de fond, si la clé est enregistrée) : pour chaque jeu visible à qui il manque une jaquette, une image de fond ou un logo (après les images Steam), le jeu SteamGridDB est trouvé par l'id déjà connu, puis `games/steam/{appid}`, puis une recherche dont le résultat n'est retenu que si le titre normalisé est identique (`match_key`). La première image de chaque type manquant est téléchargée. Un jeu incomplet n'est retenté qu'après 7 jours (marqueur `sgdb-auto:<id>` dans `artwork/misses.json`).
+- **Steam Store** (public, sans clé), pour la fiche du jeu :
+  - `GET https://store.steampowered.com/api/appdetails?appids={appid}&l=french` → `{ "{appid}": { success, data } }`. On lit `short_description` (HTML léger, entités décodées), `screenshots[] { path_thumbnail, path_full }` et `movies[] { name, thumbnail, highlight, hls_h264, dash_h264, dash_av1 }`.
+  - **Vérifié en novembre 2026** : les bandes-annonces ne sont plus servies en MP4 (`mp4.max`/`webm` ont disparu, `movie_max.mp4` répond 404). Il ne reste que du HLS (`hls_264_master.m3u8`, segments fMP4, piste audio séparée) et du DASH. Le CDN `video.akamai.steamstatic.com` répond `Access-Control-Allow-Origin: *`. La fiche lit donc le HLS avec **hls.js** (WebView2 n'a pas de HLS natif).
+  - Pour un jeu sans source Steam (Epic, GOG…), la page Steam est cherchée avec `GET /api/storesearch/?term={titre}&l=french&cc=CH` et retenue seulement si le titre normalisé (`match_key`) est identique.
+  - Les actus du jeu utilisent `ISteamNews/GetNewsForApp/v2` (10 éléments, mêmes filtres que l'accueil).
+  - Cache mémoire côté backend : 6 h pour les médias et l'appid trouvé par titre, 30 min pour les actus.
 - **IGDB** (Twitch OAuth client credentials, à faire côté backend) : `POST /v4/games` avec la requête `fields name,genres.name,themes.name,cover.image_id; search "…";`.
 - **HowLongToBeat** : pas d'API officielle. Facultatif, désactivé par défaut, et isolé dans un module remplaçable.

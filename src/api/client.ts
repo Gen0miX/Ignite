@@ -47,6 +47,11 @@ export type AppSettings = b.AppSettings;
 export type BulkUpdate = b.BulkUpdate_Deserialize;
 export type Shelf = b.Shelf;
 export type Mood = b.Mood;
+export type GameMedia = b.GameMedia_Serialize;
+export type GameNews = b.GameNews;
+export type Trailer = b.Trailer;
+export type Screenshot = b.Screenshot;
+export type NewsItem = b.NewsItem;
 
 export class BackendError extends Error {
   readonly kind: string;

@@ -19,6 +19,8 @@ import { ArtworkPicker } from '../../components/ArtworkPicker/ArtworkPicker';
 import { DailyChart } from './DailyChart';
 import { GoalsSection } from './GoalsSection';
 import { LaunchSection } from './LaunchSection';
+import { MediaSection } from './MediaSection';
+import { NewsSection } from './NewsSection';
 import { SessionLog } from './SessionLog';
 import styles from './GameDetailPage.module.css';
 
@@ -158,6 +160,7 @@ function Sheet({ game }: { game: GameDetail }) {
 
       <div className={styles.columns}>
         <div className={styles.mainColumn}>
+          <MediaSection gameId={s.id} />
           <DailyChart sessions={list} />
           <SessionLog game={game} sessions={list} steamCounted={steamCounted} />
         </div>
@@ -168,6 +171,7 @@ function Sheet({ game }: { game: GameDetail }) {
             isEmulated={s.sources.includes('emulator')}
           />
           <GoalsSection gameId={s.id} />
+          <NewsSection gameId={s.id} />
           <LaunchSection game={game} />
         </div>
       </div>
