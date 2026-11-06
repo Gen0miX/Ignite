@@ -100,6 +100,11 @@ export const commands = {
 	sessionDiscard: (sessionId: string) => typedError<null, CommandError>(__TAURI_INVOKE("session_discard", { sessionId })),
 	/**  Brings Ignite's window to the front (out of the notification area). */
 	windowReveal: () => __TAURI_INVOKE<void>("window_reveal"),
+	/**
+	 *  Windows notification "Session terminée · jeu · 2 h 14" (texts from the UI),
+	 *  used when the modal cannot open now (couch mode, another game running).
+	 */
+	notify: (title: string, body: string) => typedError<null, CommandError>(__TAURI_INVOKE("notify", { title, body })),
 	/**  Adds several games to a manual collection (selection, drag and drop). */
 	collectionAddGames: (id: string, gameIds: string[]) => typedError<null, CommandError>(__TAURI_INVOKE("collection_add_games", { id, gameIds })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),

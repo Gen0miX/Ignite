@@ -108,6 +108,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         recap::session_recap_save,
         recap::session_discard,
         recap::window_reveal,
+        recap::notify,
         collections::collection_add_games,
         sources::library_sync,
         sources::sources_status,

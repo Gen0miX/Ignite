@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { StatsRange } from '../api/client';
 
+/** End-of-session recap: always, only for sessions over N minutes, never. */
+export type RecapMode = 'always' | 'longer' | 'never';
+
 interface Prefs {
   /** Trailer player on game sheets (Réglages › Général). */
   showTrailers: boolean;
@@ -9,6 +12,10 @@ interface Prefs {
   /** Period picked on the Statistics page; `null` until the user picks one. */
   statsRange: StatsRange | null;
   setStatsRange: (v: StatsRange) => void;
+  /** Réglages › Général › Fin de session. */
+  recapMode: RecapMode;
+  recapMinMinutes: number;
+  setRecap: (mode: RecapMode, minMinutes?: number) => void;
 }
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -32,6 +39,13 @@ export const usePrefs = create<Prefs>()(
       setShowTrailers: (showTrailers) => set({ showTrailers }),
       statsRange: null,
       setStatsRange: (statsRange) => set({ statsRange }),
+      recapMode: 'longer',
+      recapMinMinutes: 15,
+      setRecap: (recapMode, minMinutes) =>
+        set((s) => ({
+          recapMode,
+          recapMinMinutes: Math.max(1, Math.min(600, Math.round(minMinutes ?? s.recapMinMinutes))),
+        })),
     }),
     { name: 'ignite.prefs' },
   ),

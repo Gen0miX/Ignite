@@ -327,6 +327,20 @@ pub fn window_reveal(app: AppHandle) {
     crate::tray::show_main(&app);
 }
 
+/// Windows notification "Session terminée · jeu · 2 h 14" (texts from the UI),
+/// used when the modal cannot open now (couch mode, another game running).
+#[tauri::command]
+#[specta::specta]
+pub fn notify(app: AppHandle, title: String, body: String) -> CommandResult<()> {
+    use tauri_plugin_notification::NotificationExt;
+    app.notification()
+        .builder()
+        .title(title)
+        .body(body)
+        .show()
+        .map_err(|e| AppError::Invalid(format!("notification: {e}")).into())
+}
+
 /// Called by the tracker once an automatic session is written: the modal can
 /// open at once, achievements are resynced in the background and the recap
 /// is refreshed when they are in.

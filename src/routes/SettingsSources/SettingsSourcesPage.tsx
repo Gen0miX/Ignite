@@ -30,10 +30,11 @@ import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { Cover } from '../../components/GameCard/Cover';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { SourceChip } from '../../components/SourceBadge/SourceBadge';
+import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
 import { Switch } from '../../components/Switch/Switch';
 import { fr } from '../../i18n/fr';
 import { formatLastPlayed } from '../../lib/format';
-import { usePrefs } from '../../lib/prefs';
+import { usePrefs, type RecapMode } from '../../lib/prefs';
 import { scrollToSection } from '../../lib/scrollToSection';
 import styles from './SettingsSourcesPage.module.css';
 import { EmulatorsCard } from './EmulatorsCard';
@@ -459,6 +460,9 @@ function TrackingCard() {
 function GeneralCard() {
   const showTrailers = usePrefs((p) => p.showTrailers);
   const setShowTrailers = usePrefs((p) => p.setShowTrailers);
+  const recapMode = usePrefs((p) => p.recapMode);
+  const recapMinMinutes = usePrefs((p) => p.recapMinMinutes);
+  const setRecap = usePrefs((p) => p.setRecap);
   const tg = t.general;
   return (
     <section className={styles.card} aria-labelledby="general-title">
@@ -472,6 +476,39 @@ function GeneralCard() {
         </div>
         <Switch label={tg.showTrailers} checked={showTrailers} onChange={setShowTrailers} />
       </div>
+      <h3 className={styles.label}>{tg.endTitle}</h3>
+      <span className={styles.muted}>{tg.recapHint}</span>
+      <SegmentedControl
+        label={tg.recapLabel}
+        options={[
+          { value: 'always', label: tg.recapAlways },
+          { value: 'longer', label: tg.recapLonger },
+          { value: 'never', label: tg.recapNever },
+        ]}
+        value={recapMode}
+        onChange={(mode: RecapMode) => setRecap(mode)}
+      />
+      {recapMode === 'longer' && (
+        <div className={styles.field}>
+          <label className={styles.label} htmlFor="recap-min">
+            {tg.recapMinutes}
+          </label>
+          <select
+            id="recap-min"
+            className={styles.select}
+            value={recapMinMinutes}
+            onChange={(e) => setRecap('longer', Number(e.target.value))}
+          >
+            {[...new Set([5, 10, 15, 20, 30, 45, 60, recapMinMinutes])]
+              .sort((a, b) => a - b)
+              .map((n) => (
+                <option key={n} value={n}>
+                  {`${n} ${tg.minutesUnit}`}
+                </option>
+              ))}
+          </select>
+        </div>
+      )}
     </section>
   );
 }
