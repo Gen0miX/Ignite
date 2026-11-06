@@ -123,6 +123,7 @@ Notes de départ :
   - Images : `https://images.igdb.com/igdb/image/upload/t_screenshot_med/{image_id}.jpg` (vignette) et `t_1080p` (plein écran). Les captures passent en premier, les artworks complètent.
   - Vidéos : ce sont des ids YouTube, lus dans le lecteur `youtube-nocookie.com` (chargé seulement au clic sur Lecture). Le résumé est en anglais.
   - Seul ce qui manque côté Steam est complété. Tant que les identifiants manquent, la fiche le signale et le résultat n'est pas mis en cache.
-  - **À vérifier** avec de vrais identifiants : la forme exacte des réponses.
+  - **Vérifié en novembre 2026** avec de vrais identifiants (test `igdb_live`, ignoré par défaut) : la réponse est un tableau de jeux, et `screenshots`, `artworks` et `videos` sont des tableaux d'objets `{ id, image_id }` / `{ id, video_id, name }`. Plusieurs jeux peuvent porter le même titre (« Hades » : un homonyme obscur sans média passe avant le vrai jeu). Parmi les titres identiques, on garde donc celui qui a le plus de médias, puis le plus de notes (`total_rating_count`).
+  - Le lecteur `youtube-nocookie.com` s'affiche bien depuis une origine locale (pas d'erreur 153 avec `referrerpolicy="strict-origin-when-cross-origin"`).
 
 - **HowLongToBeat** : pas d'API officielle. Facultatif, désactivé par défaut, et isolé dans un module remplaçable.

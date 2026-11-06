@@ -18,7 +18,8 @@ use super::steam_store::{Screenshot, Trailer};
 
 const TOKEN_URL: &str = "https://id.twitch.tv/oauth2/token";
 const GAMES_URL: &str = "https://api.igdb.com/v4/games";
-const FIELDS: &str = "fields name,summary,screenshots.image_id,artworks.image_id,\
+const FIELDS: &str =
+    "fields name,summary,total_rating_count,screenshots.image_id,artworks.image_id,\
 videos.video_id,videos.name;";
 const MAX_IMAGES: usize = 12;
 const MAX_VIDEOS: usize = 6;
@@ -38,6 +39,8 @@ struct RawGame {
     name: String,
     #[serde(default)]
     summary: Option<String>,
+    #[serde(default)]
+    total_rating_count: Option<u32>,
     #[serde(default)]
     screenshots: Vec<RawImage>,
     #[serde(default)]
@@ -114,17 +117,28 @@ fn to_media(g: RawGame) -> IgdbMedia {
     }
 }
 
-/// Game with exactly the same normalised title among search results.
+/// Game with exactly the same normalised title among search results. Several
+/// games can share a title ("Hades"): the one with the most media, then the
+/// most ratings, wins (the first one on a tie).
 pub fn parse_search(body: &str, title: &str) -> AppResult<Option<IgdbMedia>> {
     let games: Vec<RawGame> = serde_json::from_str(body)?;
     let key = match_key(title);
     if key.is_empty() {
         return Ok(None);
     }
-    Ok(games
-        .into_iter()
-        .find(|g| match_key(&g.name) == key)
-        .map(to_media))
+    let score = |g: &RawGame| {
+        (
+            g.videos.len() + g.screenshots.len() + g.artworks.len(),
+            g.total_rating_count.unwrap_or(0),
+        )
+    };
+    let mut best: Option<RawGame> = None;
+    for g in games.into_iter().filter(|g| match_key(&g.name) == key) {
+        if best.as_ref().is_none_or(|b| score(&g) > score(b)) {
+            best = Some(g);
+        }
+    }
+    Ok(best.map(to_media))
 }
 
 pub fn parse_by_id(body: &str) -> AppResult<Option<IgdbMedia>> {
@@ -226,6 +240,7 @@ mod tests {
 
     const BODY: &str = r#"[
       {"id":1,"name":"Hades II","summary":"Sequel."},
+      {"id":3,"name":"Hades","summary":"Obscure homonym.","total_rating_count":2},
       {"id":2,"name":"Hades","summary":"  A rogue-like\n dungeon crawler. ",
        "screenshots":[{"id":9,"image_id":"sc6lbb"}],
        "artworks":[{"id":8,"image_id":"ar5x"}],
@@ -266,5 +281,46 @@ mod tests {
         assert!(is_youtube_id("a-b_c-d_e-f"));
         assert!(!is_youtube_id("short"));
         assert!(!is_youtube_id("91t0ha9x0A&"));
+    }
+}
+
+/// Real IGDB call with the credentials saved in the app (ignored by default):
+/// `cargo test igdb_live -- --ignored --nocapture`. Never prints the secrets.
+#[cfg(all(test, windows))]
+mod live {
+    use super::*;
+    use crate::secrets::{KeyringStore, SecretKind, SecretStore};
+
+    #[test]
+    #[ignore]
+    fn igdb_live() {
+        let secrets = KeyringStore::new().unwrap();
+        let id = secrets
+            .get(SecretKind::IgdbClientId)
+            .unwrap()
+            .expect("client id");
+        let secret = secrets
+            .get(SecretKind::IgdbClientSecret)
+            .unwrap()
+            .expect("client secret");
+        for title in ["League of Legends", "VALORANT", "Hades", "Diablo IV"] {
+            let raw = query(&id, &secret, &search_query(title)).unwrap();
+            println!(
+                "{title}: {} bytes, starts {}",
+                raw.len(),
+                &raw[..raw.len().min(300)]
+            );
+            let media = parse_search(&raw, title).unwrap();
+            match media {
+                Some(m) => println!(
+                    "  -> id {} videos {} images {} summary {}",
+                    m.id,
+                    m.trailers.len(),
+                    m.screenshots.len(),
+                    m.summary.is_some()
+                ),
+                None => println!("  -> no exact match"),
+            }
+        }
     }
 }
