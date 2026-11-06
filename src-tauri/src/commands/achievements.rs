@@ -120,13 +120,10 @@ fn load(app: &AppHandle, game_id: &str, refresh: bool) -> CommandResult<Achievem
     }
     let Some(source) = sources.iter().find(|s| s.kind == SourceKind::Steam) else {
         // Other platforms (GOG) fill the cache during the sync.
-        for s in &sources {
-            if let Some((synced_at, _)) = achievements::sync_state(&db.conn(), &s.id)? {
-                let rows = achievements::list_for_source(&db.conn(), &s.id)?;
-                return Ok(view(rows, Some(synced_at), None));
-            }
-        }
-        return Ok(empty(AchievementsState::Unsupported));
+        let ids: Vec<&str> = sources.iter().map(|s| s.id.as_str()).collect();
+        return Ok(
+            cached_view(&db.conn(), &ids)?.unwrap_or_else(|| empty(AchievementsState::Unsupported))
+        );
     };
     let appid: u64 = source
         .external_id
@@ -188,6 +185,22 @@ fn load(app: &AppHandle, game_id: &str, refresh: bool) -> CommandResult<Achievem
     }
 }
 
+/// Cached list of the first source that has one (GOG fills it during the sync).
+/// Takes one connection for both queries: locking `Db` twice in the same
+/// `if let` (its guard lives until the end of the block) froze the app.
+fn cached_view(
+    conn: &rusqlite::Connection,
+    source_ids: &[&str],
+) -> crate::error::AppResult<Option<AchievementsView>> {
+    for id in source_ids {
+        if let Some((synced_at, _)) = achievements::sync_state(conn, id)? {
+            let rows = achievements::list_for_source(conn, id)?;
+            return Ok(Some(view(rows, Some(synced_at), None)));
+        }
+    }
+    Ok(None)
+}
+
 /// RetroAchievements for an emulated game, cached like Steam's.
 fn load_ra(
     app: &AppHandle,
@@ -220,5 +233,53 @@ fn load_ra(
             let rows = achievements::list_for_source(&db.conn(), &source.id)?;
             Ok(view(rows, cached.map(|(s, _)| s), Some(e.to_string())))
         }
+    }
+}
+
+#[cfg(test)]
+mod cache_tests {
+    use super::*;
+    use crate::db::repo::games;
+    use crate::db::repo::game_sources::SourceData;
+
+    #[test]
+    fn gog_achievements_come_from_the_cache() {
+        let db = Db::open_in_memory().unwrap();
+        let mut conn = db.conn();
+        let game = games::insert(&conn, "The Witcher 3").unwrap();
+        let gog = game_sources::upsert(
+            &conn,
+            &game.id,
+            SourceKind::Gog,
+            &SourceData {
+                external_id: Some("1".into()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(cached_view(&conn, &[&gog.id]).unwrap().is_none());
+
+        let row = |name: &str, unlocked: Option<&str>| AchievementRow {
+            api_name: name.into(),
+            name: Some(name.into()),
+            description: None,
+            icon_url: None,
+            unlocked_at: unlocked.map(Into::into),
+            global_percent: Some(30.0),
+        };
+        achievements::replace_for_source(
+            &mut conn,
+            &gog.id,
+            Some(&[
+                row("ALL_IN", None),
+                row("BOOKWORM", Some("2016-11-03T11:35:52Z")),
+            ]),
+        )
+        .unwrap();
+        let v = cached_view(&conn, &[&gog.id]).unwrap().unwrap();
+        assert_eq!(
+            (v.state, v.unlocked, v.total),
+            (AchievementsState::Ok, 1, 2)
+        );
     }
 }
