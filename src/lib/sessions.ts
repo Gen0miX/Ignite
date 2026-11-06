@@ -40,6 +40,8 @@ export interface SessionStats {
   averageMinutes: number;
   /** Minutes entered as "already played". */
   estimateMinutes: number;
+  /** Average recap rating (1–5) of the rated sessions, `null` if none. */
+  averageRating: number | null;
 }
 
 export function sessionStats(sessions: PlaySession[]): SessionStats {
@@ -48,11 +50,15 @@ export function sessionStats(sessions: PlaySession[]): SessionStats {
   const estimate = sessions
     .filter((s) => s.origin === 'estimate')
     .reduce((sum, s) => sum + s.durationSeconds, 0);
+  const rated = sessions.filter((s) => s.rating != null);
   return {
     count: dated.length,
     // Not rounded here: a sub-minute average reads "< 1 min", not "0 min".
     averageMinutes: dated.length ? total / dated.length / 60 : 0,
     estimateMinutes: Math.round(estimate / 60),
+    averageRating: rated.length
+      ? rated.reduce((sum, s) => sum + (s.rating ?? 0), 0) / rated.length
+      : null,
   };
 }
 

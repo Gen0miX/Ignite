@@ -1,0 +1,14 @@
+.flames {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  vertical-align: middle;
+}
+
+.on {
+  color: var(--color-accent);
+}
+
+.off {
+  color: var(--color-border);
+}

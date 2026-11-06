@@ -508,6 +508,8 @@ export const fr = {
     resumeHint: 'Repris sur l’accueil et en haut de la fiche au prochain lancement.',
     rating: 'Cette session',
     ratingValue: (n: number) => (n > 1 ? `${n} flammes` : '1 flamme'),
+    ratingOf: (n: number) =>
+      `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(n)} flamme${n >= 2 ? 's' : ''} sur 5`,
     status: 'Statut du jeu',
     hideShort: (n: number) => `Ne plus afficher pour les sessions de moins de ${n} min`,
     discard: 'Ne pas compter cette session',
@@ -539,6 +541,7 @@ export const fr = {
     estimatedPart: (t: string) => `dont ${t} estimé`,
     resumeNote: 'Où tu t’es arrêté',
     sessions: 'Sessions',
+    ratingAverage: 'ressenti moyen',
     sessionsDetail: (n: number, avg: string) =>
       n === 0 ? 'aucune session' : `${n} ${n > 1 ? 'sessions' : 'session'} · ${avg} en moyenne`,
     achievements: 'Succès',
@@ -556,6 +559,7 @@ export const fr = {
     colTime: 'Horaire',
     colDuration: 'Durée',
     colOrigin: 'Origine',
+    colRating: 'Ressenti',
     colNote: 'Note',
     origin: {
       auto: 'Auto',

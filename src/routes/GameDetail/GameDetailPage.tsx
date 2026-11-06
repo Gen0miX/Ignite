@@ -10,10 +10,11 @@ import { SegmentedControl } from '../../components/SegmentedControl/SegmentedCon
 import { GameTitle } from '../../components/GameTitle/GameTitle';
 import { SourceBadge } from '../../components/SourceBadge/SourceBadge';
 import { SkeletonImage } from '../../components/Skeleton/SkeletonImage';
+import { FlameRating } from '../../components/FlameRating/FlameRating';
 import { fr } from '../../i18n/fr';
 import { formatLastPlayed, formatPlaytimeLong, titleTint } from '../../lib/format';
 import { sessionStats } from '../../lib/sessions';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ImageIcon } from 'lucide-react';
 import { AchievementsSection } from './AchievementsSection';
 import { ArtworkPicker } from '../../components/ArtworkPicker/ArtworkPicker';
@@ -147,6 +148,13 @@ function Sheet({ game }: { game: GameDetail }) {
           label={t.sessions}
           value={String(stats.count)}
           detail={t.sessionsDetail(stats.count, formatPlaytimeLong(stats.averageMinutes))}
+          extra={
+            stats.averageRating != null && (
+              <>
+                <FlameRating value={stats.averageRating} /> {t.ratingAverage}
+              </>
+            )
+          }
         />
         {s.achievements && s.achievements.total > 0 ? (
           <Figure
@@ -190,12 +198,23 @@ function Sheet({ game }: { game: GameDetail }) {
   );
 }
 
-function Figure({ label, value, detail }: { label: string; value: string; detail?: string }) {
+function Figure({
+  label,
+  value,
+  detail,
+  extra,
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+  extra?: ReactNode;
+}) {
   return (
     <div className={styles.figure}>
       <span className={styles.figureLabel}>{label}</span>
       <span className={styles.figureValue}>{value}</span>
       {detail && <span className={styles.figureDetail}>{detail}</span>}
+      {extra && <span className={styles.figureDetail}>{extra}</span>}
     </div>
   );
 }

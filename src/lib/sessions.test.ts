@@ -49,8 +49,24 @@ describe('sessionStats', () => {
       session('b', '2026-11-02T10:00:00Z', 30, 'manual'),
       session('e', null, 600, 'estimate'),
     ]);
-    expect(stats).toEqual({ count: 2, averageMinutes: 45, estimateMinutes: 600 });
-    expect(sessionStats([])).toEqual({ count: 0, averageMinutes: 0, estimateMinutes: 0 });
+    expect(stats).toEqual({
+      count: 2,
+      averageMinutes: 45,
+      estimateMinutes: 600,
+      averageRating: null,
+    });
+    expect(sessionStats([])).toEqual({
+      count: 0,
+      averageMinutes: 0,
+      estimateMinutes: 0,
+      averageRating: null,
+    });
+    const rated = sessionStats([
+      { ...session('r1', '2026-11-01T10:00:00Z', 60), rating: 5 },
+      { ...session('r2', '2026-11-02T10:00:00Z', 60), rating: 4 },
+      session('r3', '2026-11-03T10:00:00Z', 60),
+    ]);
+    expect(rated.averageRating).toBe(4.5);
   });
 });
 

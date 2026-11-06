@@ -6,6 +6,7 @@ import buttons from '../../components/Button/Button.module.css';
 import { fr } from '../../i18n/fr';
 import { formatPlaytimeLong, toLocalInput } from '../../lib/format';
 import styles from './GameDetailPage.module.css';
+import { FlameRating } from '../../components/FlameRating/FlameRating';
 
 const t = fr.game;
 const dateFmt = new Intl.DateTimeFormat('fr-FR', {
@@ -179,6 +180,7 @@ export function SessionLog({
                 <th scope="col">{t.colDate}</th>
                 <th scope="col">{t.colTime}</th>
                 <th scope="col">{t.colDuration}</th>
+                <th scope="col">{t.colRating}</th>
                 <th scope="col">{t.colOrigin}</th>
                 <th scope="col">{t.colNote}</th>
                 <th scope="col">
@@ -190,7 +192,7 @@ export function SessionLog({
               {sessions.map((s) =>
                 editing?.id === s.id ? (
                   <tr key={s.id}>
-                    <td colSpan={6}>
+                    <td colSpan={7}>
                       <SessionForm
                         gameId={gameId}
                         draft={editing}
@@ -217,6 +219,9 @@ export function SessionLog({
                           (−{formatPlaytimeLong(s.idleSeconds / 60)})
                         </span>
                       )}
+                    </td>
+                    <td>
+                      <FlameRating value={s.rating} />
                     </td>
                     <td>
                       <span className={`${styles.origin} ${styles[`origin_${s.origin}`]}`}>
