@@ -199,6 +199,21 @@
   border-bottom: 0;
 }
 
+/* Small 2:3 cover; the placeholder title is too big to read at this size. */
+.hiddenThumb {
+  position: relative;
+  flex: none;
+  width: 32px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-card);
+}
+
+.hiddenThumb span {
+  display: none;
+}
+
 .hiddenName {
   flex: 1;
   min-width: 0;

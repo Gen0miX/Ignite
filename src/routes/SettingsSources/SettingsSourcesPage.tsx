@@ -27,6 +27,7 @@ import {
 import { PageMain } from '../../app/AppShell';
 import buttons from '../../components/Button/Button.module.css';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
+import { Cover } from '../../components/GameCard/Cover';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { SourceChip } from '../../components/SourceBadge/SourceBadge';
 import { Switch } from '../../components/Switch/Switch';
@@ -525,6 +526,9 @@ function HiddenGamesCard() {
           <ul className={styles.hiddenList}>
             {games.map((g) => (
               <li key={g.id}>
+                <span className={styles.hiddenThumb} aria-hidden="true">
+                  <Cover title={g.title} cover={g.cover} header={g.header} />
+                </span>
                 <span className={styles.hiddenName}>{g.title}</span>
                 <button
                   type="button"
