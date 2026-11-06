@@ -40,6 +40,9 @@ pub struct ActiveSession {
     /// Last tick where a matching process was running.
     pub last_seen: DateTime<Utc>,
     pub idle_seconds: i64,
+    /// Idle stretches removed from the session (`start`, `end`), for the
+    /// recap timeline; the last one grows while the stretch lasts.
+    pub idle_periods: Vec<(DateTime<Utc>, DateTime<Utc>)>,
     last_heartbeat: DateTime<Utc>,
     /// The current idle stretch has already been counted.
     in_idle_stretch: bool,
@@ -121,10 +124,16 @@ impl SessionTracker {
                     if idle {
                         if s.in_idle_stretch {
                             s.idle_seconds += dt;
+                            if let Some(last) = s.idle_periods.last_mut() {
+                                last.1 = now;
+                            }
                         } else {
                             // The whole stretch was idle, not only what exceeds the threshold.
-                            s.idle_seconds += idle_for_secs.min(s.total_seconds());
+                            let back = idle_for_secs.min(s.total_seconds());
+                            s.idle_seconds += back;
                             s.in_idle_stretch = true;
+                            s.idle_periods
+                                .push((now - chrono::Duration::seconds(back), now));
                         }
                         s.idle_seconds = s.idle_seconds.min(s.total_seconds());
                     } else {
@@ -147,6 +156,7 @@ impl SessionTracker {
                         started_at: now,
                         last_seen: now,
                         idle_seconds: 0,
+                        idle_periods: Vec::new(),
                         last_heartbeat: now,
                         in_idle_stretch: idle,
                     };
@@ -253,6 +263,27 @@ mod tests {
         assert_eq!(s.last_seen, t(597));
         assert_eq!(s.active_seconds(), 597);
         assert_eq!(tr.active().count(), 0);
+    }
+
+    #[test]
+    fn idle_stretches_are_recorded_for_the_timeline() {
+        let mut tr = tracker();
+        // Inputs stop at 300 s; idle (15 min threshold) is noticed at 1200 s,
+        // inputs come back at 1500 s.
+        let events = play(&mut tr, 0, 2000, |s| {
+            if (300..1500).contains(&s) {
+                s - 300
+            } else {
+                0
+            }
+        });
+        let _ = events;
+        let s = tr.active().next().unwrap();
+        assert_eq!(s.idle_periods.len(), 1);
+        let (start, end) = s.idle_periods[0];
+        assert_eq!(start, t(300));
+        assert_eq!(end, t(1497));
+        assert_eq!(s.idle_seconds, (end - start).num_seconds());
     }
 
     #[test]

@@ -154,12 +154,24 @@ fn load_watch_list(db: &Db) -> Vec<WatchEntry> {
 /// heartbeat, once the minimum is reached), the row on heartbeat and on a kept
 /// end, a delete on a discarded end (in case a heartbeat wrote it).
 fn write_event(conn: &rusqlite::Connection, event: &TrackerEvent) -> crate::error::AppResult<()> {
+    let save = |s: &ActiveSession| -> crate::error::AppResult<()> {
+        sessions::save(conn, &to_row(s))?;
+        let periods: Vec<sessions::IdlePeriod> = s
+            .idle_periods
+            .iter()
+            .map(|(a, b)| sessions::IdlePeriod {
+                started_at: rfc3339(*a),
+                ended_at: rfc3339(*b),
+            })
+            .collect();
+        sessions::replace_idle_periods(conn, &s.session_id, &periods)
+    };
     match event {
         TrackerEvent::Started(_) => Ok(()),
-        TrackerEvent::Heartbeat(s) => sessions::save(conn, &to_row(s)),
+        TrackerEvent::Heartbeat(s) => save(s),
         TrackerEvent::Ended { session: s, keep } => {
             if *keep {
-                sessions::save(conn, &to_row(s))
+                save(s)
             } else {
                 sessions::delete(conn, &s.session_id)
             }

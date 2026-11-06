@@ -239,8 +239,8 @@ fn load_ra(
 #[cfg(test)]
 mod cache_tests {
     use super::*;
-    use crate::db::repo::games;
     use crate::db::repo::game_sources::SourceData;
+    use crate::db::repo::games;
 
     #[test]
     fn gog_achievements_come_from_the_cache() {

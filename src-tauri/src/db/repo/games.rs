@@ -56,6 +56,34 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<Game> {
     })
 }
 
+/// "Où t'es-tu arrêté ?": latest resume note of a game and when it was written.
+pub fn resume_note(conn: &Connection, id: &str) -> AppResult<Option<(String, String)>> {
+    Ok(conn
+        .query_row(
+            "SELECT resume_note, resume_note_at FROM games WHERE id = ?1",
+            [id],
+            |r| {
+                Ok((
+                    r.get::<_, Option<String>>(0)?,
+                    r.get::<_, Option<String>>(1)?,
+                ))
+            },
+        )
+        .optional()?
+        .and_then(|(n, at)| n.zip(at)))
+}
+
+/// Sets (or clears, with `None` / blank) the resume note.
+pub fn set_resume_note(conn: &Connection, id: &str, note: Option<&str>) -> AppResult<()> {
+    let note = note.map(str::trim).filter(|n| !n.is_empty());
+    conn.execute(
+        "UPDATE games SET resume_note = ?2, resume_note_at = CASE WHEN ?2 IS NULL THEN NULL ELSE ?3 END \
+         WHERE id = ?1",
+        params![id, note, now_rfc3339()],
+    )?;
+    Ok(())
+}
+
 const LEADING_ARTICLES: &[&str] = &["the ", "a ", "an ", "les ", "le ", "la ", "l'", "l\u{2019}"];
 
 /// Key used to sort titles: lowercase, accents folded, leading article removed

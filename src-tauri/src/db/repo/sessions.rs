@@ -114,6 +114,78 @@ pub fn delete(conn: &Connection, id: &str) -> AppResult<()> {
     Ok(())
 }
 
+/// An idle stretch removed from a session (RFC 3339).
+#[derive(Debug, Clone, PartialEq, Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct IdlePeriod {
+    pub started_at: String,
+    pub ended_at: String,
+}
+
+/// Replaces the idle stretches of a session.
+pub fn replace_idle_periods(
+    conn: &Connection,
+    session_id: &str,
+    periods: &[IdlePeriod],
+) -> AppResult<()> {
+    conn.execute(
+        "DELETE FROM session_idle_periods WHERE session_id = ?1",
+        [session_id],
+    )?;
+    let mut stmt = conn.prepare(
+        "INSERT INTO session_idle_periods (session_id, started_at, ended_at) VALUES (?1, ?2, ?3)",
+    )?;
+    for p in periods {
+        stmt.execute(params![session_id, p.started_at, p.ended_at])?;
+    }
+    Ok(())
+}
+
+pub fn idle_periods(conn: &Connection, session_id: &str) -> AppResult<Vec<IdlePeriod>> {
+    let mut stmt = conn.prepare(
+        "SELECT started_at, ended_at FROM session_idle_periods WHERE session_id = ?1 \
+         ORDER BY started_at",
+    )?;
+    let rows = stmt.query_map([session_id], |r| {
+        Ok(IdlePeriod {
+            started_at: r.get(0)?,
+            ended_at: r.get(1)?,
+        })
+    })?;
+    Ok(rows.collect::<Result<_, _>>()?)
+}
+
+/// Rating of a session, 1 to 5 flames (`None` clears it).
+pub fn set_rating(conn: &Connection, id: &str, rating: Option<u8>) -> AppResult<()> {
+    if rating.is_some_and(|r| !(1..=5).contains(&r)) {
+        return Err(AppError::Invalid("rating must be between 1 and 5".into()));
+    }
+    conn.execute(
+        "UPDATE play_sessions SET rating = ?2 WHERE id = ?1",
+        params![id, rating],
+    )?;
+    Ok(())
+}
+
+pub fn rating(conn: &Connection, id: &str) -> AppResult<Option<u8>> {
+    Ok(conn
+        .query_row(
+            "SELECT rating FROM play_sessions WHERE id = ?1",
+            [id],
+            |r| r.get::<_, Option<u8>>(0),
+        )
+        .optional()?
+        .flatten())
+}
+
+pub fn set_note(conn: &Connection, id: &str, note: Option<&str>) -> AppResult<()> {
+    conn.execute(
+        "UPDATE play_sessions SET note = ?2 WHERE id = ?1",
+        params![id, note],
+    )?;
+    Ok(())
+}
+
 /// Deletes automatic sessions shorter than `min_secs`; returns how many.
 pub fn purge_short_auto(conn: &Connection, min_secs: i64) -> AppResult<usize> {
     Ok(conn.execute(
