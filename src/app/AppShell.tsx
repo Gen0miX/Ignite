@@ -6,6 +6,7 @@ import { DragGhost } from '../lib/gameDrag';
 import { usePad } from '../lib/usePad';
 import { useLibraryEvents } from '../api/hooks';
 import { Sidebar } from '../components/Sidebar/Sidebar';
+import { SessionRecapHost } from '../components/SessionRecap/SessionRecapHost';
 import { Toaster } from '../components/Toaster/Toaster';
 import styles from './AppShell.module.css';
 
@@ -29,6 +30,7 @@ export function AppShell() {
       <Outlet />
       <DragGhost />
       <Toaster />
+      <SessionRecapHost />
     </div>
   );
 }

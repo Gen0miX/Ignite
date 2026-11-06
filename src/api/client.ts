@@ -45,6 +45,7 @@ export type HomeGame = b.HomeGame_Serialize;
 export type Tonight = b.Tonight;
 export type AppSettings = b.AppSettings;
 export type BulkUpdate = b.BulkUpdate_Deserialize;
+export type SessionRecap = b.SessionRecap_Serialize;
 export type Shelf = b.Shelf;
 export type Mood = b.Mood;
 export type GameMedia = b.GameMedia_Serialize;
