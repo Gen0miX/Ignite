@@ -149,7 +149,7 @@ describe('library page', () => {
     const grid = await screen.findByRole('grid', { name: 'Jeux' });
     const cards = within(grid).getAllByRole('gridcell');
     expect(cards).toHaveLength(2);
-    expect(within(cards[0]!).getByText('12 h · Installé')).toBeVisible();
+    expect(within(cards[0]!).getByText('12 h')).toBeVisible();
 
     await user.click(cards[1]!);
     expect(router.state.location.search).toContain('game=g2');

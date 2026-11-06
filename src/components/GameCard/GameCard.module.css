@@ -97,14 +97,61 @@
 .badge {
   position: absolute;
   left: 6px;
-  bottom: 6px;
+  bottom: 9px;
   display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Not installed: dimmed cover (normal on hover) and a small cloud mark. */
+.notInstalled .image,
+.notInstalled .headerFallback,
+.notInstalled .placeholder {
+  filter: saturate(0.6) brightness(0.8);
+  transition: filter var(--transition);
+}
+
+.notInstalled:hover .image,
+.notInstalled:hover .headerFallback,
+.notInstalled:hover .placeholder,
+.notInstalled:focus-visible .image,
+.notInstalled:focus-visible .headerFallback,
+.notInstalled:focus-visible .placeholder {
+  filter: none;
+}
+
+.notInstalledMark {
+  display: flex;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  background: rgb(20 16 14 / 78%);
+  color: var(--color-text-2);
+}
+
+/* Achievements / goals progress along the bottom edge of the cover. */
+.progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--color-line);
+}
+
+.progress > span {
+  display: block;
+  height: 100%;
+  background: var(--color-accent-ink);
+}
+
+.progressDone > span {
+  background: var(--status-done);
 }
 
 .play {
   position: absolute;
   right: 6px;
-  bottom: 6px;
+  bottom: 9px;
   width: 36px;
   height: 36px;
   border-radius: 50%;

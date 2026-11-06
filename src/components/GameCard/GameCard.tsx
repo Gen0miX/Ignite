@@ -1,11 +1,11 @@
 import { forwardRef, type KeyboardEvent, type MouseEvent } from 'react';
-import { Check, EyeOff, MoreHorizontal, Play } from 'lucide-react';
+import { Check, CloudDownload, EyeOff, MoreHorizontal, Play } from 'lucide-react';
 import type { GameSummary } from '../../api/client';
 import { fr } from '../../i18n/fr';
 import { formatPlaytimeShort } from '../../lib/format';
 import { useCardDrag } from '../../lib/gameDrag';
 import { useToasts } from '../Toaster/toasts';
-import { progressLabel } from '../../lib/sessions';
+import { cardProgress } from '../../lib/sessions';
 import { SourceBadge } from '../SourceBadge/SourceBadge';
 import { Cover } from './Cover';
 import styles from './GameCard.module.css';
@@ -53,10 +53,17 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
 ) {
   const drag = useCardDrag(dragIds);
   const flashing = useToasts((s) => s.flashed.has(game.id));
+  const progress = cardProgress(game.achievements, game.goals);
   const meta = [formatPlaytimeShort(game.playtimeMinutes)];
-  const progress = progressLabel(game.achievements, game.goals);
-  if (progress) meta.push(progress);
-  else if (game.installed) meta.push(fr.library.installedBadge);
+  if (progress) meta.push(`${progress.done}/${progress.total}`);
+  const label = [
+    game.title,
+    fr.statusSingular[game.status],
+    !game.installed && fr.library.notInstalled,
+    progress && fr.library.progressLabel(progress.kind, progress.done, progress.total),
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   const onClick = (e: MouseEvent) => {
     if (drag.dragged()) return;
@@ -76,7 +83,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
       role="gridcell"
       aria-selected={selected}
       tabIndex={tabIndex}
-      className={`${styles.card} ${selected ? styles.selected : ''} ${checked ? styles.checked : ''} ${selecting ? styles.selecting : ''} ${flashing ? styles.flash : ''}`}
+      className={`${styles.card} ${game.installed ? '' : styles.notInstalled} ${selected ? styles.selected : ''} ${checked ? styles.checked : ''} ${selecting ? styles.selecting : ''} ${flashing ? styles.flash : ''}`}
       onClick={onClick}
       onDoubleClick={() => !selecting && onLaunch()}
       onFocus={() => !selecting && onSelect()}
@@ -98,7 +105,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
         }
         onKeyDown(e);
       }}
-      aria-label={`${game.title}, ${fr.statusSingular[game.status]}`}
+      aria-label={label}
       data-game-id={game.id}
       {...drag.handlers}
     >
@@ -128,9 +135,22 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
             aria-hidden="true"
           />
         </span>
-        {game.sources[0] && (
+        {(game.sources[0] || !game.installed) && (
           <span className={styles.badge}>
-            <SourceBadge kind={game.sources[0]} overlay />
+            {game.sources[0] && <SourceBadge kind={game.sources[0]} overlay />}
+            {!game.installed && (
+              <span className={styles.notInstalledMark} title={fr.library.notInstalledTitle}>
+                <CloudDownload size={12} aria-hidden="true" />
+              </span>
+            )}
+          </span>
+        )}
+        {progress && (
+          <span
+            className={`${styles.progress} ${progress.ratio >= 1 ? styles.progressDone : ''}`}
+            aria-hidden="true"
+          >
+            <span style={{ width: `${progress.ratio * 100}%` }} />
           </span>
         )}
         <button

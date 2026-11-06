@@ -65,14 +65,22 @@ export function formatClock(totalSeconds: number): string {
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
 }
 
-/** Progress shown on cards: "79 %" for achievements, else "objectifs 6/10". */
-export function progressLabel(
+export interface CardProgress {
+  kind: 'achievements' | 'goals';
+  done: number;
+  total: number;
+  /** 0..1, for the bar under the cover. */
+  ratio: number;
+}
+
+/** Progress shown on cards: achievements first, else personal goals. */
+export function cardProgress(
   achievements: Progress | null | undefined,
   goals: Progress | null | undefined,
-): string | null {
-  if (achievements && achievements.total > 0) {
-    return `${Math.floor((achievements.done / achievements.total) * 100)} %`;
-  }
-  if (goals && goals.total > 0) return `objectifs ${goals.done}/${goals.total}`;
-  return null;
+): CardProgress | null {
+  const pick = (kind: CardProgress['kind'], p: Progress | null | undefined) =>
+    p && p.total > 0
+      ? { kind, done: p.done, total: p.total, ratio: Math.min(1, p.done / p.total) }
+      : null;
+  return pick('achievements', achievements) ?? pick('goals', goals);
 }

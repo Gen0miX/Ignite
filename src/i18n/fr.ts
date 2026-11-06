@@ -235,6 +235,10 @@ export const fr = {
     loading: 'Chargement de la bibliothèque…',
     backendUnavailable: 'Backend indisponible (lancer avec pnpm tauri dev).',
     installedBadge: 'Installé',
+    notInstalled: 'non installé',
+    notInstalledTitle: 'Non installé',
+    progressLabel: (kind: 'achievements' | 'goals', done: number, total: number) =>
+      `${kind === 'achievements' ? 'succès' : 'objectifs'} ${done} sur ${total}`,
     play: 'Jouer',
     neverPlayed: 'Jamais lancé',
   },
@@ -443,7 +447,7 @@ export const fr = {
     saveSearch: 'Enregistrer comme collection',
     unknownFilters: (tokens: string) => `Filtres non reconnus, cherchés dans le titre : ${tokens}`,
     syntaxHelp:
-      'Syntaxe : source:gog · tag:souls · genre:rpg · joueurs:coop · statut:termine · heures:>20 · heures:10-20 · session:<60 · succes:>80 · installe:oui · favori:oui · joue:<30j · -source:steam · "titre exact"',
+      'Syntaxe : source:gog · tag:souls · genre:rpg · joueurs:coop · statut:termine · heures:>20 · heures:10-20 · session:<60 · succes:>80 · installe:oui · favori:oui · joue:<30j · -source:steam · "titre exact". Pastille de couleur sur la jaquette : statut (gris à faire, bleu en cours, vert terminé, rose abandonné), nom au survol.',
     manualIn: 'Collections manuelles',
     noManual: 'Crée une collection manuelle depuis la barre latérale pour y ranger ce jeu.',
   },

@@ -1,5 +1,5 @@
 import type { PlaySession } from '../api/client';
-import { dailyMinutes, formatClock, progressLabel, sessionStats } from './sessions';
+import { cardProgress, dailyMinutes, formatClock, sessionStats } from './sessions';
 
 const session = (
   id: string,
@@ -61,10 +61,20 @@ describe('formatClock', () => {
   });
 });
 
-describe('progressLabel', () => {
+describe('cardProgress', () => {
   it('prefers achievements, then goals', () => {
-    expect(progressLabel({ done: 79, total: 100 }, { done: 1, total: 2 })).toBe('79 %');
-    expect(progressLabel({ done: 0, total: 0 }, { done: 6, total: 10 })).toBe('objectifs 6/10');
-    expect(progressLabel(null, null)).toBeNull();
+    expect(cardProgress({ done: 42, total: 42 }, { done: 1, total: 2 })).toEqual({
+      kind: 'achievements',
+      done: 42,
+      total: 42,
+      ratio: 1,
+    });
+    expect(cardProgress({ done: 0, total: 0 }, { done: 6, total: 10 })).toEqual({
+      kind: 'goals',
+      done: 6,
+      total: 10,
+      ratio: 0.6,
+    });
+    expect(cardProgress(null, null)).toBeNull();
   });
 });
