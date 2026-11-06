@@ -1,6 +1,6 @@
-# CLAUDE.md — Ludothèque
+# CLAUDE.md — Ignite (ex-Ludothèque)
 
-Ludothèque est un launcher de jeux PC pour Windows qui regroupe en une seule bibliothèque les jeux Steam et non-Steam (Epic, GOG, Battle.net, exécutables locaux, émulateurs…). Il lance les jeux, suit le temps de jeu, les succès et les objectifs, et affiche des statistiques toutes sources confondues.
+Ignite (nom de code et dépôt : `ludotheque`) est un launcher de jeux PC pour Windows qui regroupe en une seule bibliothèque les jeux Steam et non-Steam (Epic, GOG, Battle.net, exécutables locaux, émulateurs…). Il lance les jeux, suit le temps de jeu, les succès et les objectifs, et affiche des statistiques toutes sources confondues.
 
 Lis dans cet ordre avant de coder :
 
@@ -41,6 +41,8 @@ Versions épinglées à connaître : `specta`/`tauri-specta` `=2.0.0-rc.26` et `
 secrets via `keyring-core` + `windows-native-keyring-store` (recommandé par keyring 4 pour une app).
 
 **Attention, base de données en dev** : une instance lancée par les outils de Claude (Bash/PowerShell de l'app Claude) voit son `%APPDATA%` **virtualisé** par Windows vers `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\com.ludotheque.app\`. Pour tester sur la vraie base de l'utilisateur, lance `pnpm tauri dev` depuis le panneau Terminal (non virtualisé), et lis la base réelle depuis ce même terminal. L'app installée n'est pas concernée.
+
+Nom : l'app s'appelle **Ignite** (`productName`, textes UI, logo `design/logo/ignite.svg` → `pnpm tauri icon design/logo/ignite.svg`). L'identifiant `com.ludotheque.app` et le nom du crate restent inchangés : ils fixent l'emplacement de la base et du coffre, ne les renomme pas.
 
 (Mets à jour cette section si tu changes l'outillage.)
 

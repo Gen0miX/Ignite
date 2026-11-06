@@ -82,7 +82,7 @@ pub fn run() {
             }
         })
         .build(tauri::generate_context!())
-        .expect("error while building Ludothèque")
+        .expect("error while building Ignite")
         .run(|app, event| {
             if let tauri::RunEvent::Exit = event {
                 // Write sessions still open before quitting.

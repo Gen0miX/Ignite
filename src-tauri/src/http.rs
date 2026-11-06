@@ -11,7 +11,7 @@ pub fn agent() -> &'static ureq::Agent {
     AGENT.get_or_init(|| {
         ureq::Agent::config_builder()
             .timeout_global(Some(Duration::from_secs(20)))
-            .user_agent(concat!("Ludotheque/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("Ignite/", env!("CARGO_PKG_VERSION")))
             .build()
             .into()
     })

@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { isTauri } from '../api/client';
 import { Outlet, useNavigate } from 'react-router-dom';
+import { DragGhost } from '../lib/gameDrag';
 import { usePad } from '../lib/usePad';
 import { useLibraryEvents } from '../api/hooks';
 import { Sidebar } from '../components/Sidebar/Sidebar';
@@ -25,6 +26,7 @@ export function AppShell() {
     <div className={styles.shell}>
       <Sidebar />
       <Outlet />
+      <DragGhost />
     </div>
   );
 }

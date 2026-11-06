@@ -43,8 +43,11 @@ describe('app shell', () => {
     await user.click(screen.getByRole('link', { name: /Réglages/ }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Réglages' })).toBeVisible();
     expect(router.state.location.pathname).toBe('/settings/sources');
+    // The library panel only shows on library screens.
+    expect(screen.queryByRole('link', { name: /Installés/ })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('link', { name: /Installés/ }));
+    await user.click(screen.getByRole('link', { name: 'Bibliothèque' }));
+    await user.click(await screen.findByRole('link', { name: /Installés/ }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Installés' })).toBeVisible();
     expect(screen.getByRole('link', { name: /Installés/ })).toHaveAttribute('aria-current', 'page');
   });

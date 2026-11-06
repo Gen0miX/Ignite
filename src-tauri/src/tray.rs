@@ -82,7 +82,7 @@ fn playing(app: &AppHandle) -> Vec<(String, u32)> {
 
 pub fn setup(app: &AppHandle) -> tauri::Result<()> {
     let now = MenuItem::with_id(app, "now", "Aucun jeu en cours", false, None::<&str>)?;
-    let show = MenuItem::with_id(app, "show", "Afficher Ludothèque", true, None::<&str>)?;
+    let show = MenuItem::with_id(app, "show", "Afficher Ignite", true, None::<&str>)?;
     let couch = MenuItem::with_id(app, "couch", "Mode Canapé", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quitter", true, None::<&str>)?;
     let menu: Menu<Wry> = Menu::with_items(
@@ -98,7 +98,7 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
     )?;
 
     let mut builder = TrayIconBuilder::with_id(TRAY_ID)
-        .tooltip("Ludothèque")
+        .tooltip("Ignite")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
@@ -133,8 +133,8 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
             let label = now_playing_label(&playing(&handle));
             if label != last {
                 let tooltip = match &label {
-                    Some(l) => format!("Ludothèque — {l}"),
-                    None => "Ludothèque".into(),
+                    Some(l) => format!("Ignite — {l}"),
+                    None => "Ignite".into(),
                 };
                 let _ = tray.set_tooltip(Some(&tooltip));
                 let _ = now.set_text(label.as_deref().unwrap_or("Aucun jeu en cours"));

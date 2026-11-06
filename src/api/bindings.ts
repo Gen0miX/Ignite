@@ -199,7 +199,7 @@ export type AppInfo = {
 
 /**  Application behaviour (Réglages › Application). */
 export type AppSettings = {
-	/**  Closing the window keeps Ludothèque in the notification area. */
+	/**  Closing the window keeps Ignite in the notification area. */
 	closeToTray: boolean,
 	/**  Start with Windows, minimized in the notification area. */
 	autostart: boolean,

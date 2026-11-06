@@ -58,3 +58,45 @@ export function NowPlaying() {
     </section>
   );
 }
+
+function RailRow({
+  game,
+  fetchedAt,
+  extra,
+}: {
+  game: ActiveGame;
+  fetchedAt: number;
+  extra: number;
+}) {
+  const client = useQueryClient();
+  const seconds = useLiveSeconds(game, fetchedAt);
+  const title = titleOf(client, game.gameId) ?? fr.tracking.nowPlaying;
+  const clock = formatClock(seconds);
+  return (
+    <Link
+      to={`/game/${game.gameId}`}
+      className={styles.rail}
+      title={`${fr.tracking.nowPlaying} : ${title} · ${clock}`}
+      aria-label={`${fr.tracking.nowPlaying} : ${title}, ${clock}`}
+    >
+      <span className={styles.dot} aria-hidden="true" />
+      <span className={styles.railLabel}>{fr.tracking.inGame}</span>
+      <span className={styles.railClock}>
+        {clock}
+        {extra > 0 ? ` +${extra}` : ''}
+      </span>
+    </Link>
+  );
+}
+
+/** Compact live timer for the navigation rail (visible on every screen). */
+export function RailNowPlaying() {
+  const { data, dataUpdatedAt } = useTrackerActive();
+  const first = data?.[0];
+  if (!first) return null;
+  return (
+    <div role="status">
+      <RailRow game={first} fetchedAt={dataUpdatedAt} extra={(data?.length ?? 1) - 1} />
+    </div>
+  );
+}

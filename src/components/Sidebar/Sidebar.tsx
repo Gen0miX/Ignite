@@ -1,132 +1,224 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Gamepad2, Plus, Settings } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ChevronDown, Plus } from 'lucide-react';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { GameStatus } from '../../api/client';
-import { useCollections, useLibraryCounts, useSourcesStatus } from '../../api/hooks';
+import {
+  useAddToCollection,
+  useCollections,
+  useLibraryCounts,
+  useSourcesStatus,
+} from '../../api/hooks';
 import { CollectionEditor } from '../CollectionEditor/CollectionEditor';
 import { fr } from '../../i18n/fr';
-import { AppLogo } from '../AppLogo/AppLogo';
+import { useGameDrag } from '../../lib/gameDrag';
 import { SourceChip } from '../SourceBadge/SourceBadge';
 import { StatusDot } from '../StatusDot/StatusDot';
 import { NowPlaying } from '../NowPlaying/NowPlaying';
 import { NavItem } from './NavItem';
+import { Rail } from './Rail';
 import styles from './Sidebar.module.css';
 
 const STATUSES: GameStatus[] = ['playing', 'done', 'todo', 'dropped'];
 
-export function Sidebar() {
+type SectionId = 'collections' | 'status' | 'sources';
+
+/** Folded sections of the library panel, remembered between launches. */
+const usePanelPrefs = create<{
+  folded: Partial<Record<SectionId, boolean>>;
+  toggle: (id: SectionId) => void;
+}>()(
+  persist(
+    (set) => ({
+      folded: {},
+      toggle: (id) => set((s) => ({ folded: { ...s.folded, [id]: !s.folded[id] } })),
+    }),
+    { name: 'ignite.sidebar' },
+  ),
+);
+
+function Section({
+  id,
+  title,
+  action,
+  children,
+}: {
+  id: SectionId;
+  title: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  const folded = usePanelPrefs((s) => s.folded[id] ?? false);
+  const toggle = usePanelPrefs((s) => s.toggle);
+  const bodyId = `panel-section-${id}`;
+  return (
+    <section className={styles.section}>
+      <div className={styles.sectionHead}>
+        <button
+          type="button"
+          className={styles.sectionToggle}
+          aria-expanded={!folded}
+          aria-controls={bodyId}
+          onClick={() => toggle(id)}
+        >
+          <ChevronDown
+            size={14}
+            aria-hidden="true"
+            className={folded ? styles.chevronFolded : styles.chevron}
+          />
+          <h2 className="section-label">{title}</h2>
+        </button>
+        {action}
+      </div>
+      {!folded && (
+        <div id={bodyId} className={styles.group}>
+          {children}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Library filters (views, collections, statuses, sources), next to the rail. */
+function LibraryPanel() {
   const { data: counts } = useLibraryCounts();
   const { data: sources } = useSourcesStatus();
   const { data: collections } = useCollections();
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
+  const { mutate: addTo } = useAddToCollection();
+  const over = useGameDrag((s) => s.drag?.over ?? null);
+  const dragging = useGameDrag((s) => s.drag !== null);
   const syncing = sources?.some((s) => s.syncing) ?? false;
   const n = (v: number | undefined) => String(v ?? 0);
 
+  // Games dropped on a manual collection are added to it.
+  useEffect(() => {
+    useGameDrag.setState({
+      onDrop: (collectionId, gameIds) => addTo({ id: collectionId, gameIds }),
+    });
+    return () => useGameDrag.setState({ onDrop: null });
+  }, [addTo]);
+
   return (
-    <aside className={styles.sidebar}>
-      <AppLogo />
+    <aside className={styles.panel}>
+      <nav aria-label={fr.nav.label} className={styles.nav}>
+        <p className={styles.panelTitle}>{fr.nav.library}</p>
+        <ul className={styles.group}>
+          <li>
+            <NavItem to="/library" label={fr.nav.allGames} trailing={n(counts?.all)} />
+          </li>
+          <li>
+            <NavItem
+              to="/library?view=installed"
+              label={fr.nav.installed}
+              trailing={n(counts?.installed)}
+            />
+          </li>
+          <li>
+            <NavItem
+              to="/library?view=favorites"
+              label={fr.nav.favorites}
+              trailing={n(counts?.favorites)}
+            />
+          </li>
+          {(counts?.hidden ?? 0) > 0 && (
+            <li>
+              <NavItem
+                to="/library?view=hidden"
+                label={fr.sidebar.hiddenGames}
+                trailing={String(counts?.hidden)}
+              />
+            </li>
+          )}
+        </ul>
 
-      <nav aria-label={fr.nav.label} className={styles.group}>
-        <NavItem to="/" label={fr.nav.home} />
-        <NavItem to="/library" label={fr.nav.allGames} trailing={n(counts?.all)} />
-        <NavItem
-          to="/library?view=installed"
-          label={fr.nav.installed}
-          trailing={n(counts?.installed)}
-        />
-        <NavItem
-          to="/library?view=favorites"
-          label={fr.nav.favorites}
-          trailing={n(counts?.favorites)}
-        />
-        <NavItem to="/stats" label={fr.nav.stats} trailing="→" />
-        <NavItem
-          to="/couch"
-          label={fr.couch.open}
-          trailing={<Gamepad2 size={15} aria-hidden="true" />}
-        />
-        <NavItem
-          to="/settings/sources"
-          label={fr.nav.settings}
-          trailing={<Settings size={15} aria-hidden="true" />}
-        />
-      </nav>
+        <Section
+          id="collections"
+          title={fr.collections.section}
+          action={
+            <button
+              type="button"
+              className={styles.iconButton}
+              aria-label={fr.collections.add}
+              title={fr.collections.add}
+              onClick={() => setCreating(true)}
+            >
+              <Plus size={16} aria-hidden="true" />
+            </button>
+          }
+        >
+          {collections && collections.length > 0 ? (
+            <ul className={styles.group}>
+              {collections.map((c) => {
+                const manual = c.collection.kind === 'manual';
+                return (
+                  <li
+                    key={c.collection.id}
+                    data-drop-collection={manual ? c.collection.id : undefined}
+                    className={`${dragging && manual ? styles.dropTarget : ''} ${over === c.collection.id ? styles.dropOver : ''}`}
+                  >
+                    <NavItem
+                      to={`/library?view=collection-${c.collection.id}`}
+                      label={c.collection.name}
+                      trailing={String(c.count)}
+                      size="compact"
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className={styles.hint}>{fr.sidebar.noCollections}</p>
+          )}
+          {dragging && <p className={styles.hint}>{fr.sidebar.dropHint}</p>}
+        </Section>
 
-      <section aria-labelledby="sidebar-sources">
-        <h2 id="sidebar-sources" className={`section-label ${styles.sectionLabel}`}>
-          {fr.sidebar.sources}
-        </h2>
-        {counts && counts.sources.length > 0 ? (
+        <Section id="status" title={fr.sidebar.status}>
           <ul className={styles.group}>
-            {counts.sources.map((s) => (
-              <li key={s.kind}>
+            {STATUSES.map((s) => (
+              <li key={s}>
                 <NavItem
-                  to={`/library?view=source-${s.kind}`}
-                  label={fr.sources[s.kind]}
-                  leading={<SourceChip kind={s.kind} />}
-                  trailing={String(s.count)}
+                  to={`/library?view=status-${s}`}
+                  label={fr.status[s]}
+                  leading={<StatusDot status={s} />}
+                  trailing={n(counts?.status[s])}
+                  size="compact"
                 />
               </li>
             ))}
           </ul>
-        ) : (
-          <p className={styles.hint}>{fr.sidebar.noSources}</p>
-        )}
-        <Link to="/settings/sources" className={styles.secondaryLink}>
-          {fr.sidebar.manageSources}
-        </Link>
-      </section>
+        </Section>
 
-      <section aria-labelledby="sidebar-collections">
-        <h2 id="sidebar-collections" className={`section-label ${styles.sectionLabel}`}>
-          {fr.collections.section}
-        </h2>
-        <ul className={styles.group}>
-          {collections?.map((c) => (
-            <li key={c.collection.id}>
-              <NavItem
-                to={`/library?view=collection-${c.collection.id}`}
-                label={c.collection.name}
-                trailing={String(c.count)}
-                size="compact"
-              />
-            </li>
-          ))}
-        </ul>
-        <button type="button" className={styles.secondaryLink} onClick={() => setCreating(true)}>
-          <Plus size={14} aria-hidden="true" />
-          {fr.collections.add}
-        </button>
-        {creating && (
-          <CollectionEditor
-            collection={null}
-            onClose={(saved) => {
-              setCreating(false);
-              if (saved) navigate(`/library?view=collection-${saved.id}`);
-            }}
-          />
-        )}
-      </section>
-
-      <section aria-labelledby="sidebar-status">
-        <h2 id="sidebar-status" className={`section-label ${styles.sectionLabel}`}>
-          {fr.sidebar.status}
-        </h2>
-        <ul className={styles.group}>
-          {STATUSES.map((s) => (
-            <li key={s}>
-              <NavItem
-                to={`/library?view=status-${s}`}
-                label={fr.status[s]}
-                leading={<StatusDot status={s} />}
-                trailing={n(counts?.status[s])}
-                size="compact"
-              />
-            </li>
-          ))}
-        </ul>
-      </section>
+        <Section
+          id="sources"
+          title={fr.sidebar.sources}
+          action={
+            <Link to="/settings/sources" className={styles.sectionLink}>
+              {fr.sidebar.manage}
+            </Link>
+          }
+        >
+          {counts && counts.sources.length > 0 ? (
+            <ul className={styles.group}>
+              {counts.sources.map((s) => (
+                <li key={s.kind}>
+                  <NavItem
+                    to={`/library?view=source-${s.kind}`}
+                    label={fr.sources[s.kind]}
+                    leading={<SourceChip kind={s.kind} />}
+                    trailing={String(s.count)}
+                    size="compact"
+                  />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.hint}>{fr.sidebar.noSources}</p>
+          )}
+        </Section>
+      </nav>
 
       <div className={styles.footer}>
         <NowPlaying />
@@ -135,18 +227,28 @@ export function Sidebar() {
             {fr.sidebar.syncing}
           </p>
         )}
-        {(counts?.hidden ?? 0) > 0 && (
-          <NavItem
-            to="/library?view=hidden"
-            label={fr.sidebar.hiddenGames}
-            trailing={String(counts?.hidden)}
-            size="compact"
-          />
-        )}
-        <Link to="/import" className={styles.secondaryLink}>
-          {fr.sidebar.importGames}
-        </Link>
       </div>
+      {creating && (
+        <CollectionEditor
+          collection={null}
+          onClose={(saved) => {
+            setCreating(false);
+            if (saved) navigate(`/library?view=collection-${saved.id}`);
+          }}
+        />
+      )}
     </aside>
+  );
+}
+
+/** Rail on every screen, plus the library panel on library screens. */
+export function Sidebar() {
+  const { pathname } = useLocation();
+  const library = pathname.startsWith('/library') || pathname.startsWith('/game');
+  return (
+    <>
+      <Rail />
+      {library && <LibraryPanel />}
+    </>
   );
 }

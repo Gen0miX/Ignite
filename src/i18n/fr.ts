@@ -85,7 +85,7 @@ export const fr = {
     gamesLaunched: 'jeux lancés',
     streak: 'de suite',
     weekdays: ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'],
-    emptyTitle: 'Bienvenue dans Ludothèque',
+    emptyTitle: 'Bienvenue dans Ignite',
     emptyBody: 'Lance un jeu ou importe ta bibliothèque : l’accueil se remplira avec tes parties.',
   },
   couch: {
@@ -135,6 +135,10 @@ export const fr = {
   },
   nav: {
     label: 'Bibliothèque',
+    main: 'Navigation principale',
+    library: 'Bibliothèque',
+    couch: 'Canapé',
+    import: 'Importer',
     home: 'Accueil',
     allGames: 'Tous les jeux',
     installed: 'Installés',
@@ -146,6 +150,9 @@ export const fr = {
     sources: 'Sources',
     noSources: 'Aucune source connectée',
     manageSources: 'Gérer les sources',
+    manage: 'Gérer',
+    noCollections: 'Crée une collection avec +.',
+    dropHint: 'Dépose sur une collection manuelle pour y ajouter.',
     status: 'Statut',
     importGames: 'Importer des jeux',
     syncing: 'Synchronisation…',
@@ -339,7 +346,7 @@ export const fr = {
     noResult: 'Aucune image trouvée. Essaie un autre titre ou un autre jeu dans la liste.',
     choose: (size: string) => `Utiliser cette image ${size}`.trim(),
     setError: "L'image n'a pas pu être téléchargée.",
-    credit: 'Images de la communauté SteamGridDB, copiées dans le cache local de Ludothèque.',
+    credit: 'Images de la communauté SteamGridDB, copiées dans le cache local de Ignite.',
   },
   collections: {
     section: 'Collections',
@@ -352,7 +359,8 @@ export const fr = {
     kinds: { smart: 'Intelligente', manual: 'Manuelle' },
     kindHints: {
       smart: 'Se remplit toute seule selon des règles (tag, durée, statut…).',
-      manual: 'Tu y ajoutes les jeux toi-même : menu ⋯ d’un jeu, sélection multiple, ou glisser-déposer sur la collection.',
+      manual:
+        'Tu y ajoutes les jeux toi-même : menu ⋯ d’un jeu, sélection multiple, ou glisser-déposer sur la collection.',
     },
     rules: 'Règles',
     matchLabel: 'Les jeux qui respectent',
@@ -460,7 +468,7 @@ export const fr = {
     chartLabel: (date: string, time: string) => `${date} : ${time}`,
     log: 'Journal des sessions',
     logEmpty:
-      'Aucune session enregistrée. Lance le jeu : Ludothèque détecte son processus et chronomètre la session automatiquement.',
+      'Aucune session enregistrée. Lance le jeu : Ignite détecte son processus et chronomètre la session automatiquement.',
     steamCounterNote:
       'Pour ce jeu, le total vient du compteur de Steam : les sessions ci-dessous servent à l’historique et ne s’y ajoutent pas.',
     colDate: 'Date',
@@ -572,9 +580,9 @@ export const fr = {
     optionalNote:
       "Chaque launcher est facultatif : s'il n'est pas installé, il est simplement ignoré et le reste de l'app fonctionne normalement.",
     otherSources:
-      'Les jeux de ces launchers sont détectés via la liste des programmes installés de Windows ; leur temps de jeu est suivi par Ludothèque.',
+      'Les jeux de ces launchers sont détectés via la liste des programmes installés de Windows ; leur temps de jeu est suivi par Ignite.',
     secondary: {
-      provides: 'Jeux installés · lancement · temps suivi par Ludothèque',
+      provides: 'Jeux installés · lancement · temps suivi par Ignite',
       note: 'Lecture seule de la liste des programmes installés de Windows.',
       riotNote:
         'Lancement via le client Riot. Pour League of Legends, seul le processus de la partie est chronométré, pas le client.',
@@ -584,9 +592,9 @@ export const fr = {
       title: 'Application',
       closeToTray: 'Garder dans la zone de notification à la fermeture',
       closeToTrayHint:
-        'Fermer la fenêtre laisse Ludothèque tourner, pour continuer à compter ton temps de jeu.',
+        'Fermer la fenêtre laisse Ignite tourner, pour continuer à compter ton temps de jeu.',
       autostart: 'Démarrer avec Windows',
-      autostartHint: 'Ludothèque démarre réduite dans la zone de notification.',
+      autostartHint: 'Ignite démarre réduite dans la zone de notification.',
       trayHint:
         'L’icône de la zone de notification affiche le jeu en cours et son minuteur. Clic droit › Quitter pour fermer complètement.',
       saveError: 'Impossible d’enregistrer ce réglage.',
@@ -665,7 +673,7 @@ export const fr = {
     },
     epic: {
       provides: 'Jeux installés · lancement',
-      note: "Temps de jeu suivi par Ludothèque (Epic n'en fournit pas localement). Les jeux possédés non installés demandent la connexion à Epic : plus tard.",
+      note: "Temps de jeu suivi par Ignite (Epic n'en fournit pas localement). Les jeux possédés non installés demandent la connexion à Epic : plus tard.",
     },
     status: {
       connected: 'Connecté',

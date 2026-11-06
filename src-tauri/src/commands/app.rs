@@ -39,7 +39,7 @@ pub fn app_info(paths: tauri::State<'_, AppPaths>) -> AppInfo {
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
-    /// Closing the window keeps Ludothèque in the notification area.
+    /// Closing the window keeps Ignite in the notification area.
     pub close_to_tray: bool,
     /// Start with Windows, minimized in the notification area.
     pub autostart: bool,

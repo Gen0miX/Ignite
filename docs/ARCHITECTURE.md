@@ -202,6 +202,14 @@ Pour chaque `game_source` :
 - **Démarrer avec Windows** : `tauri-plugin-autostart` (clé `Run` du registre) avec `--minimized` ; la fenêtre est créée invisible et ne s'affiche pas dans ce cas.
 - **Installeur** : NSIS, installation par utilisateur (sans droits administrateur), en français.
 
+## 5 quater. Navigation et actions sur les jeux
+
+- **Menu latéral** : un rail d'icônes (Accueil, Bibliothèque, Statistiques, Canapé ; Importer, Réglages en bas ; minuteur du jeu en cours) visible partout, et un panneau Bibliothèque (vues, collections, statuts, sources, sections repliables mémorisées dans `localStorage`) affiché seulement sur `/library` et `/game/:id`.
+- **Actions sur une carte** : bouton « ⋯ », clic droit ou Maj+F10 (jouer, fiche, images, collection, favori, masquer, supprimer). Le panneau du jeu reprend ces actions sous le bouton Jouer.
+- **Sélection multiple** : case sur la carte, Ctrl/Maj+clic, Espace ; barre d'actions (statut, masquer, collection, supprimer, tout sélectionner), Échap pour annuler. Commandes `games_bulk_update`, `collection_add_games`.
+- **Suppression** (`games_delete`) : seulement les jeux dont toutes les sources sont des exécutables ajoutés à la main ; les jeux des launchers reviendraient à la synchro, on les masque. Sessions, objectifs et images en cache partent avec le jeu ; les fichiers du disque ne sont pas touchés.
+- **Collections manuelles** : sélecteur commun (cocher/décocher, créer à la volée) et glisser-déposer des cartes sur une collection du panneau. Le glisser utilise les événements pointeur, pas le drag-and-drop HTML5 : sous Windows, Tauri réserve le dépôt de fichiers natif (utilisé par « Ajouter un jeu »), ce qui désactive le DnD HTML5 dans la page.
+
 ## 6. Collections intelligentes — format des règles
 
 ```json
