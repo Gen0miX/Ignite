@@ -4,6 +4,8 @@ import styles from './SegmentedControl.module.css';
 interface Option<T extends string> {
   value: T;
   label: string;
+  /** Full name for assistive tech when `label` is abbreviated. */
+  ariaLabel?: string;
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -45,6 +47,7 @@ export function SegmentedControl<T extends string>({
     <div role="radiogroup" aria-label={label} className={styles.group}>
       {options.map((o, i) => {
         const checked = o.value === value;
+        const fullName = o.ariaLabel && o.ariaLabel !== o.label ? o.ariaLabel : undefined;
         return (
           <button
             key={o.value}
@@ -54,6 +57,8 @@ export function SegmentedControl<T extends string>({
             type="button"
             role="radio"
             aria-checked={checked}
+            aria-label={fullName}
+            title={fullName}
             tabIndex={checked ? 0 : -1}
             disabled={disabled}
             className={`${styles.segment} ${checked ? styles.checked : ''}`}

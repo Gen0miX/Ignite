@@ -218,7 +218,11 @@ function PanelContent({ game }: { game: GameDetail }) {
           <h3 className="section-label">{fr.panel.status}</h3>
           <SegmentedControl
             label={fr.panel.status}
-            options={STATUS_ORDER.map((v) => ({ value: v, label: fr.statusSingular[v] }))}
+            options={STATUS_ORDER.map((v) => ({
+              value: v,
+              label: fr.statusShort[v],
+              ariaLabel: fr.statusSingular[v],
+            }))}
             value={s.status}
             onChange={(status) => update.mutate({ status })}
           />

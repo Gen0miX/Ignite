@@ -186,6 +186,13 @@ export const fr = {
     todo: 'À faire',
     dropped: 'Abandonné',
   },
+  /** Fits the 4-segment control of the 340 px panel. */
+  statusShort: {
+    playing: 'En cours',
+    done: 'Terminé',
+    todo: 'À faire',
+    dropped: 'Abandon',
+  },
   sources: {
     steam: 'Steam',
     epic: 'Epic Games',
