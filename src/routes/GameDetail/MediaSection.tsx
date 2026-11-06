@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import type { Screenshot, Trailer } from '../../api/client';
 import { useGameMedia } from '../../api/hooks';
 import { Dialog } from '../../components/Dialog/Dialog';
 import { fr } from '../../i18n/fr';
+import { usePrefs } from '../../lib/prefs';
 import styles from './MediaSection.module.css';
 
 const t = fr.game;
@@ -11,10 +12,11 @@ const t = fr.game;
 /** Steam Store trailers, screenshots and short description of the game. */
 export function MediaSection({ gameId }: { gameId: string }) {
   const media = useGameMedia(gameId);
+  const showTrailers = usePrefs((p) => p.showTrailers);
   const [trailer, setTrailer] = useState(0);
   const [viewing, setViewing] = useState<number | null>(null);
   const data = media.data;
-  const trailers = data?.media.trailers ?? [];
+  const trailers = showTrailers ? (data?.media.trailers ?? []) : [];
   const shots = data?.media.screenshots ?? [];
   const current = trailers[Math.min(trailer, trailers.length - 1)];
 
@@ -73,12 +75,7 @@ export function MediaSection({ gameId }: { gameId: string }) {
         </ul>
       )}
 
-      {data?.media.description && (
-        <div className={styles.about}>
-          <h3 className={styles.h3}>{t.about}</h3>
-          <p>{data.media.description}</p>
-        </div>
-      )}
+      {data?.media.description && <About text={data.media.description} />}
       {data?.byTitle &&
         data.steamAppid &&
         !data.fromIgdb &&
@@ -93,6 +90,38 @@ export function MediaSection({ gameId }: { gameId: string }) {
 }
 
 const trailerKey = (tr: Trailer) => tr.hls ?? tr.youtube ?? tr.name;
+
+/** Description folded after 4 lines, with "Lire la suite" when it is longer. */
+function About({ text }: { text: string }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [open, setOpen] = useState(false);
+  const [long, setLong] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (el && !open) setLong(el.scrollHeight > el.clientHeight + 1);
+  }, [text, open]);
+
+  return (
+    <div className={styles.about}>
+      <h3 className={styles.h3}>{t.about}</h3>
+      <p ref={ref} id="sheet-about" className={open ? undefined : styles.clamped}>
+        {text}
+      </p>
+      {(long || open) && (
+        <button
+          type="button"
+          className={styles.more}
+          aria-expanded={open}
+          aria-controls="sheet-about"
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? t.readLess : t.readMore}
+        </button>
+      )}
+    </div>
+  );
+}
 
 /**
  * Poster first (nothing is streamed until asked), then either a native

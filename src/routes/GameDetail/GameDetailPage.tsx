@@ -160,9 +160,9 @@ function Sheet({ game }: { game: GameDetail }) {
 
       <div className={styles.columns}>
         <div className={styles.mainColumn}>
-          <MediaSection gameId={s.id} />
           <DailyChart sessions={list} />
           <SessionLog game={game} sessions={list} steamCounted={steamCounted} />
+          <MediaSection gameId={s.id} />
         </div>
         <div className={styles.sideColumn}>
           <AchievementsSection

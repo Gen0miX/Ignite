@@ -18,9 +18,11 @@
 }
 
 /* Trailer: 16:9 poster, then the video in the same box. */
+/* 420 px high at most, centred, so the sheet's own data stays in view. */
 .player {
   position: relative;
-  width: 100%;
+  width: min(100%, calc(420px * 16 / 9));
+  margin-inline: auto;
   aspect-ratio: 16 / 9;
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -165,6 +167,26 @@ button.player:hover .playButton {
   gap: var(--space-1);
   color: var(--color-text-2);
   line-height: 1.5;
+}
+
+.clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+}
+
+.more {
+  align-self: flex-start;
+  min-height: var(--h-control-sm);
+  padding: 0;
+  color: var(--color-accent-ink);
+  font-weight: 600;
+}
+
+.more:hover {
+  text-decoration: underline;
 }
 
 .h3 {

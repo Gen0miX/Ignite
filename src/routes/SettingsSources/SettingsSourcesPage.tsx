@@ -33,6 +33,7 @@ import { SourceChip } from '../../components/SourceBadge/SourceBadge';
 import { Switch } from '../../components/Switch/Switch';
 import { fr } from '../../i18n/fr';
 import { formatLastPlayed } from '../../lib/format';
+import { usePrefs } from '../../lib/prefs';
 import { scrollToSection } from '../../lib/scrollToSection';
 import styles from './SettingsSourcesPage.module.css';
 import { EmulatorsCard } from './EmulatorsCard';
@@ -454,6 +455,27 @@ function TrackingCard() {
   );
 }
 
+/** Display preferences (stored in the WebView, no backend). */
+function GeneralCard() {
+  const showTrailers = usePrefs((p) => p.showTrailers);
+  const setShowTrailers = usePrefs((p) => p.setShowTrailers);
+  const tg = t.general;
+  return (
+    <section className={styles.card} aria-labelledby="general-title">
+      <h2 id="general-title" className="section-label">
+        {tg.title}
+      </h2>
+      <div className={styles.cardHeader}>
+        <div className={styles.cardTitle}>
+          <span className={styles.label}>{tg.showTrailers}</span>
+          <span className={styles.muted}>{tg.showTrailersHint}</span>
+        </div>
+        <Switch label={tg.showTrailers} checked={showTrailers} onChange={setShowTrailers} />
+      </div>
+    </section>
+  );
+}
+
 function AppCard() {
   const client = useQueryClient();
   const settings = useQuery({
@@ -632,6 +654,7 @@ function AboutCard() {
 }
 
 const TOC: [string, string][] = [
+  ['general-title', t.general.title],
   ['settings-sources', t.sourcesSection],
   ['emulators-title', t.emulators.title],
   ['tracking-title', t.trackingTitle],
@@ -660,6 +683,7 @@ export function SettingsSourcesPage() {
           </a>
         ))}
       </nav>
+      <GeneralCard />
       <h2 id="settings-sources" className="section-label">
         {t.sourcesSection}
       </h2>

@@ -554,6 +554,8 @@ export const fr = {
     mediaNone: 'Aucune page Steam trouvée pour ce jeu : pas de bande-annonce ni d’images.',
     mediaEmpty: 'La page Steam de ce jeu n’a ni bande-annonce ni images.',
     mediaByTitle: 'Médias de la page Steam portant le même titre.',
+    readMore: 'Lire la suite',
+    readLess: 'Réduire',
     mediaFromIgdb: 'Une partie des médias vient d’IGDB (description en anglais).',
     mediaIgdbHint:
       'Ajoute tes identifiants IGDB dans Réglages › Métadonnées pour compléter ce qui manque sur Steam.',
@@ -645,6 +647,11 @@ export const fr = {
       unhideAll: 'Tout réafficher',
       openInLibrary: 'Gérer dans la bibliothèque',
       count: (n: number) => (n === 1 ? '1 jeu masqué' : `${n} jeux masqués`),
+    },
+    general: {
+      title: 'Général',
+      showTrailers: 'Afficher la bande-annonce sur les fiches',
+      showTrailersHint: 'Les captures et la description restent affichées.',
     },
     app: {
       title: 'Application',
