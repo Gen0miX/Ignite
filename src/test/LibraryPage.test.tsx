@@ -161,8 +161,12 @@ describe('library page', () => {
     cards[1]!.focus();
     await user.keyboard('{ArrowLeft}');
     expect(cards[0]).toHaveFocus();
+    // Launch from the grid: a cancellable toast first, then the game starts.
     await user.keyboard('{Enter}');
-    expect(backend.launched).toEqual(['g1']);
+    expect(screen.getByText('Lancement de Hades…')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Annuler' })).toBeVisible();
+    expect(backend.launched).toEqual([]);
+    await vi.waitFor(() => expect(backend.launched).toEqual(['g1']), { timeout: 4000 });
 
     // Sidebar shows the Steam source with its counter.
     expect(screen.getByRole('link', { name: /Steam/ })).toHaveTextContent('2');
