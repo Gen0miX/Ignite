@@ -107,7 +107,7 @@
 .notInstalled .image,
 .notInstalled .headerFallback,
 .notInstalled .placeholder {
-  filter: saturate(0.6) brightness(0.8);
+  filter: grayscale(0.55) brightness(0.55);
   transition: filter var(--transition);
 }
 
