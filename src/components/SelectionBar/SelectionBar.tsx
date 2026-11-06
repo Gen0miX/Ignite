@@ -1,5 +1,5 @@
 import { Eye, EyeOff, FolderPlus, Trash2, X } from 'lucide-react';
-import type { GameStatus, GameSummary } from '../../api/client';
+import type { BulkUpdate, GameStatus, GameSummary } from '../../api/client';
 import { useBulkUpdate } from '../../api/hooks';
 import { fr } from '../../i18n/fr';
 import { isDeletable } from '../../lib/selection';
@@ -34,13 +34,15 @@ export function SelectionBar({
   const ids = games.map((g) => g.id);
   const allHidden = games.every((g) => g.hidden);
   const deletable = games.length > 0 && games.every(isDeletable);
-  const setStatus = (status: GameStatus) =>
-    bulk.mutate(
-      { ids, update: { status } },
-      {
-        onSuccess: () => onDone(fr.toast.status(ids.length, fr.statusSingular[status]), ids),
-      },
+  // mutateAsync, not mutate callbacks: the bar may unmount before the change
+  // settles (games leaving a filtered view), the confirmation must still run.
+  const run = (update: BulkUpdate, message: string) =>
+    bulk.mutateAsync({ ids, update }).then(
+      () => onDone(message, ids),
+      () => undefined,
     );
+  const setStatus = (status: GameStatus) =>
+    run({ status }, fr.toast.status(ids.length, fr.statusSingular[status]));
 
   return (
     <div role="toolbar" aria-label={t.label} className={styles.bar}>
@@ -73,13 +75,7 @@ export function SelectionBar({
         className={buttons.secondary}
         disabled={bulk.isPending}
         onClick={() =>
-          bulk.mutate(
-            { ids, update: { hidden: !allHidden } },
-            {
-              onSuccess: () =>
-                onDone((allHidden ? fr.toast.unhidden : fr.toast.hidden)(ids.length), ids),
-            },
-          )
+          run({ hidden: !allHidden }, (allHidden ? fr.toast.unhidden : fr.toast.hidden)(ids.length))
         }
       >
         {allHidden ? <Eye size={16} aria-hidden="true" /> : <EyeOff size={16} aria-hidden="true" />}

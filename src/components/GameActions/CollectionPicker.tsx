@@ -48,15 +48,13 @@ export function CollectionPicker({ gameIds, onClose, onAdded }: CollectionPicker
     e.preventDefault();
     const value = name.trim();
     if (!value) return;
-    add.mutate(
-      { newName: value, gameIds },
-      {
-        onSuccess: (id) => {
-          setName('');
-          setAdded((s) => new Set(s).add(id));
-          if (!single) confirm(value);
-        },
+    add.mutateAsync({ newName: value, gameIds }).then(
+      (id) => {
+        setName('');
+        setAdded((s) => new Set(s).add(id));
+        if (!single) confirm(value);
       },
+      () => undefined,
     );
   };
 
@@ -100,14 +98,12 @@ export function CollectionPicker({ gameIds, onClose, onAdded }: CollectionPicker
                   className={buttons.secondary}
                   disabled={done || add.isPending}
                   onClick={() =>
-                    add.mutate(
-                      { id, gameIds },
-                      {
-                        onSuccess: () => {
-                          setAdded((s) => new Set(s).add(id));
-                          confirm(c.collection.name);
-                        },
+                    add.mutateAsync({ id, gameIds }).then(
+                      () => {
+                        setAdded((s) => new Set(s).add(id));
+                        confirm(c.collection.name);
                       },
+                      () => undefined,
                     )
                   }
                 >

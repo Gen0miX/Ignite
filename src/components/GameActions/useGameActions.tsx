@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, FileText, FolderPlus, ImageIcon, Play, Star, Trash2 } from 'lucide-react';
-import type { GameSummary } from '../../api/client';
+import type { BulkUpdate, GameSummary } from '../../api/client';
 import { useBulkUpdate, useLaunchGame } from '../../api/hooks';
 import { fr } from '../../i18n/fr';
 import { isDeletable } from '../../lib/selection';
@@ -25,6 +25,11 @@ export function useGameActions() {
   const launch = useLaunchGame();
   const bulk = useBulkUpdate();
   const close = () => setOpen(null);
+  const run = (update: BulkUpdate, message: string, id: string) =>
+    bulk.mutateAsync({ ids: [id], update }).then(
+      () => toast(message, [id]),
+      () => undefined,
+    );
 
   const menuItems = (g: GameSummary): MenuItem[] => [
     {
@@ -51,14 +56,10 @@ export function useGameActions() {
       label: g.favorite ? t.favoriteRemove : t.favoriteAdd,
       icon: <Star size={16} aria-hidden="true" />,
       onSelect: () =>
-        bulk.mutate(
-          { ids: [g.id], update: { favorite: !g.favorite } },
-          {
-            onSuccess: () =>
-              toast((g.favorite ? fr.toast.favoriteRemoved : fr.toast.favoriteAdded)(g.title), [
-                g.id,
-              ]),
-          },
+        run(
+          { favorite: !g.favorite },
+          (g.favorite ? fr.toast.favoriteRemoved : fr.toast.favoriteAdded)(g.title),
+          g.id,
         ),
       separator: true,
     },
@@ -70,10 +71,7 @@ export function useGameActions() {
         <EyeOff size={16} aria-hidden="true" />
       ),
       onSelect: () =>
-        bulk.mutate(
-          { ids: [g.id], update: { hidden: !g.hidden } },
-          { onSuccess: () => toast((g.hidden ? fr.toast.unhidden : fr.toast.hidden)(1), [g.id]) },
-        ),
+        run({ hidden: !g.hidden }, (g.hidden ? fr.toast.unhidden : fr.toast.hidden)(1), g.id),
     },
     ...(isDeletable(g)
       ? [

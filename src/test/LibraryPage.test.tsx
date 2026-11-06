@@ -29,6 +29,7 @@ const backend = vi.hoisted(() => ({
   counts: null as LibraryCounts | null,
   launched: [] as string[],
   syncCalls: 0,
+  bulk: [] as string[][],
 }));
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: () => Promise.resolve(() => {}) }));
@@ -84,6 +85,14 @@ vi.mock('../api/client', async (importOriginal) => {
       duplicatesList: () => ok([]),
       facets: () => ok({ genres: [], modes: [] }),
       collectionsList: () => ok([]),
+      gamesBulkUpdate: (ids: string[], update: { status?: GameSummary['status'] }) => {
+        // The changed games leave a filtered view, like in the real app.
+        backend.games = backend.games.map((g) =>
+          ids.includes(g.id) && update.status ? { ...g, status: update.status } : g,
+        );
+        backend.bulk.push(ids);
+        return ok(null);
+      },
     },
   };
 });
@@ -157,5 +166,24 @@ describe('library page', () => {
 
     // Sidebar shows the Steam source with its counter.
     expect(screen.getByRole('link', { name: /Steam/ })).toHaveTextContent('2');
+  });
+
+  it('confirms a status change with a toast and clears the selection', async () => {
+    backend.games = [game('g1', 'Hades'), game('g2', 'Celeste'), game('g3', 'Tunic')];
+    backend.counts = counts(3);
+    const user = userEvent.setup();
+    renderAt('/library');
+
+    await screen.findByRole('grid', { name: 'Jeux' });
+    await user.click(screen.getByRole('checkbox', { name: /Hades/ }));
+    await user.click(screen.getByRole('checkbox', { name: /Celeste/ }));
+    const bar = screen.getByRole('toolbar', { name: 'Sélection' });
+    expect(within(bar).getByText('2 jeux sélectionnés')).toBeVisible();
+
+    await user.selectOptions(within(bar).getByRole('combobox'), 'done');
+
+    expect(await screen.findByText('2 jeux passés en « Terminé »')).toBeVisible();
+    expect(backend.bulk).toEqual([['g1', 'g2']]);
+    expect(screen.queryByRole('toolbar', { name: 'Sélection' })).not.toBeInTheDocument();
   });
 });

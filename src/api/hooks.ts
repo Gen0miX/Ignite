@@ -402,7 +402,7 @@ export function useBulkUpdate() {
   return useMutation({
     mutationFn: ({ ids, update }: { ids: string[]; update: BulkUpdate }) =>
       unwrap(commands.gamesBulkUpdate(ids, update)),
-    onSettled: () => invalidate(),
+    onSettled: () => void invalidate(),
   });
 }
 
