@@ -179,7 +179,8 @@ fn write_event(conn: &rusqlite::Connection, event: &TrackerEvent) -> crate::erro
     }
 }
 
-fn persist(app: &AppHandle, events: Vec<TrackerEvent>) {
+/// `live = false` while the app shuts down: no recap is offered then.
+fn persist(app: &AppHandle, events: Vec<TrackerEvent>, live: bool) {
     let db = app.state::<Db>();
     for event in events {
         if let Err(e) = write_event(&db.conn(), &event) {
@@ -207,6 +208,9 @@ fn persist(app: &AppHandle, events: Vec<TrackerEvent>) {
                     },
                 );
                 let _ = app.emit(crate::commands::sources::LIBRARY_CHANGED_EVENT, ());
+                if *keep && live {
+                    crate::commands::recap::session_written(app, &s.session_id, &s.game_id);
+                }
             }
         }
     }
@@ -253,7 +257,7 @@ fn run(app: AppHandle) {
         let running = matcher::running_games(&watch, &processes.processes(), hint.as_deref());
         let events = tracker.tick(Utc::now(), &running, idle.idle_seconds());
         if !events.is_empty() {
-            persist(&app, events);
+            persist(&app, events, true);
         }
         *state.active.lock().unwrap_or_else(|e| e.into_inner()) = tracker
             .active()
@@ -269,7 +273,7 @@ fn run(app: AppHandle) {
     }
 
     // Closing the app: write what is open.
-    persist(&app, tracker.stop_all());
+    persist(&app, tracker.stop_all(), false);
     let (lock, cvar) = &*state.stopped;
     *lock.lock().unwrap_or_else(|e| e.into_inner()) = true;
     cvar.notify_all();

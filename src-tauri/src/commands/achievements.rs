@@ -112,6 +112,11 @@ pub async fn achievements_get(
     result
 }
 
+/// Refetches the achievements of a game (end of session).
+pub fn refresh(app: &AppHandle, game_id: &str) -> CommandResult<AchievementsView> {
+    load(app, game_id, true)
+}
+
 fn load(app: &AppHandle, game_id: &str, refresh: bool) -> CommandResult<AchievementsView> {
     let db = app.state::<Db>();
     let sources = game_sources::list_for_game(&db.conn(), game_id)?;

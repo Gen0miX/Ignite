@@ -11,6 +11,7 @@ pub mod import;
 pub mod library;
 pub mod media;
 pub mod play;
+pub mod recap;
 pub mod secrets;
 pub mod sources;
 pub mod tracking;
@@ -103,6 +104,10 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         library::games_bulk_update,
         library::games_delete,
         library::source_open_folder,
+        recap::session_recap,
+        recap::session_recap_save,
+        recap::session_discard,
+        recap::window_reveal,
         collections::collection_add_games,
         sources::library_sync,
         sources::sources_status,

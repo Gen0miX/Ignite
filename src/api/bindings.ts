@@ -94,6 +94,12 @@ export const commands = {
 	 *  the database, never from the frontend.
 	 */
 	sourceOpenFolder: (sourceId: string) => typedError<null, CommandError>(__TAURI_INVOKE("source_open_folder", { sourceId })),
+	sessionRecap: (sessionId: string) => typedError<SessionRecap_Serialize, CommandError>(__TAURI_INVOKE("session_recap", { sessionId })),
+	sessionRecapSave: (sessionId: string, input: RecapSave_Deserialize) => typedError<null, CommandError>(__TAURI_INVOKE("session_recap_save", { sessionId, input })),
+	/**  "Ne pas compter cette session": the session and its time are removed. */
+	sessionDiscard: (sessionId: string) => typedError<null, CommandError>(__TAURI_INVOKE("session_discard", { sessionId })),
+	/**  Brings Ignite's window to the front (out of the notification area). */
+	windowReveal: () => __TAURI_INVOKE<void>("window_reveal"),
 	/**  Adds several games to a manual collection (selection, drag and drop). */
 	collectionAddGames: (id: string, gameIds: string[]) => typedError<null, CommandError>(__TAURI_INVOKE("collection_add_games", { id, gameIds })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
@@ -451,6 +457,9 @@ export type GameDetail_Deserialize = {
 	playSourceId?: string | null,
 	sources: SourceInfo_Deserialize[],
 	timeBySource: SourceTime_Deserialize[],
+	/**  "Où t'es-tu arrêté ?" (end-of-session recap) and when it was written. */
+	resumeNote?: string | null,
+	resumeNoteAt?: string | null,
 };
 
 export type GameDetail_Serialize = {
@@ -467,6 +476,9 @@ export type GameDetail_Serialize = {
 	playSourceId: string | null,
 	sources: SourceInfo_Serialize[],
 	timeBySource: SourceTime_Serialize[],
+	/**  "Où t'es-tu arrêté ?" (end-of-session recap) and when it was written. */
+	resumeNote: string | null,
+	resumeNoteAt: string | null,
 };
 
 export type GameMedia = GameMedia_Serialize | GameMedia_Deserialize;
@@ -629,6 +641,12 @@ export type HomeOverview_Serialize = {
 	pileTotal: number,
 };
 
+/**  An idle stretch removed from a session (RFC 3339). */
+export type IdlePeriod = {
+	startedAt: string,
+	endedAt: string,
+};
+
 /**  What the user decided for one candidate. */
 export type ImportAction = { type: "import" } | 
 /**  Import and merge into an existing game. */
@@ -784,6 +802,79 @@ export type Progress = {
 	total: number,
 };
 
+export type RecapAchievement = RecapAchievement_Serialize | RecapAchievement_Deserialize;
+
+export type RecapAchievement_Deserialize = {
+	name: string,
+	icon?: string | null,
+	globalPercent?: number | null,
+};
+
+export type RecapAchievement_Serialize = {
+	name: string,
+	icon: string | null,
+	globalPercent: number | null,
+};
+
+export type RecapAchievements = RecapAchievements_Serialize | RecapAchievements_Deserialize;
+
+export type RecapAchievements_Deserialize = {
+	unlocked: RecapAchievement_Deserialize[],
+	done: number,
+	total: number,
+	/**  Resync after the session still running: show a skeleton. */
+	syncing: boolean,
+};
+
+export type RecapAchievements_Serialize = {
+	unlocked: RecapAchievement_Serialize[],
+	done: number,
+	total: number,
+	/**  Resync after the session still running: show a skeleton. */
+	syncing: boolean,
+};
+
+export type RecapGame = RecapGame_Serialize | RecapGame_Deserialize;
+
+export type RecapGame_Deserialize = {
+	id: string,
+	title: string,
+	logo?: string | null,
+	hero?: string | null,
+	header?: string | null,
+};
+
+export type RecapGame_Serialize = {
+	id: string,
+	title: string,
+	logo: string | null,
+	hero: string | null,
+	header: string | null,
+};
+
+export type RecapSave = RecapSave_Serialize | RecapSave_Deserialize;
+
+export type RecapSave_Deserialize = {
+	/**  "Où t'es-tu arrêté ?"; blank clears it. */
+	resumeNote?: string | null,
+	/**  1 to 5 flames; 0 clears the rating. */
+	rating?: number | null,
+	status?: GameStatus | null,
+};
+
+export type RecapSave_Serialize = {
+	/**  "Où t'es-tu arrêté ?"; blank clears it. */
+	resumeNote: string | null,
+	/**  1 to 5 flames; 0 clears the rating. */
+	rating: number | null,
+	status: GameStatus | null,
+};
+
+export type RecapWeek = {
+	minutes: number,
+	sessions: number,
+};
+
 export type ScannedGame = {
 	title: string,
 	exePath: string,
@@ -844,6 +935,52 @@ export type SessionInput_Serialize = {
 };
 
 export type SessionOrigin = "auto" | "manual" | "imported" | "estimate";
+
+export type SessionRecap = SessionRecap_Serialize | SessionRecap_Deserialize;
+
+export type SessionRecap_Deserialize = {
+	session: PlaySession_Deserialize,
+	game: RecapGame_Deserialize,
+	activeSeconds: number,
+	idlePeriods: IdlePeriod[],
+	timeline: TimelineSegment[],
+	/**  Average of the other `auto` / `manual` sessions (3 at least). */
+	averageSeconds?: number | null,
+	totalMinutes: number,
+	/**  Platform counter (Steam) not resynced yet: the total is an estimate. */
+	totalApprox: boolean,
+	week: RecapWeek,
+	streak: Streak,
+	/**  `None`: no source of the game has achievements. */
+	achievements?: RecapAchievements_Deserialize | null,
+	openGoals: Goal_Deserialize[],
+	openGoalsTotal: number,
+	resumeNote?: string | null,
+	rating?: number | null,
+	status: GameStatus,
+};
+
+export type SessionRecap_Serialize = {
+	session: PlaySession_Serialize,
+	game: RecapGame_Serialize,
+	activeSeconds: number,
+	idlePeriods: IdlePeriod[],
+	timeline: TimelineSegment[],
+	/**  Average of the other `auto` / `manual` sessions (3 at least). */
+	averageSeconds: number | null,
+	totalMinutes: number,
+	/**  Platform counter (Steam) not resynced yet: the total is an estimate. */
+	totalApprox: boolean,
+	week: RecapWeek,
+	streak: Streak,
+	/**  `None`: no source of the game has achievements. */
+	achievements: RecapAchievements_Serialize | null,
+	openGoals: Goal_Serialize[],
+	openGoalsTotal: number,
+	resumeNote: string | null,
+	rating: number | null,
+	status: GameStatus,
+};
 
 export type SgdbGameOption = SgdbGameOption_Serialize | SgdbGameOption_Deserialize;
 
@@ -1080,6 +1217,12 @@ export type StoreMedia_Serialize = {
 	screenshots: Screenshot[],
 };
 
+export type Streak = {
+	/**  Consecutive days with a session, up to `today`. */
+	current: number,
+	best: number,
+};
+
 export type SyncReport = {
 	kind: SourceKind,
 	status: SourceStatus,
@@ -1098,6 +1241,13 @@ export type SyncReport = {
 export type Tag = {
 	id: string,
 	name: string,
+};
+
+/**  Part of a session: played (`idle = false`) or idle time removed. */
+export type TimelineSegment = {
+	start: string,
+	end: string,
+	idle: boolean,
 };
 
 /**  Time the user has tonight. */

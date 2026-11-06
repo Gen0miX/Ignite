@@ -65,6 +65,9 @@ pub struct GameDetail {
     pub play_source_id: Option<String>,
     pub sources: Vec<SourceInfo>,
     pub time_by_source: Vec<SourceTime>,
+    /// "Où t'es-tu arrêté ?" (end-of-session recap) and when it was written.
+    pub resume_note: Option<String>,
+    pub resume_note_at: Option<String>,
 }
 
 fn to_u32(v: i64) -> u32 {
@@ -92,10 +95,13 @@ pub(crate) fn load_detail(db: &Db, id: &str) -> CommandResult<GameDetail> {
         &session_sums,
     );
     let mut art = artwork::for_game(&conn, id)?;
+    let (resume_note, resume_note_at) = games::resume_note(&conn, id)?.unzip();
     let play_source_id =
         crate::launcher::pick_source(&sources, game.preferred_source_id.as_deref())
             .map(|s| s.id.clone());
     Ok(GameDetail {
+        resume_note,
+        resume_note_at,
         play_source_id,
         notes: game.notes,
         preferred_source_id: game.preferred_source_id,

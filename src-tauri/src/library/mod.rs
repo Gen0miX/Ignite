@@ -8,6 +8,7 @@ pub mod merge;
 pub mod non_games;
 pub mod playtime;
 pub mod query;
+pub mod recap;
 pub mod rules;
 pub mod search;
 pub mod stats;
