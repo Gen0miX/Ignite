@@ -160,9 +160,8 @@
 .tileValue {
   font-family: var(--font-mono);
   font-size: var(--text-lg);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .tileLabel {

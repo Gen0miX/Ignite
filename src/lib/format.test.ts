@@ -1,6 +1,7 @@
 import {
   formatBytes,
   formatLastPlayed,
+  formatLastPlayedShort,
   formatPlaytimeLong,
   formatPlaytimeShort,
   titleTint,
@@ -55,5 +56,19 @@ describe('titleTint', () => {
   it('is stable and dark', () => {
     expect(titleTint('Minecraft')).toBe(titleTint('Minecraft'));
     expect(titleTint('Minecraft')).toMatch(/^hsl\(\d+ 28% 18%\)$/);
+  });
+});
+
+describe('formatLastPlayedShort', () => {
+  const now = new Date(2026, 10, 5, 15, 0);
+  const at = (y: number, m: number, d: number) => new Date(y, m, d, 12, 0).toISOString();
+
+  it('stays short enough for a panel tile', () => {
+    expect(formatLastPlayedShort(null, now)).toBe('jamais');
+    expect(formatLastPlayedShort(at(2026, 10, 5), now)).toBe("aujourd'hui");
+    expect(formatLastPlayedShort(at(2026, 10, 4), now)).toBe('hier');
+    expect(formatLastPlayedShort(at(2026, 10, 1), now)).toBe('il y a 4 j');
+    expect(formatLastPlayedShort(at(2026, 8, 12), now)).toBe('12 sept.');
+    expect(formatLastPlayedShort(at(2024, 9, 12), now)).toBe('oct. 2024');
   });
 });

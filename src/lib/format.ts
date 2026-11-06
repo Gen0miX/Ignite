@@ -38,6 +38,28 @@ export function formatLastPlayed(iso: string | null | undefined, now: Date = new
   }).format(date);
 }
 
+/**
+ * Compact variant for tiles: "aujourd'hui", "hier", "il y a 4 j" (under a
+ * month), then "12 oct." this year or "oct. 2024" before.
+ */
+export function formatLastPlayedShort(
+  iso: string | null | undefined,
+  now: Date = new Date(),
+): string {
+  if (!iso) return fr.format.never;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return fr.format.never;
+  const days = Math.round((startOfDay(now) - startOfDay(date)) / DAY);
+  if (days <= 0) return fr.format.today;
+  if (days === 1) return fr.format.yesterday;
+  if (days < 30) return fr.format.daysAgo(days);
+  const sameYear = date.getFullYear() === now.getFullYear();
+  return new Intl.DateTimeFormat(
+    'fr-FR',
+    sameYear ? { day: 'numeric', month: 'short' } : { month: 'short', year: 'numeric' },
+  ).format(date);
+}
+
 /** "155,4 Go", "820 Mo". */
 export function formatBytes(bytes: number | null | undefined): string {
   if (!bytes || bytes <= 0) return '—';

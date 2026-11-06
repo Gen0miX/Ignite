@@ -15,7 +15,14 @@ import {
   useUpdateGame,
 } from '../../api/hooks';
 import { fr } from '../../i18n/fr';
-import { formatBytes, formatLastPlayed, formatPlaytimeLong, titleTint } from '../../lib/format';
+import {
+  formatBytes,
+  formatLastPlayed,
+  formatLastPlayedShort,
+  formatPlaytimeLong,
+  formatPlaytimeShort,
+  titleTint,
+} from '../../lib/format';
 import { isDeletable } from '../../lib/selection';
 import { useGameActions } from '../GameActions/useGameActions';
 import { GameTitle } from '../GameTitle/GameTitle';
@@ -179,7 +186,11 @@ function PanelContent({ game }: { game: GameDetail }) {
         {actions.element}
 
         <div className={styles.tiles}>
-          <StatTile label={fr.panel.totalTime} value={formatPlaytimeLong(total)} />
+          <StatTile
+            label={fr.panel.totalTime}
+            value={total > 0 ? formatPlaytimeShort(total) : formatPlaytimeLong(0)}
+            detail={formatPlaytimeLong(total)}
+          />
           {s.achievements && s.achievements.total > 0 ? (
             <StatTile
               label={fr.panel.achievements}
@@ -190,7 +201,11 @@ function PanelContent({ game }: { game: GameDetail }) {
           ) : (
             <StatTile label={fr.panel.achievements} value="—" />
           )}
-          <StatTile label={fr.panel.lastSession} value={formatLastPlayed(s.lastPlayed)} />
+          <StatTile
+            label={fr.panel.lastSession}
+            value={formatLastPlayedShort(s.lastPlayed)}
+            detail={formatLastPlayed(s.lastPlayed)}
+          />
         </div>
 
         <DuplicateHint game={game} />
@@ -257,9 +272,10 @@ function PanelContent({ game }: { game: GameDetail }) {
   );
 }
 
-function StatTile({ label, value }: { label: string; value: string }) {
+/** Compact value (wraps, never cut); the long form goes in the tooltip. */
+function StatTile({ label, value, detail }: { label: string; value: string; detail?: string }) {
   return (
-    <div className={styles.tile}>
+    <div className={styles.tile} title={detail && detail !== value ? detail : undefined}>
       <span className={styles.tileValue}>{value}</span>
       <span className={styles.tileLabel}>{label}</span>
     </div>

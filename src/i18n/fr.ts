@@ -832,6 +832,7 @@ export const fr = {
     hoursMinutes: (h: number, m: number) => `${h} h ${String(m).padStart(2, '0')}`,
     today: "aujourd'hui",
     yesterday: 'hier',
+    daysAgo: (n: number) => `il y a ${n} j`,
     never: 'jamais',
   },
 } as const;
