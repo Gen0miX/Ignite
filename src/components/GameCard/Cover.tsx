@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { artworkSrc } from '../../api/client';
 import { titleTint } from '../../lib/format';
+import { SkeletonImage } from '../Skeleton/SkeletonImage';
 import styles from './GameCard.module.css';
 
 interface CoverProps {
@@ -20,10 +21,9 @@ export function Cover({ title, cover, header }: CoverProps) {
 
   if (coverSrc && failed !== coverSrc) {
     return (
-      <img
+      <SkeletonImage
         className={styles.image}
         src={coverSrc}
-        alt=""
         loading="lazy"
         decoding="async"
         onError={() => setFailed(coverSrc)}
@@ -34,10 +34,9 @@ export function Cover({ title, cover, header }: CoverProps) {
     return (
       <div className={styles.headerFallback}>
         <img className={styles.headerBlur} src={headerSrc} alt="" aria-hidden="true" />
-        <img
+        <SkeletonImage
           className={styles.headerImage}
           src={headerSrc}
-          alt=""
           loading="lazy"
           onError={() => setFailed(headerSrc)}
         />

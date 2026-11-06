@@ -26,6 +26,7 @@ import {
 import { useGameActions } from '../GameActions/useGameActions';
 import { GameTitle } from '../GameTitle/GameTitle';
 import { InstallFolder } from '../InstallFolder/InstallFolder';
+import { SkeletonImage } from '../Skeleton/SkeletonImage';
 import { Menu } from '../Menu/Menu';
 import { SegmentedControl } from '../SegmentedControl/SegmentedControl';
 import { SourceBadge } from '../SourceBadge/SourceBadge';
@@ -95,10 +96,10 @@ function PanelContent({ game }: { game: GameDetail }) {
   return (
     <>
       <div
-        className={styles.banner}
+        className={`${styles.banner} img-host`}
         style={banner ? undefined : { background: titleTint(s.title) }}
       >
-        {banner && <img src={banner} alt="" />}
+        {banner && <SkeletonImage src={banner} />}
         <div className={styles.bannerShade} />
         <GameTitle title={s.title} logo={game.logo} className={styles.title} />
       </div>

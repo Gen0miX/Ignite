@@ -4,6 +4,7 @@ import type { Screenshot, Trailer } from '../../api/client';
 import { useGameMedia } from '../../api/hooks';
 import { Dialog } from '../../components/Dialog/Dialog';
 import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
+import { SkeletonImage } from '../../components/Skeleton/SkeletonImage';
 import { fr } from '../../i18n/fr';
 import { usePrefs } from '../../lib/prefs';
 import styles from './MediaSection.module.css';
@@ -56,13 +57,13 @@ export function MediaSection({ gameId }: { gameId: string }) {
             <li key={trailerKey(tr)}>
               <button
                 type="button"
-                className={`${styles.thumb} ${i === trailer ? styles.thumbActive : ''}`}
+                className={`${styles.thumb} img-host ${i === trailer ? styles.thumbActive : ''}`}
                 aria-pressed={i === trailer}
                 aria-label={t.trailerPick(tr.name)}
                 title={tr.name}
                 onClick={() => setTrailer(i)}
               >
-                <img src={tr.thumbnail} alt="" loading="lazy" />
+                <SkeletonImage src={tr.thumbnail} loading="lazy" />
                 <Play
                   size={14}
                   fill="currentColor"
@@ -81,11 +82,11 @@ export function MediaSection({ gameId }: { gameId: string }) {
             <li key={s.full}>
               <button
                 type="button"
-                className={styles.shot}
+                className={`${styles.shot} img-host`}
                 aria-label={t.screenshotOpen(i + 1, shots.length)}
                 onClick={() => setViewing(i)}
               >
-                <img src={s.thumb} alt="" loading="lazy" />
+                <SkeletonImage src={s.thumb} loading="lazy" />
               </button>
             </li>
           ))}
@@ -186,7 +187,7 @@ function TrailerPlayer({ trailer }: { trailer: Trailer }) {
   if (failed) {
     return (
       <div className={styles.player}>
-        <img src={trailer.thumbnail} alt="" />
+        <SkeletonImage src={trailer.thumbnail} />
         <p className={styles.playerError} role="alert">
           {t.trailerError}
         </p>
@@ -197,11 +198,11 @@ function TrailerPlayer({ trailer }: { trailer: Trailer }) {
     return (
       <button
         type="button"
-        className={styles.player}
+        className={`${styles.player} img-host`}
         aria-label={t.trailerPlay(trailer.name)}
         onClick={() => setPlaying(true)}
       >
-        <img src={trailer.thumbnail} alt="" />
+        <SkeletonImage src={trailer.thumbnail} />
         <span className={styles.playButton} aria-hidden="true">
           <Play size={28} fill="currentColor" />
         </span>
@@ -265,8 +266,8 @@ function ScreenshotViewer({
       onClose={() => onIndex(null)}
       width={1280}
     >
-      <div className={styles.viewer}>
-        <img src={shot.full} alt="" className={styles.viewerImage} />
+      <div className={`${styles.viewer} img-host`}>
+        <SkeletonImage src={shot.full} className={styles.viewerImage} />
         {n > 1 && (
           <>
             <button

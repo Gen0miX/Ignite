@@ -109,7 +109,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
       data-game-id={game.id}
       {...drag.handlers}
     >
-      <div className={styles.coverBox}>
+      <div className={`${styles.coverBox} img-host`}>
         <Cover title={game.title} cover={game.cover} header={game.header} />
         {playing && <span className={styles.playing}>{fr.tracking.inGame}</span>}
         <span className={styles.corner}>

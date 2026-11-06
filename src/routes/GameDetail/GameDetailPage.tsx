@@ -9,6 +9,7 @@ import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
 import { GameTitle } from '../../components/GameTitle/GameTitle';
 import { SourceBadge } from '../../components/SourceBadge/SourceBadge';
+import { SkeletonImage } from '../../components/Skeleton/SkeletonImage';
 import { fr } from '../../i18n/fr';
 import { formatPlaytimeLong, titleTint } from '../../lib/format';
 import { sessionStats } from '../../lib/sessions';
@@ -72,10 +73,10 @@ function Sheet({ game }: { game: GameDetail }) {
   return (
     <PageMain>
       <header
-        className={styles.hero}
+        className={`${styles.hero} img-host`}
         style={banner ? undefined : { background: titleTint(s.title) }}
       >
-        {banner && <img src={banner} alt="" />}
+        {banner && <SkeletonImage src={banner} />}
         <div className={styles.heroShade} />
         <div className={styles.heroContent}>
           <div className={styles.badges}>

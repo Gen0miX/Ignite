@@ -124,6 +124,26 @@ a {
   color: var(--color-muted);
 }
 
+/* Image skeleton: the host pulses until its SkeletonImage has loaded. */
+.img-loading {
+  opacity: 0;
+}
+
+.img-loaded {
+  transition: opacity 160ms ease-out;
+}
+
+.img-host:has(.img-loading) {
+  background-color: var(--color-active);
+  animation: img-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes img-pulse {
+  50% {
+    background-color: var(--color-card);
+  }
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
