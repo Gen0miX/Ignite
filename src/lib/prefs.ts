@@ -2,6 +2,12 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { StatsRange } from '../api/client';
 
+/** Library cover width (grid minimum column), in px. */
+export const COVER_MIN = 110;
+export const COVER_MAX = 280;
+export const COVER_STEP = 10;
+export const COVER_DEFAULT = 150;
+
 /** End-of-session recap: always, only for sessions over N minutes, never. */
 export type RecapMode = 'always' | 'longer' | 'never';
 
@@ -16,6 +22,9 @@ interface Prefs {
   recapMode: RecapMode;
   recapMinMinutes: number;
   setRecap: (mode: RecapMode, minMinutes?: number) => void;
+  /** Cover width in the library grid (Bibliothèque › taille des jaquettes). */
+  coverSize: number;
+  setCoverSize: (px: number) => void;
 }
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -39,6 +48,12 @@ export const usePrefs = create<Prefs>()(
       setShowTrailers: (showTrailers) => set({ showTrailers }),
       statsRange: null,
       setStatsRange: (statsRange) => set({ statsRange }),
+      coverSize: COVER_DEFAULT,
+      setCoverSize: (px) =>
+        set({
+          coverSize:
+            Math.round(Math.max(COVER_MIN, Math.min(COVER_MAX, px)) / COVER_STEP) * COVER_STEP,
+        }),
       recapMode: 'longer',
       recapMinMinutes: 15,
       setRecap: (recapMode, minMinutes) =>

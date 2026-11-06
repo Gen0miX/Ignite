@@ -56,17 +56,30 @@ function animate(row: HTMLElement, before: Map<string, Box>, after: Map<string, 
 
 /**
  * Animates the cover grid when its width changes (side panel opened or closed,
- * menu reduced, window resized): cards glide to their new place instead of
- * jumping. `items` changing only refreshes the remembered layout.
+ * menu reduced, window resized) or `layoutKey` does (cover size): cards glide
+ * to their new place instead of jumping. `items` changing only refreshes the
+ * remembered layout.
  */
-export function useGridFlip<T extends HTMLElement>(items: unknown) {
+export function useGridFlip<T extends HTMLElement>(items: unknown, layoutKey?: unknown) {
   const ref = useRef<T>(null);
   const last = useRef<{ boxes: Map<string, Box>; width: number }>({ boxes: new Map(), width: -1 });
+  const lastKey = useRef(layoutKey);
 
   useLayoutEffect(() => {
     const row = ref.current;
     if (row) last.current = { boxes: measure(row), width: row.clientWidth };
   }, [items]);
+
+  // Same width, other layout (cover size changed): glide as well.
+  useLayoutEffect(() => {
+    const row = ref.current;
+    if (!row || lastKey.current === layoutKey) return;
+    lastKey.current = layoutKey;
+    const boxes = measure(row);
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!reduced?.matches) animate(row, last.current.boxes, boxes);
+    last.current = { boxes, width: row.clientWidth };
+  }, [layoutKey]);
 
   useEffect(() => {
     const row = ref.current;

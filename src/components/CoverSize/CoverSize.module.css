@@ -1,0 +1,67 @@
+.control {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: var(--h-control);
+  padding: 0 2px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-field);
+}
+
+.button {
+  width: var(--h-control-sm);
+  height: var(--h-control-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-2);
+}
+
+.button:hover:not(:disabled) {
+  background: var(--color-active);
+  color: var(--color-text);
+}
+
+.button:disabled {
+  opacity: 0.4;
+}
+
+/* Slider: accent up to the value, a round thumb; 36 px tall hit area. */
+.slider {
+  width: 110px;
+  height: var(--h-control-sm);
+  margin: 0 4px;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--color-accent) var(--fill, 50%),
+    var(--color-border) var(--fill, 50%)
+  );
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--color-text);
+  box-shadow: 0 0 0 2px var(--color-field);
+}
+
+.slider:focus-visible {
+  box-shadow: none;
+}
+
+.slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: var(--focus-ring);
+}

@@ -20,6 +20,7 @@ import {
 } from '../../api/hooks';
 import { PageMain } from '../../app/AppShell';
 import buttons from '../../components/Button/Button.module.css';
+import { CoverSize } from '../../components/CoverSize/CoverSize';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { FilterChips } from '../../components/FilterChips/FilterChips';
 import { GameGrid } from '../../components/GameGrid/GameGrid';
@@ -283,6 +284,7 @@ export function LibraryPage() {
               ))}
             </select>
           </label>
+          <CoverSize />
         </div>
         {isTauri() && (
           <FilterChips

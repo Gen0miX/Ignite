@@ -266,6 +266,11 @@ export const fr = {
     loading: 'Chargement de la bibliothèque…',
     backendUnavailable: 'Backend indisponible (lancer avec pnpm tauri dev).',
     installedBadge: 'Installé',
+    coverSize: 'Taille des jaquettes',
+    coverSizeValue: (px: number) => `${px} pixels de large`,
+    coverSizeHint: 'Taille des jaquettes (double-clic : taille par défaut)',
+    coverSmaller: 'Réduire les jaquettes',
+    coverLarger: 'Agrandir les jaquettes',
     notInstalled: 'non installé',
     notInstalledTitle: 'Non installé',
     progressLabel: (kind: 'achievements' | 'goals', done: number, total: number) =>

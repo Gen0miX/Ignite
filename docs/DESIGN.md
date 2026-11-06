@@ -29,7 +29,7 @@ Le design de référence est la **direction B** : une interface dense et utilita
 ## Principes
 
 1. **La jaquette d'abord** : les images des jeux apportent la couleur, l'interface reste sobre autour. L'orange est réservé aux actions principales (Jouer, Ajouter), à la sélection et aux données mises en avant.
-2. **Densité maîtrisée** : 6 colonnes de jaquettes à 1440 px. Grille `repeat(auto-fill, minmax(150px, 1fr))` avec un écart de 18 px en vertical et 14 px en horizontal.
+2. **Densité maîtrisée** : 6 colonnes de jaquettes à 1440 px par défaut. Grille `repeat(auto-fill, minmax(var(--cover-min), 1fr))` avec un écart de 18 px en vertical et 14 px en horizontal. L'utilisateur règle la largeur minimale des jaquettes (110 à 280 px, 150 par défaut, pas de 10) avec le contrôle **CoverSize** à droite de la barre d'outils : boutons loupe −/+ de 36 px autour d'un curseur (piste 4 px accent jusqu'à la valeur, double-clic = taille par défaut), mémorisé dans `ignite.prefs` ; les jaquettes glissent vers leur nouvelle place.
 3. **Chiffres en monospace** (`--font-mono`) : temps, compteurs, pourcentages, chemins de fichiers.
 4. **Libellés de section** : 11 px, MAJUSCULES, `letter-spacing: .1em`, graisse 600, `--color-muted`.
 5. **Pas d'emoji**, pas de dégradés décoratifs. Les dégradés servent uniquement à rendre le texte lisible sur une image.

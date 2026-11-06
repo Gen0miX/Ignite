@@ -1,7 +1,8 @@
-import { useRef, type KeyboardEvent } from 'react';
+import { useRef, type CSSProperties, type KeyboardEvent } from 'react';
 import type { GameSummary } from '../../api/client';
 import { fr } from '../../i18n/fr';
 import { GameCard } from '../GameCard/GameCard';
+import { usePrefs } from '../../lib/prefs';
 import { useGridFlip } from '../../lib/useGridFlip';
 import { countColumns, nextIndex } from './gridNavigation';
 import styles from './GameGrid.module.css';
@@ -31,7 +32,8 @@ export function GameGrid({
 }: GameGridProps) {
   const selecting = checkedIds.size > 0;
   const refs = useRef<(HTMLDivElement | null)[]>([]);
-  const rowRef = useGridFlip<HTMLDivElement>(games);
+  const coverSize = usePrefs((p) => p.coverSize);
+  const rowRef = useGridFlip<HTMLDivElement>(games, coverSize);
   const selectedIndex = games.findIndex((g) => g.id === selectedId);
   const focusIndex = selectedIndex >= 0 ? selectedIndex : 0;
 
@@ -55,7 +57,12 @@ export function GameGrid({
 
   return (
     <div role="grid" aria-label={fr.library.gridLabel} className={styles.grid}>
-      <div role="row" className={styles.row} ref={rowRef}>
+      <div
+        role="row"
+        className={styles.row}
+        ref={rowRef}
+        style={{ '--cover-min': `${coverSize}px` } as CSSProperties}
+      >
         {games.map((game, i) => (
           <GameCard
             key={game.id}
