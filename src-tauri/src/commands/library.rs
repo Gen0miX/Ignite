@@ -283,10 +283,12 @@ pub fn exe_inspect(path: String) -> CommandResult<crate::sources::local::ExeInfo
 #[tauri::command]
 #[specta::specta]
 pub fn add_executable(
+    app: tauri::AppHandle,
     db: tauri::State<'_, Db>,
     input: crate::sources::local::AddExeInput,
 ) -> CommandResult<GameDetail> {
     let id = crate::sources::local::create(&mut db.conn(), &input)?;
+    super::artwork::spawn_autofill(app);
     load_detail(&db, &id)
 }
 
@@ -367,7 +369,11 @@ pub struct ScannedGame {
 /// Returns how many were added; failures (duplicates...) are skipped.
 #[tauri::command]
 #[specta::specta]
-pub fn add_scanned_games(db: tauri::State<'_, Db>, games: Vec<ScannedGame>) -> CommandResult<u32> {
+pub fn add_scanned_games(
+    app: tauri::AppHandle,
+    db: tauri::State<'_, Db>,
+    games: Vec<ScannedGame>,
+) -> CommandResult<u32> {
     let mut added = 0;
     for g in games {
         let input = crate::sources::local::AddExeInput {
@@ -382,6 +388,9 @@ pub fn add_scanned_games(db: tauri::State<'_, Db>, games: Vec<ScannedGame>) -> C
             Ok(_) => added += 1,
             Err(e) => tracing::info!(error = %e, "scanned game skipped"),
         }
+    }
+    if added > 0 {
+        super::artwork::spawn_autofill(app);
     }
     Ok(added)
 }

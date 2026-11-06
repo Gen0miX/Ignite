@@ -333,3 +333,202 @@ pub async fn artwork_set(
     .map_err(|e| AppError::Invalid(format!("artwork task failed: {e}")))??;
     load_detail(&app.state::<Db>(), &game_id)
 }
+
+// --- Automatic fill after a sync ---------------------------------------------
+
+/// Pause between two games, to stay gentle with SteamGridDB.
+const AUTO_DELAY: std::time::Duration = std::time::Duration::from_millis(350);
+static AUTO_RUNNING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Search result accepted without asking: same title once normalised
+/// (a fuzzy guess could put another game's logo on the sheet).
+pub(crate) fn pick_match(title: &str, found: &[sgdb::SgdbGame]) -> Option<u32> {
+    let key = crate::library::merge::match_key(title);
+    found
+        .iter()
+        .find(|g| crate::library::merge::match_key(&g.name) == key)
+        .map(|g| g.id)
+}
+
+/// Fills, in the background, the logos (and covers / heroes) that no launcher
+/// provided, from SteamGridDB. Needs the key; does nothing without it.
+pub(crate) fn spawn_autofill(app: AppHandle) {
+    use std::sync::atomic::Ordering;
+    if AUTO_RUNNING.swap(true, Ordering::SeqCst) {
+        return;
+    }
+    std::thread::spawn(move || {
+        match autofill(&app) {
+            Ok(0) => {}
+            Ok(n) => tracing::info!(stored = n, "SteamGridDB artwork filled"),
+            Err(e) => tracing::warn!(error = %e, "SteamGridDB auto-fill stopped"),
+        }
+        AUTO_RUNNING.store(false, Ordering::SeqCst);
+    });
+}
+
+struct AutoTodo {
+    id: String,
+    title: String,
+    sgdb_id: Option<i64>,
+    steam_appid: Option<String>,
+    missing: Vec<ArtworkSlot>,
+}
+
+fn autofill_todo(conn: &rusqlite::Connection) -> AppResult<Vec<AutoTodo>> {
+    let stored = artwork::all(conn)?;
+    let mut stmt = conn.prepare(
+        "SELECT g.id, g.title, g.steamgriddb_id, \
+         (SELECT external_id FROM game_sources s WHERE s.game_id = g.id AND s.kind = 'steam' LIMIT 1) \
+         FROM games g WHERE g.hidden = 0 ORDER BY g.title",
+    )?;
+    let rows = stmt.query_map([], |r| {
+        Ok((
+            r.get::<_, String>(0)?,
+            r.get::<_, String>(1)?,
+            r.get::<_, Option<i64>>(2)?,
+            r.get::<_, Option<String>>(3)?,
+        ))
+    })?;
+    let mut todo = Vec::new();
+    for row in rows {
+        let (id, title, sgdb_id, steam_appid) = row?;
+        let have = stored.get(&id);
+        let missing: Vec<ArtworkSlot> = SLOTS
+            .into_iter()
+            .filter(|slot| {
+                !have
+                    .and_then(|m| m.get(slot.as_str()))
+                    .is_some_and(|p| std::path::Path::new(p).is_file())
+            })
+            .collect();
+        if !missing.is_empty() {
+            todo.push(AutoTodo {
+                id,
+                title,
+                sgdb_id,
+                steam_appid,
+                missing,
+            });
+        }
+    }
+    Ok(todo)
+}
+
+fn autofill(app: &AppHandle) -> AppResult<usize> {
+    use tauri::Emitter;
+    let Some(key) = key(app)? else {
+        return Ok(0);
+    };
+    let db = app.state::<Db>();
+    let data_dir = app.state::<AppPaths>().data_dir.clone();
+    let misses = crate::metadata::artwork::MissCache::load(&data_dir);
+    let todo = autofill_todo(&db.conn())?;
+    let mut stored = 0;
+    let mut since_refresh = 0;
+    for game in todo {
+        // Tried recently without finding everything: retry in a few days.
+        let marker = format!("sgdb-auto:{}", game.id);
+        if misses.is_recent_miss(&marker) {
+            continue;
+        }
+        let resolved = match game.sgdb_id.and_then(|id| u32::try_from(id).ok()) {
+            Some(id) => Ok(Some(id)),
+            None => match &game.steam_appid {
+                Some(appid) => sgdb::by_steam_appid(&key, appid).map(|g| g.map(|g| g.id)),
+                None => {
+                    sgdb::search(&key, &game.title).map(|found| pick_match(&game.title, &found))
+                }
+            },
+        };
+        let sgdb_id = match resolved {
+            Ok(Some(id)) => id,
+            Ok(None) => {
+                misses.record(&marker);
+                continue;
+            }
+            Err(e @ AppError::Network { .. }) => {
+                misses.save();
+                return Err(e);
+            }
+            Err(e) => {
+                tracing::debug!(game = %game.title, error = %e, "SteamGridDB match failed");
+                misses.record(&marker);
+                continue;
+            }
+        };
+        if game.sgdb_id.is_none() {
+            let _ = db.conn().execute(
+                "UPDATE games SET steamgriddb_id = ?2 WHERE id = ?1",
+                rusqlite::params![game.id, i64::from(sgdb_id)],
+            );
+        }
+        let dir = cache_root(&data_dir).join(&game.id);
+        let mut complete = true;
+        for slot in &game.missing {
+            let url = sgdb::images(&key, sgdb_id, slot.kind())
+                .ok()
+                .and_then(|list| list.into_iter().find(|i| sgdb::is_sgdb_url(&i.url)))
+                .map(|i| i.url);
+            let Some(url) = url else {
+                complete = false;
+                continue;
+            };
+            let name = format!("{}-sgdb-{}", slot.as_str(), &crate::db::new_id()[..8]);
+            match download_named(&dir, &name, &url) {
+                Ok(path) => {
+                    let row = ArtworkRow {
+                        game_id: game.id.clone(),
+                        kind: slot.as_str().to_string(),
+                        local_path: path.display().to_string(),
+                        provider: Some("steamgriddb".into()),
+                        source_url: Some(url),
+                    };
+                    if artwork::upsert(&db.conn(), &row).is_ok() {
+                        stored += 1;
+                        since_refresh += 1;
+                    }
+                }
+                Err(e) => {
+                    tracing::debug!(%url, error = %e, "SteamGridDB download failed");
+                    complete = false;
+                }
+            }
+        }
+        if !complete {
+            misses.record(&marker);
+        }
+        if since_refresh >= 10 {
+            since_refresh = 0;
+            let _ = app.emit(super::sources::LIBRARY_CHANGED_EVENT, ());
+        }
+        std::thread::sleep(AUTO_DELAY);
+    }
+    misses.save();
+    if stored > 0 {
+        let _ = app.emit(super::sources::LIBRARY_CHANGED_EVENT, ());
+    }
+    Ok(stored)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn g(id: u32, name: &str) -> sgdb::SgdbGame {
+        sgdb::SgdbGame {
+            id,
+            name: name.into(),
+            release_date: None,
+        }
+    }
+
+    #[test]
+    fn accepts_only_same_title() {
+        let found = [g(1, "Hades II"), g(2, "Hades")];
+        assert_eq!(pick_match("Hades", &found), Some(2));
+        assert_eq!(pick_match("HADES™", &found), Some(2));
+        assert_eq!(pick_match("Hades Origins", &[g(3, "Hades")]), None);
+        assert_eq!(pick_match("Celeste", &found), None);
+    }
+}

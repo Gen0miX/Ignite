@@ -87,7 +87,7 @@ impl MissCache {
         }
     }
 
-    fn is_recent_miss(&self, url: &str) -> bool {
+    pub fn is_recent_miss(&self, url: &str) -> bool {
         let entries = self.entries.lock().unwrap_or_else(|e| e.into_inner());
         entries
             .get(url)
@@ -97,7 +97,7 @@ impl MissCache {
             })
     }
 
-    fn record(&self, url: &str) {
+    pub fn record(&self, url: &str) {
         self.entries
             .lock()
             .unwrap_or_else(|e| e.into_inner())

@@ -258,11 +258,10 @@ fn spawn_store_metadata(app: AppHandle) {
 
 /// Downloads the artwork still missing, in the background, then refreshes the UI.
 fn spawn_artwork_downloads(app: AppHandle, data_dir: PathBuf, jobs: Vec<ArtworkJob>) {
-    if jobs.is_empty()
-        || app
-            .state::<SyncState>()
-            .artwork_running
-            .swap(true, Ordering::SeqCst)
+    if app
+        .state::<SyncState>()
+        .artwork_running
+        .swap(true, Ordering::SeqCst)
     {
         return;
     }
@@ -283,6 +282,8 @@ fn spawn_artwork_downloads(app: AppHandle, data_dir: PathBuf, jobs: Vec<ArtworkJ
         app.state::<SyncState>()
             .artwork_running
             .store(false, Ordering::SeqCst);
+        // Then what the launchers did not provide (logos of non-Steam games…).
+        super::artwork::spawn_autofill(app);
     });
 }
 
