@@ -29,7 +29,7 @@ import { GamePanel } from '../../components/GamePanel/GamePanel';
 import { useGameActions } from '../../components/GameActions/useGameActions';
 import { Menu } from '../../components/Menu/Menu';
 import { SelectionBar } from '../../components/SelectionBar/SelectionBar';
-import { toast } from '../../components/Toaster/toasts';
+import { launchWithUndo, toast } from '../../components/Toaster/toasts';
 import { clickSelection, pruneSelection } from '../../lib/selection';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { fr } from '../../i18n/fr';
@@ -175,7 +175,10 @@ export function LibraryPage() {
         checkedIds={visibleChecked}
         onSelect={(id) => id !== selected && select(id)}
         onToggle={toggle}
-        onLaunch={(id) => launch.mutate(id)}
+        onLaunch={(id) => {
+          const game = games.find((g) => g.id === id);
+          if (game) launchWithUndo(game, () => launch.mutate(id));
+        }}
         onMenu={(game, at) => setMenu({ game, at })}
       />
     );

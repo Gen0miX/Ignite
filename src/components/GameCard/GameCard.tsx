@@ -29,9 +29,10 @@ interface GameCardProps {
 }
 
 /**
- * Cover card: click selects (or toggles in selection mode), Ctrl/Shift+click
- * multi-selects, double-click / Enter launches, right-click or "⋯" opens the
- * actions, drag onto a sidebar collection adds to it.
+ * Cover card: a click anywhere but the corner Play button selects (or toggles
+ * in selection mode), Ctrl/Shift+click multi-selects, double-click / Enter
+ * launches, right-click or "⋯" opens the actions, drag onto a sidebar
+ * collection adds to it.
  */
 export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameCard(
   {
@@ -105,6 +106,17 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
         <Cover title={game.title} cover={game.cover} header={game.header} />
         {playing && <span className={styles.playing}>{fr.tracking.inGame}</span>}
         <span className={styles.corner}>
+          <button
+            type="button"
+            className={styles.more}
+            tabIndex={-1}
+            aria-label={fr.actions.menu(game.title)}
+            aria-haspopup="menu"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={openMenuFromButton}
+          >
+            <MoreHorizontal size={16} aria-hidden="true" />
+          </button>
           {game.hidden && (
             <span className={styles.hiddenMark} title={fr.library.hiddenTitle}>
               <EyeOff size={12} aria-hidden="true" />
@@ -136,17 +148,6 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
         >
           {checked && <Check size={14} strokeWidth={3} aria-hidden="true" />}
         </button>
-        <button
-          type="button"
-          className={styles.more}
-          tabIndex={-1}
-          aria-label={fr.actions.menu(game.title)}
-          aria-haspopup="menu"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={openMenuFromButton}
-        >
-          <MoreHorizontal size={16} aria-hidden="true" />
-        </button>
         {!selecting && (
           <button
             type="button"
@@ -159,7 +160,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
               onLaunch();
             }}
           >
-            <Play size={17} fill="currentColor" aria-hidden="true" />
+            <Play size={16} fill="currentColor" aria-hidden="true" />
           </button>
         )}
       </div>

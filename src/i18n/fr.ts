@@ -55,6 +55,8 @@ export const fr = {
   },
   toast: {
     close: 'Fermer la notification',
+    launching: (title: string) => `Lancement de ${title}…`,
+    cancel: 'Annuler',
     status: (n: number, label: string) =>
       `${n > 1 ? `${n} jeux passés` : '1 jeu passé'} en « ${label} »`,
     hidden: (n: number) => (n > 1 ? `${n} jeux masqués` : '1 jeu masqué'),
