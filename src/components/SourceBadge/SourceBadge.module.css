@@ -24,8 +24,8 @@
 }
 
 .overlay {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   justify-content: center;
   padding: 0;
   background: var(--source-badge-bg);

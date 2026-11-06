@@ -14,7 +14,7 @@ export function SourceChip({ kind }: { kind: SourceKind }) {
       title={fr.sources[kind]}
       aria-hidden="true"
     >
-      <SourceIcon kind={kind} size={13} />
+      <SourceIcon kind={kind} size={16} />
     </span>
   );
 }
@@ -30,7 +30,7 @@ export function SourceBadge({ kind, overlay = false }: { kind: SourceKind; overl
       style={{ color: sourceVar(kind) }}
       title={overlay ? fr.sources[kind] : undefined}
     >
-      <SourceIcon kind={kind} size={overlay ? 13 : 12} />
+      <SourceIcon kind={kind} size={overlay ? 16 : 14} />
       <span className={overlay ? 'visually-hidden' : undefined}>{fr.sources[kind]}</span>
     </span>
   );

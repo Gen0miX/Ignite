@@ -41,7 +41,7 @@ Le design de référence est la **direction B** : une interface dense et utilita
 |---|---|
 | **Logo app** | Carré de 26 px, rayon 6, fond accent, triangle « play » en `--color-on-accent`, puis « Ludothèque » 17 px en 700. |
 | **NavItem** | Hauteur 40 (36 pour les statuts), padding 0 10, rayon 8, texte 14. Compteur en mono 12 muted, aligné à droite. Actif : fond `--color-active`. |
-| **SourceItem** | Pastille carrée de 22 px, rayon 6, fond `--source-*`, logo de la plateforme en 13 px, texte sombre, puis le nom et le compteur. Logos : [Simple Icons](https://simpleicons.org/) (CC0, paquet `simple-icons`) pour Steam, Epic, GOG, Battle.net, EA, Ubisoft et Riot ; Lucide pour Xbox (`Gamepad2`, retiré de Simple Icons à la demande de Microsoft), les exécutables (`AppWindow`) et les émulateurs (`Joystick`). Voir `SourceIcon.tsx`. |
+| **SourceItem** | Pastille carrée de 22 px, rayon 6, fond `--source-*`, logo de la plateforme en 16 px, texte sombre, puis le nom et le compteur. Logos : [Simple Icons](https://simpleicons.org/) (CC0, paquet `simple-icons`) pour Steam, Epic, GOG, Battle.net, EA, Ubisoft et Riot ; Lucide pour Xbox (`Gamepad2`, retiré de Simple Icons à la demande de Microsoft), les exécutables (`AppWindow`) et les émulateurs (`Joystick`). Voir `SourceIcon.tsx`. |
 | **StatusDot** | Pastille de 8 px aux couleurs `--status-*`. |
 | **FilterChip** | Hauteur 36, padding 0 12, rayon 8, bordure `--color-border`, fond `--color-field`, 13 px en 500. Actif : bordure et texte `--color-accent-ink`, fond `--color-accent-soft`. Le libellé porte la valeur choisie (« Genre : RPG, Action ▾ »). |
 | **SearchField** | Hauteur 40, icône loupe, placeholder en mono 13 qui montre la syntaxe (`source:gog heures:>20`). |
@@ -53,7 +53,7 @@ Le design de référence est la **direction B** : une interface dense et utilita
 | **StatTile** | Padding 10 à 16, rayon 8 à 10, fond `--color-card`. Valeur en mono 16–26, libellé 11–12 muted. |
 | **SegmentedControl** | Fond `--color-card` avec 4 px de marge intérieure. Segment de 36 px, rayon 7. Sélectionné : fond `--color-active`, 600. |
 | **Tag** | Pastille ronde 12 px, padding 4 10, fond `--color-card`, texte `--color-text-2`. « + tag » en pointillés. |
-| **SourceBadge** | Logo 12 px puis nom, 11 px 700, padding 3 8, rayon 5, fond `--color-active`, texte `--source-*`. Sur une jaquette : logo seul dans un carré de 24 px (nom en infobulle et pour les lecteurs d'écran). |
+| **SourceBadge** | Logo 14 px puis nom, 11 px 700, padding 3 8, rayon 5, fond `--color-active`, texte `--source-*`. Sur une jaquette : logo seul de 16 px dans un carré de 28 px (nom en infobulle et pour les lecteurs d'écran). |
 | **Table** | En-têtes en 11 px majuscules muted. Lignes de 44 px séparées par `--color-line`. Elle défile horizontalement dans un conteneur `overflow-x: auto`. |
 | **Modal** | Largeur max 900, rayon 16, fond `--color-panel`, ombre `--shadow-modal`. La bibliothèque reste visible derrière, assombrie (overlay noir à 60 % avec blur). En-tête et pied séparés par `--color-line`. |
 | **Barres / graphiques** | Barres de 3 à 6 px de rayon. Barre du jour en cours ou valeur mise en avant en accent, les autres en `--color-active`. Calendrier : cases de 14 px avec `--heat-0..3`. |
