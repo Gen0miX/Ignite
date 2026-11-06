@@ -114,6 +114,14 @@ pub fn delete(conn: &Connection, id: &str) -> AppResult<()> {
     Ok(())
 }
 
+/// Deletes automatic sessions shorter than `min_secs`; returns how many.
+pub fn purge_short_auto(conn: &Connection, min_secs: i64) -> AppResult<usize> {
+    Ok(conn.execute(
+        "DELETE FROM play_sessions WHERE origin = 'auto' AND duration_seconds < ?1",
+        [min_secs],
+    )?)
+}
+
 /// Sessions of a game, most recent first (estimates without a date last).
 pub fn list_for_game(conn: &Connection, game_id: &str) -> AppResult<Vec<PlaySession>> {
     let mut stmt = conn.prepare(&format!(

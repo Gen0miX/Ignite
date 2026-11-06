@@ -3,12 +3,14 @@ import { fr } from '../i18n/fr';
 /** Compact playtime for cards: "45 min", "12 h", "—" when never played. */
 export function formatPlaytimeShort(minutes: number): string {
   if (minutes <= 0) return '—';
-  if (minutes < 60) return fr.format.minutes(minutes);
+  if (minutes < 1) return fr.format.underMinute;
+  if (minutes < 60) return fr.format.minutes(Math.floor(minutes));
   return fr.format.hours(Math.floor(minutes / 60));
 }
 
-/** Detailed playtime for the panel: "45 min", "12 h 05", "0 min". */
+/** Detailed playtime for the panel: "45 min", "12 h 05", "< 1 min", "0 min" (none). */
 export function formatPlaytimeLong(minutes: number): string {
+  if (minutes > 0 && minutes < 1) return fr.format.underMinute;
   const m = Math.max(0, Math.round(minutes));
   if (m < 60) return fr.format.minutes(m);
   return fr.format.hoursMinutes(Math.floor(m / 60), m % 60);

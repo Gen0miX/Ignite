@@ -150,14 +150,32 @@ fn load_watch_list(db: &Db) -> Vec<WatchEntry> {
         .collect()
 }
 
+/// Writes one tracker event: nothing on start (the row appears with the first
+/// heartbeat, once the minimum is reached), the row on heartbeat and on a kept
+/// end, a delete on a discarded end (in case a heartbeat wrote it).
+fn write_event(conn: &rusqlite::Connection, event: &TrackerEvent) -> crate::error::AppResult<()> {
+    match event {
+        TrackerEvent::Started(_) => Ok(()),
+        TrackerEvent::Heartbeat(s) => sessions::save(conn, &to_row(s)),
+        TrackerEvent::Ended { session: s, keep } => {
+            if *keep {
+                sessions::save(conn, &to_row(s))
+            } else {
+                sessions::delete(conn, &s.session_id)
+            }
+        }
+    }
+}
+
 fn persist(app: &AppHandle, events: Vec<TrackerEvent>) {
     let db = app.state::<Db>();
     for event in events {
-        let result = match &event {
+        if let Err(e) = write_event(&db.conn(), &event) {
+            tracing::warn!(error = %e, "tracker: cannot write session");
+        }
+        match &event {
             TrackerEvent::Started(s) => {
                 tracing::info!(game = %s.game_id, "session started");
-                // Saved before the event so the UI reads the new row.
-                let result = sessions::save(&db.conn(), &to_row(s));
                 let _ = app.emit(
                     SESSION_STARTED_EVENT,
                     SessionEventPayload {
@@ -165,16 +183,10 @@ fn persist(app: &AppHandle, events: Vec<TrackerEvent>) {
                         session_id: s.session_id.clone(),
                     },
                 );
-                result
             }
-            TrackerEvent::Heartbeat(s) => sessions::save(&db.conn(), &to_row(s)),
+            TrackerEvent::Heartbeat(_) => {}
             TrackerEvent::Ended { session: s, keep } => {
                 tracing::info!(game = %s.game_id, active = s.active_seconds(), keep, "session ended");
-                let result = if *keep {
-                    sessions::save(&db.conn(), &to_row(s))
-                } else {
-                    sessions::delete(&db.conn(), &s.session_id)
-                };
                 let _ = app.emit(
                     SESSION_ENDED_EVENT,
                     SessionEventPayload {
@@ -183,12 +195,18 @@ fn persist(app: &AppHandle, events: Vec<TrackerEvent>) {
                     },
                 );
                 let _ = app.emit(crate::commands::sources::LIBRARY_CHANGED_EVENT, ());
-                result
             }
-        };
-        if let Err(e) = result {
-            tracing::warn!(error = %e, "tracker: cannot write session");
         }
+    }
+}
+
+/// Removes automatic sessions under the minimum left by older versions or by
+/// an app killed mid-session (installer update, crash).
+fn purge_short_sessions(db: &Db, config: &TrackerConfig) {
+    match sessions::purge_short_auto(&db.conn(), config.min_session_secs) {
+        Ok(0) => {}
+        Ok(n) => tracing::info!(removed = n, "tracker: short sessions purged"),
+        Err(e) => tracing::warn!(error = %e, "tracker: cannot purge short sessions"),
     }
 }
 
@@ -204,7 +222,9 @@ fn run(app: AppHandle) {
     let state = app.state::<TrackerState>();
     let mut processes = system::ProcessProbe::new();
     let mut idle = system::IdleProbe::new();
-    let mut tracker = SessionTracker::new(load_config(&app.state::<Db>()));
+    let config = load_config(&app.state::<Db>());
+    purge_short_sessions(&app.state::<Db>(), &config);
+    let mut tracker = SessionTracker::new(config);
     let mut watch = load_watch_list(&app.state::<Db>());
     let mut last_reload = Instant::now();
     tracing::info!(watched = watch.len(), "tracker started");
@@ -242,4 +262,84 @@ fn run(app: AppHandle) {
     *lock.lock().unwrap_or_else(|e| e.into_inner()) = true;
     cvar.notify_all();
     tracing::info!("tracker stopped");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::repo::games;
+    use chrono::TimeZone;
+
+    /// Plays a game for `secs` (3 s ticks), closes it and writes every event.
+    fn play_for(secs: i64) -> (Db, String) {
+        let db = Db::open_in_memory().unwrap();
+        let game = games::insert(&db.conn(), "Elden Ring").unwrap();
+        let mut tr = SessionTracker::new(TrackerConfig::default());
+        let at = |s: i64| Utc.timestamp_opt(1_800_000_000 + s, 0).unwrap();
+        let running = vec![(game.id.clone(), "src".to_string())];
+        let mut events = Vec::new();
+        let mut s = 0;
+        while s < secs {
+            events.extend(tr.tick(at(s), &running, 0));
+            s += 3;
+        }
+        events.extend(tr.tick(at(secs + 30), &[], 0));
+        for mut e in events {
+            // No game source row in this test.
+            match &mut e {
+                TrackerEvent::Started(a) | TrackerEvent::Heartbeat(a) => a.source_id = None,
+                TrackerEvent::Ended { session, .. } => session.source_id = None,
+            }
+            write_event(&db.conn(), &e).unwrap();
+        }
+        (db, game.id)
+    }
+
+    #[test]
+    fn a_game_closed_after_30_seconds_leaves_no_trace() {
+        let (db, game) = play_for(30);
+        assert!(sessions::list_for_game(&db.conn(), &game)
+            .unwrap()
+            .is_empty());
+    }
+
+    #[test]
+    fn a_ten_minute_game_is_written_once() {
+        let (db, game) = play_for(600);
+        let rows = sessions::list_for_game(&db.conn(), &game).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert!(rows[0].duration_seconds >= 590);
+    }
+
+    #[test]
+    fn short_auto_sessions_are_purged_but_not_manual_ones() {
+        let db = Db::open_in_memory().unwrap();
+        let game = games::insert(&db.conn(), "Elden Ring").unwrap();
+        let row = |id: &str, secs: u32, origin: SessionOrigin| PlaySession {
+            id: id.into(),
+            game_id: game.id.clone(),
+            game_source_id: None,
+            started_at: Some("2026-11-06T10:00:00Z".into()),
+            ended_at: Some("2026-11-06T10:01:00Z".into()),
+            duration_seconds: secs,
+            idle_seconds: 0,
+            origin,
+            note: None,
+        };
+        for s in [
+            row("a", 20, SessionOrigin::Auto),
+            row("b", 600, SessionOrigin::Auto),
+            row("c", 30, SessionOrigin::Manual),
+        ] {
+            sessions::save(&db.conn(), &s).unwrap();
+        }
+        purge_short_sessions(&db, &TrackerConfig::default());
+        let mut ids: Vec<_> = sessions::list_for_game(&db.conn(), &game.id)
+            .unwrap()
+            .into_iter()
+            .map(|s| s.id)
+            .collect();
+        ids.sort();
+        assert_eq!(ids, ["b", "c"]);
+    }
 }

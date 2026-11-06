@@ -58,13 +58,12 @@ impl ActiveSession {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TrackerEvent {
+    /// Not written yet: the row appears with the first heartbeat.
     Started(ActiveSession),
+    /// Ongoing session to write; only once it reached the minimum.
     Heartbeat(ActiveSession),
     /// `keep = false` when the session is shorter than the minimum: delete it.
-    Ended {
-        session: ActiveSession,
-        keep: bool,
-    },
+    Ended { session: ActiveSession, keep: bool },
 }
 
 pub struct SessionTracker {
@@ -133,7 +132,11 @@ impl SessionTracker {
                     }
                     if (now - s.last_heartbeat).num_seconds() >= self.config.heartbeat_secs {
                         s.last_heartbeat = now;
-                        events.push(TrackerEvent::Heartbeat(s.clone()));
+                        // Nothing is written before the minimum: a game closed
+                        // (or a crash) within it leaves no row behind.
+                        if s.active_seconds() >= self.config.min_session_secs {
+                            events.push(TrackerEvent::Heartbeat(s.clone()));
+                        }
                     }
                 }
                 None => {
@@ -239,7 +242,7 @@ mod tests {
             .iter()
             .filter(|e| matches!(e, TrackerEvent::Heartbeat(_)))
             .count();
-        assert_eq!(beats, 9); // every 60 s over ~10 min
+        assert_eq!(beats, 8); // every 60 s over ~10 min, from the 2 min minimum on
 
         // Process gone: still active within the grace period...
         assert!(tr.tick(t(606), &[], 0).is_empty());
@@ -250,6 +253,18 @@ mod tests {
         assert_eq!(s.last_seen, t(597));
         assert_eq!(s.active_seconds(), 597);
         assert_eq!(tr.active().count(), 0);
+    }
+
+    #[test]
+    fn a_session_under_the_minimum_never_asks_to_be_written() {
+        let mut tr = tracker();
+        let mut events = play(&mut tr, 0, 30, |_| 0);
+        events.extend(tr.tick(t(45), &[], 0));
+        assert!(!events
+            .iter()
+            .any(|e| matches!(e, TrackerEvent::Heartbeat(_))));
+        let (_, keep) = ended(&events).unwrap();
+        assert!(!keep);
     }
 
     #[test]

@@ -50,7 +50,8 @@ export function sessionStats(sessions: PlaySession[]): SessionStats {
     .reduce((sum, s) => sum + s.durationSeconds, 0);
   return {
     count: dated.length,
-    averageMinutes: dated.length ? Math.round(total / dated.length / 60) : 0,
+    // Not rounded here: a sub-minute average reads "< 1 min", not "0 min".
+    averageMinutes: dated.length ? total / dated.length / 60 : 0,
     estimateMinutes: Math.round(estimate / 60),
   };
 }

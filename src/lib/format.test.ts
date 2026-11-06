@@ -16,6 +16,9 @@ describe('playtime', () => {
 
   it('formats long values for the panel', () => {
     expect(formatPlaytimeLong(0)).toBe('0 min');
+    expect(formatPlaytimeLong(0.5)).toBe('< 1 min');
+    expect(formatPlaytimeShort(0.5)).toBe('< 1 min');
+    expect(formatPlaytimeShort(45.7)).toBe('45 min');
     expect(formatPlaytimeLong(59)).toBe('59 min');
     expect(formatPlaytimeLong(725)).toBe('12 h 05');
   });

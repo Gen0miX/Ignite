@@ -153,7 +153,7 @@ CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL); -- JSON
      1. chemin exact de l'exe ;
      2. préfixe `install_path` ;
      3. nom d'exe déclaré.
-2. **Pendant la session** : un heartbeat toutes les 60 s écrit `ended_at` et la durée provisoire en base, pour survivre à un crash ou à une coupure. Une sonde d'inactivité (`GetLastInputInfo` pour le clavier et la souris, XInput pour la manette) accumule `idle_seconds` au-delà du seuil (15 min par défaut).
+2. **Pendant la session** : un heartbeat toutes les 60 s écrit `ended_at` et la durée provisoire en base, pour survivre à un crash ou à une coupure. Rien n'est écrit tant que la session n'a pas atteint le minimum (2 min par défaut) : un jeu fermé avant, ou un crash pendant ce délai, ne laisse aucune ligne. Au démarrage, les sessions `auto` sous le minimum (anciennes versions, app tuée par une mise à jour) sont supprimées. Une sonde d'inactivité (`GetLastInputInfo` pour le clavier et la souris, XInput pour la manette) accumule `idle_seconds` au-delà du seuil (15 min par défaut).
 3. **Fin de la session** : tous les processus correspondants ont disparu depuis plus de 10 s (délai de grâce pour les launchers qui relancent un processus enfant). On enregistre `duration_seconds = durée totale − idle_seconds`. On supprime la session si elle est sous le minimum (2 min par défaut).
 4. Les événements `session-started` et `session-ended` sont émis vers le frontend (badge « En jeu », mise à jour en direct).
 

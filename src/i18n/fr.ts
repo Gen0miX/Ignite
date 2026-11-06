@@ -828,6 +828,7 @@ export const fr = {
   },
   format: {
     minutes: (n: number) => `${n} min`,
+    underMinute: '< 1 min',
     hours: (n: number) => `${n} h`,
     hoursMinutes: (h: number, m: number) => `${h} h ${String(m).padStart(2, '0')}`,
     today: "aujourd'hui",
