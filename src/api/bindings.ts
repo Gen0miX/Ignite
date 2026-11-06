@@ -994,6 +994,10 @@ export type StatsOverview_Deserialize = {
 	library: LibraryState,
 	/**  First day with dated history (sessions or counter snapshots). */
 	historyStart?: string | null,
+	/**  Dated sessions (`auto` / `manual`) in the range, with the source filter. */
+	sessionsInRange: number,
+	/**  Local day of the first session tracked by Ignite (`auto`), any game. */
+	firstTrackedDay?: string | null,
 };
 
 export type StatsOverview_Serialize = {
@@ -1013,6 +1017,10 @@ export type StatsOverview_Serialize = {
 	library: LibraryState,
 	/**  First day with dated history (sessions or counter snapshots). */
 	historyStart: string | null,
+	/**  Dated sessions (`auto` / `manual`) in the range, with the source filter. */
+	sessionsInRange: number,
+	/**  Local day of the first session tracked by Ignite (`auto`), any game. */
+	firstTrackedDay: string | null,
 };
 
 export type StatsRange = "week" | "month" | "year" | "all";

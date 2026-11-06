@@ -61,3 +61,10 @@ export function monthStarts(weeks: CalendarCell[][]): { week: number; month: num
   });
   return out;
 }
+
+/** Calendar cell size filling `width` with `weeks` columns, kept within 10–18 px. */
+export function calendarCell(width: number, weeks: number, gap = 3): number {
+  if (weeks <= 0 || width <= 0) return 14;
+  const size = Math.floor((width - (weeks - 1) * gap) / weeks);
+  return Math.max(10, Math.min(18, size));
+}

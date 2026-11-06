@@ -1,4 +1,5 @@
 import { buildCalendar, monthStarts, thresholds } from './calendar';
+import { calendarCell } from './calendar';
 
 describe('calendar', () => {
   it('splits played days into three levels', () => {
@@ -29,5 +30,14 @@ describe('calendar', () => {
     const starts = monthStarts(weeks);
     expect(starts.map((s) => s.month)).toEqual([0, 1, 2]);
     expect(starts[0]!.week).toBe(0);
+  });
+});
+
+describe('calendarCell', () => {
+  it('fills the width within 10 and 18 px', () => {
+    expect(calendarCell(53 * 17 - 3, 53)).toBe(14);
+    expect(calendarCell(2000, 53)).toBe(18);
+    expect(calendarCell(300, 53)).toBe(10);
+    expect(calendarCell(0, 53)).toBe(14);
   });
 });

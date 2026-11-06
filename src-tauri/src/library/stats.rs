@@ -158,6 +158,49 @@ pub struct StatsOverview {
     pub library: LibraryState,
     /// First day with dated history (sessions or counter snapshots).
     pub history_start: Option<String>,
+    /// Dated sessions (`auto` / `manual`) in the range, with the source filter.
+    pub sessions_in_range: u32,
+    /// Local day of the first session tracked by Ignite (`auto`), any game.
+    pub first_tracked_day: Option<String>,
+}
+
+/// `(sessions in the range, first auto session day)`.
+fn session_facts(
+    conn: &Connection,
+    sources: &HashMap<String, SourceInfo>,
+    visible: &HashMap<&str, &GameSummary>,
+    filter: &[SourceKind],
+    in_range: impl Fn(&NaiveDate) -> bool,
+) -> AppResult<(u32, Option<NaiveDate>)> {
+    let mut stmt = conn.prepare(
+        "SELECT game_id, game_source_id, started_at, origin FROM play_sessions \
+         WHERE origin IN ('auto', 'manual') AND started_at IS NOT NULL",
+    )?;
+    let rows = stmt.query_map([], |r| {
+        Ok((
+            r.get::<_, String>(0)?,
+            r.get::<_, Option<String>>(1)?,
+            r.get::<_, String>(2)?,
+            r.get::<_, String>(3)?,
+        ))
+    })?;
+    let mut count = 0;
+    let mut first: Option<NaiveDate> = None;
+    for row in rows {
+        let (game, source, start, origin) = row?;
+        let Some(day) = local_day(&start) else {
+            continue;
+        };
+        if origin == "auto" {
+            first = Some(first.map_or(day, |f| f.min(day)));
+        }
+        let kind = source.as_ref().and_then(|s| sources.get(s)).map(|i| i.kind);
+        let wanted = filter.is_empty() || kind.is_some_and(|k| filter.contains(&k));
+        if visible.contains_key(game.as_str()) && wanted && in_range(&day) {
+            count += 1;
+        }
+    }
+    Ok((count, first))
 }
 
 fn local_day(rfc3339: &str) -> Option<NaiveDate> {
@@ -331,6 +374,9 @@ pub fn overview(
         }
     }
 
+    let (sessions_in_range, first_tracked_day) =
+        session_facts(conn, &sources, &visible, filter, in_range)?;
+
     let total: f64 = per_game.values().flat_map(|m| m.values()).sum();
     let span_days = match start {
         Some(s) => (today - s).num_days() + 1,
@@ -471,6 +517,8 @@ pub fn overview(
         by_source,
         library,
         history_start: history_start.map(|d| d.to_string()),
+        sessions_in_range,
+        first_tracked_day: first_tracked_day.map(|d| d.to_string()),
     })
 }
 
@@ -627,10 +675,13 @@ mod tests {
         assert_eq!(week.longest_streak_days, 3);
         assert_eq!(week.games_completed, 1);
         assert_eq!(week.minutes_per_day, 30); // 150 min over Mon..Fri
+        assert_eq!(week.sessions_in_range, 3);
+        assert_eq!(week.first_tracked_day.as_deref(), Some("2025-06-01"));
 
         let steam_only = overview(&conn, StatsRange::Week, &[SourceKind::Steam], today).unwrap();
         assert_eq!(steam_only.total_minutes, 90);
         assert_eq!(steam_only.by_source.len(), 1);
+        assert_eq!(steam_only.sessions_in_range, 1);
 
         // Since forever: Steam counter (600) + Celeste sessions (160).
         let all = overview(&conn, StatsRange::All, &[], today).unwrap();
@@ -638,5 +689,6 @@ mod tests {
         assert_eq!(all.library.done, 1);
         assert_eq!(all.games_owned, 2);
         assert_eq!(all.history_start.as_deref(), Some("2025-06-01"));
+        assert_eq!(all.sessions_in_range, 4);
     }
 }

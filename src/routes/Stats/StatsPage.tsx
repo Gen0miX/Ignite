@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -15,8 +15,9 @@ import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
 import { SourceBadge } from '../../components/SourceBadge/SourceBadge';
 import { fr } from '../../i18n/fr';
-import { buildCalendar, monthStarts } from '../../lib/calendar';
+import { buildCalendar, calendarCell, monthStarts } from '../../lib/calendar';
 import { formatPlaytimeLong, titleTint } from '../../lib/format';
+import { defaultStatsRange, usePrefs } from '../../lib/prefs';
 import styles from './StatsPage.module.css';
 
 const t = fr.stats;
@@ -105,6 +106,8 @@ function Kpi({ label, value, detail }: { label: string; value: string; detail?: 
   );
 }
 
+const CELL_GAP = 3;
+
 function Calendar({
   days,
   start,
@@ -116,12 +119,30 @@ function Calendar({
 }) {
   const weeks = useMemo(() => buildCalendar(days, start, end), [days, start, end]);
   const months = monthStarts(weeks);
+  const wrap = useRef<HTMLDivElement>(null);
+  const [cell, setCell] = useState(14);
+
+  // Cells sized so the year fills the card (10–18 px), recomputed on resize.
+  useLayoutEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    const measure = () => setCell(calendarCell(el.clientWidth, weeks.length, CELL_GAP));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [weeks.length]);
+
   return (
-    <div className={styles.calendarWrap}>
+    <div
+      ref={wrap}
+      className={styles.calendarWrap}
+      style={{ '--cell': `${cell}px`, '--cell-gap': `${CELL_GAP}px` } as React.CSSProperties}
+    >
       <div
         className={styles.monthRow}
         aria-hidden="true"
-        style={{ gridTemplateColumns: `repeat(${weeks.length}, 14px)` }}
+        style={{ gridTemplateColumns: `repeat(${weeks.length}, var(--cell))` }}
       >
         {months.map((m) => (
           <span key={`${m.week}-${m.month}`} style={{ gridColumn: m.week + 1 }}>
@@ -158,7 +179,13 @@ function Calendar({
 }
 
 export function StatsPage() {
-  const [range, setRange] = useState<StatsRange>('year');
+  const picked = usePrefs((p) => p.statsRange);
+  const setPicked = usePrefs((p) => p.setStatsRange);
+  // Until the user picks a period: "Depuis toujours" first (it carries the
+  // first tracked day), then the year if Ignite's history is old enough.
+  const [auto, setAuto] = useState<StatsRange>('all');
+  const range = picked ?? auto;
+  const setRange = setPicked;
   const [sources, setSources] = useState<SourceKind[]>([]);
   const stats = useQuery({
     queryKey: ['stats', range, sources],
@@ -166,6 +193,9 @@ export function StatsPage() {
     enabled: isTauri(),
     placeholderData: (prev) => prev,
   });
+  const firstTracked = stats.data?.firstTrackedDay;
+  const suggested = stats.data ? defaultStatsRange(firstTracked ?? null) : null;
+  if (!picked && suggested && suggested !== auto) setAuto(suggested);
 
   const now = new Date();
   const year = now.getFullYear();
@@ -256,7 +286,15 @@ export function StatsPage() {
             <h2 id="stats-calendar" className="section-label">
               {t.calendar}
             </h2>
-            <Calendar days={s.calendar} start={calStart} end={calEnd} />
+            {range !== 'all' && s.sessionsInRange < 3 ? (
+              <p className={styles.youngHistory}>
+                {t.youngHistory(
+                  longDate.format(new Date(`${s.firstTrackedDay ?? iso(now)}T12:00:00`)),
+                )}
+              </p>
+            ) : (
+              <Calendar days={s.calendar} start={calStart} end={calEnd} />
+            )}
           </section>
 
           <div className={styles.columns}>

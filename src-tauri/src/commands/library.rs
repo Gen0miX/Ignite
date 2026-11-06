@@ -493,4 +493,3 @@ pub fn source_open_folder(db: tauri::State<'_, Db>, source_id: String) -> Comman
     tauri_plugin_opener::open_path(&path, None::<&str>)
         .map_err(|e| AppError::Invalid(format!("cannot open folder: {e}")).into())
 }
-

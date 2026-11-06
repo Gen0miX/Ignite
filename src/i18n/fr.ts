@@ -602,6 +602,8 @@ export const fr = {
     historyNote: (date: string) =>
       `Historique détaillé depuis le ${date} : avant, seuls les totaux de Steam et GOG sont connus (« Depuis toujours »).`,
     calendar: 'Calendrier de jeu',
+    youngHistory: (date: string) =>
+      `Ignite mesure tes sessions depuis le ${date}. Joue un peu, les graphiques se rempliront.`,
     calendarLabel: 'Calendrier du temps de jeu par jour',
     noPlay: 'pas joué',
     less: 'moins',

@@ -56,7 +56,7 @@ Le design de référence est la **direction B** : une interface dense et utilita
 | **SourceBadge** | Logo 18 px puis nom, 11 px 700, padding 3 8, rayon 5, fond `--color-active`, texte `--source-*`. Sur une jaquette : logo seul de 18 px dans un carré de 24 px (nom en infobulle et pour les lecteurs d'écran). |
 | **Table** | En-têtes en 11 px majuscules muted. Lignes de 44 px séparées par `--color-line`. Elle défile horizontalement dans un conteneur `overflow-x: auto`. |
 | **Modal** | Largeur max 900, rayon 16, fond `--color-panel`, ombre `--shadow-modal`. La bibliothèque reste visible derrière, assombrie (overlay noir à 60 % avec blur). En-tête et pied séparés par `--color-line`. |
-| **Barres / graphiques** | Barres de 3 à 6 px de rayon. Barre du jour en cours ou valeur mise en avant en accent, les autres en `--color-active`. Calendrier : cases de 14 px avec `--heat-0..3`. |
+| **Barres / graphiques** | Barres de 3 à 6 px de rayon. Barre du jour en cours ou valeur mise en avant en accent, les autres en `--color-active`. Calendrier : la grille occupe toute la largeur (case calculée entre 10 et 18 px, mois alignés sur les colonnes) avec `--heat-0..3`. Moins de 3 sessions sur la période : un encart « Ignite mesure tes sessions depuis le … » remplace le calendrier vide. |
 
 ## États et retours
 
