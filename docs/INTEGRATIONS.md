@@ -116,5 +116,13 @@ Notes de départ :
   - Pour un jeu sans source Steam (Epic, GOG…), la page Steam est cherchée avec `GET /api/storesearch/?term={titre}&l=french&cc=CH` et retenue seulement si le titre normalisé (`match_key`) est identique.
   - Les actus du jeu utilisent `ISteamNews/GetNewsForApp/v2` (10 éléments, mêmes filtres que l'accueil).
   - Cache mémoire côté backend : 6 h pour les médias et l'appid trouvé par titre, 30 min pour les actus.
-- **IGDB** (Twitch OAuth client credentials, à faire côté backend) : `POST /v4/games` avec la requête `fields name,genres.name,themes.name,cover.image_id; search "…";`.
+- **IGDB** (Twitch) : complète la fiche quand Steam n'a pas de page pour le jeu, ou pas de bande-annonce, pas d'images ou pas de description. Facultatif, implémenté dans `src-tauri/src/metadata/igdb.rs`.
+  - Identifiants : l'ID client et le secret d'une application Twitch, de type « Confidentiel » (seul ce type a un secret ; URL de redirection `https://localhost`, inutilisée). Ils sont saisis dans Réglages › Métadonnées et stockés dans le coffre Windows.
+  - Jeton : `POST https://id.twitch.tv/oauth2/token?client_id=…&client_secret=…&grant_type=client_credentials` → `{ access_token, expires_in }`. Il est gardé en mémoire seulement et renouvelé une fois sur un 401.
+  - Requête : `POST https://api.igdb.com/v4/games` avec les en-têtes `Client-ID` et `Authorization: Bearer …`, et le corps `search "titre"; fields name,summary,screenshots.image_id,artworks.image_id,videos.video_id,videos.name; limit 10;` (ou `where id = N;` si l'id IGDB est connu). Le jeu n'est retenu que si son titre normalisé (`match_key`) est identique ; son id est alors enregistré dans `games.igdb_id`.
+  - Images : `https://images.igdb.com/igdb/image/upload/t_screenshot_med/{image_id}.jpg` (vignette) et `t_1080p` (plein écran). Les captures passent en premier, les artworks complètent.
+  - Vidéos : ce sont des ids YouTube, lus dans le lecteur `youtube-nocookie.com` (chargé seulement au clic sur Lecture). Le résumé est en anglais.
+  - Seul ce qui manque côté Steam est complété. Tant que les identifiants manquent, la fiche le signale et le résultat n'est pas mis en cache.
+  - **À vérifier** avec de vrais identifiants : la forme exacte des réponses.
+
 - **HowLongToBeat** : pas d'API officielle. Facultatif, désactivé par défaut, et isolé dans un module remplaçable.

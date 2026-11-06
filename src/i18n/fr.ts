@@ -538,6 +538,9 @@ export const fr = {
     mediaNone: 'Aucune page Steam trouvée pour ce jeu : pas de bande-annonce ni d’images.',
     mediaEmpty: 'La page Steam de ce jeu n’a ni bande-annonce ni images.',
     mediaByTitle: 'Médias de la page Steam portant le même titre.',
+    mediaFromIgdb: 'Une partie des médias vient d’IGDB (description en anglais).',
+    mediaIgdbHint:
+      'Ajoute tes identifiants IGDB dans Réglages › Métadonnées pour compléter ce qui manque sur Steam.',
     about: 'À propos',
     trailerPlay: (name: string) => `Lire la bande-annonce : ${name}`,
     trailerPick: (name: string) => `Choisir la bande-annonce : ${name}`,
@@ -690,6 +693,14 @@ export const fr = {
       title: 'SteamGridDB',
       provides: 'Jaquettes, images de fond et logos pour les jeux hors Steam',
       help: 'Facultative. Crée un compte gratuit sur steamgriddb.com, puis copie la clé API depuis les préférences du compte. Elle est stockée dans le Gestionnaire d’identification Windows.',
+    },
+    igdb: {
+      title: 'IGDB (Twitch)',
+      provides:
+        'Vidéos, images et description des jeux absents de Steam (ou sans médias sur Steam)',
+      help: 'Facultatif. Sur dev.twitch.tv › Applications, crée une application (type de client « Confidentiel », URL de redirection https://localhost), puis copie l’ID client et un nouveau secret. Les deux sont stockés dans le Gestionnaire d’identification Windows.',
+      clientId: 'ID client',
+      clientSecret: 'Secret client',
     },
     key: {
       present: 'Clé enregistrée',

@@ -576,6 +576,21 @@ function MetadataCard() {
         <p className={styles.muted}>{t.sgdb.help}</p>
         <SecretKeyField kind="steamgriddb_api_key" labelId="sgdb-label" />
       </div>
+      <div className={styles.field}>
+        <span className={styles.label} id="igdb-label">
+          {t.igdb.title}
+        </span>
+        <span className={styles.muted}>{t.igdb.provides}</span>
+        <p className={styles.muted}>{t.igdb.help}</p>
+        <span className={styles.label} id="igdb-id-label">
+          {t.igdb.clientId}
+        </span>
+        <SecretKeyField kind="igdb_client_id" labelId="igdb-id-label" />
+        <span className={styles.label} id="igdb-secret-label">
+          {t.igdb.clientSecret}
+        </span>
+        <SecretKeyField kind="igdb_client_secret" labelId="igdb-secret-label" />
+      </div>
     </section>
   );
 }

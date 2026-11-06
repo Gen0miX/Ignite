@@ -49,7 +49,7 @@ export type Shelf = b.Shelf;
 export type Mood = b.Mood;
 export type GameMedia = b.GameMedia_Serialize;
 export type GameNews = b.GameNews;
-export type Trailer = b.Trailer;
+export type Trailer = b.Trailer_Serialize;
 export type Screenshot = b.Screenshot;
 export type NewsItem = b.NewsItem;
 

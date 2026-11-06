@@ -70,7 +70,10 @@ export const commands = {
 	homeNews: () => typedError<HomeNews, CommandError>(__TAURI_INVOKE("home_news")),
 	/**  Opens a news article in the default browser (https only). */
 	openLink: (url: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_link", { url })),
-	/**  Trailers, screenshots and short description from the Steam Store. */
+	/**
+	 *  Trailers, screenshots and short description: Steam Store first, IGDB
+	 *  for what Steam lacks.
+	 */
 	gameStoreMedia: (gameId: string) => typedError<GameMedia_Serialize, CommandError>(__TAURI_INVOKE("game_store_media", { gameId })),
 	/**  Latest Steam news of the game (developer announcements first). */
 	gameNews: (gameId: string) => typedError<GameNews, CommandError>(__TAURI_INVOKE("game_news", { gameId })),
@@ -468,6 +471,10 @@ export type GameMedia_Deserialize = {
 	steamAppid?: string | null,
 	/**  The page was found by title (game not owned on Steam). */
 	byTitle: boolean,
+	/**  Part of the media (or all of it) comes from IGDB. */
+	fromIgdb: boolean,
+	/**  Steam lacks something IGDB could give, but the IGDB keys are not set. */
+	igdbKeysMissing: boolean,
 	media: StoreMedia_Deserialize,
 };
 
@@ -476,6 +483,10 @@ export type GameMedia_Serialize = {
 	steamAppid: string | null,
 	/**  The page was found by title (game not owned on Steam). */
 	byTitle: boolean,
+	/**  Part of the media (or all of it) comes from IGDB. */
+	fromIgdb: boolean,
+	/**  Steam lacks something IGDB could give, but the IGDB keys are not set. */
+	igdbKeysMissing: boolean,
 	media: StoreMedia_Serialize,
 };
 
@@ -1046,13 +1057,13 @@ export type StoreMedia = StoreMedia_Serialize | StoreMedia_Deserialize;
 
 export type StoreMedia_Deserialize = {
 	description?: string | null,
-	trailers: Trailer[],
+	trailers: Trailer_Deserialize[],
 	screenshots: Screenshot[],
 };
 
 export type StoreMedia_Serialize = {
 	description: string | null,
-	trailers: Trailer[],
+	trailers: Trailer_Serialize[],
 	screenshots: Screenshot[],
 };
 
@@ -1117,11 +1128,24 @@ export type TrackingSettings = {
 	idleMinutes: number,
 };
 
-export type Trailer = {
+export type Trailer = Trailer_Serialize | Trailer_Deserialize;
+
+export type Trailer_Deserialize = {
 	name: string,
 	thumbnail: string,
-	/**  HLS master playlist (Steam no longer serves plain MP4 trailers). */
-	hls: string,
+	/**  HLS master playlist (Steam: no plain MP4 trailers any more). */
+	hls?: string | null,
+	/**  YouTube video id (IGDB). */
+	youtube?: string | null,
+};
+
+export type Trailer_Serialize = {
+	name: string,
+	thumbnail: string,
+	/**  HLS master playlist (Steam: no plain MP4 trailers any more). */
+	hls: string | null,
+	/**  YouTube video id (IGDB). */
+	youtube: string | null,
 };
 
 /* Tauri Specta runtime */

@@ -25,16 +25,16 @@ export function MediaSection({ gameId }: { gameId: string }) {
       </h2>
       {media.isPending && <p className={styles.muted}>{t.mediaLoading}</p>}
       {media.isError && <p className={styles.muted}>{t.mediaError}</p>}
-      {data && !data.steamAppid && <p className={styles.muted}>{t.mediaNone}</p>}
-      {data?.steamAppid && trailers.length === 0 && shots.length === 0 && (
-        <p className={styles.muted}>{t.mediaEmpty}</p>
+      {data && trailers.length === 0 && shots.length === 0 && (
+        <p className={styles.muted}>{data.steamAppid ? t.mediaEmpty : t.mediaNone}</p>
       )}
+      {data?.igdbKeysMissing && <p className={styles.subtle}>{t.mediaIgdbHint}</p>}
 
-      {current && <TrailerPlayer key={current.hls} trailer={current} />}
+      {current && <TrailerPlayer key={trailerKey(current)} trailer={current} />}
       {trailers.length > 1 && (
         <ul className={styles.strip} aria-label={t.trailers}>
           {trailers.map((tr, i) => (
-            <li key={tr.hls}>
+            <li key={trailerKey(tr)}>
               <button
                 type="button"
                 className={`${styles.thumb} ${i === trailer ? styles.thumbActive : ''}`}
@@ -79,29 +79,37 @@ export function MediaSection({ gameId }: { gameId: string }) {
           <p>{data.media.description}</p>
         </div>
       )}
-      {data?.byTitle && data.steamAppid && (trailers.length > 0 || shots.length > 0) && (
-        <p className={styles.subtle}>{t.mediaByTitle}</p>
-      )}
+      {data?.byTitle &&
+        data.steamAppid &&
+        !data.fromIgdb &&
+        (trailers.length > 0 || shots.length > 0) && (
+          <p className={styles.subtle}>{t.mediaByTitle}</p>
+        )}
+      {data?.fromIgdb && <p className={styles.subtle}>{t.mediaFromIgdb}</p>}
 
       {viewing !== null && <ScreenshotViewer shots={shots} index={viewing} onIndex={setViewing} />}
     </section>
   );
 }
 
+const trailerKey = (tr: Trailer) => tr.hls ?? tr.youtube ?? tr.name;
+
 /**
- * Poster first (nothing is streamed until asked), then a native player fed
- * by hls.js: Steam trailers are HLS only and WebView2 has no native HLS.
+ * Poster first (nothing is streamed until asked), then either a native
+ * player fed by hls.js (Steam trailers are HLS only and WebView2 has no
+ * native HLS) or the privacy-enhanced YouTube embed (IGDB videos).
  */
 function TrailerPlayer({ trailer }: { trailer: Trailer }) {
   const [playing, setPlaying] = useState(false);
   const [failed, setFailed] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
+  const hlsUrl = trailer.hls;
 
   useEffect(() => {
     const el = video.current;
-    if (!playing || !el) return;
+    if (!playing || !el || !hlsUrl) return;
     if (el.canPlayType('application/vnd.apple.mpegurl')) {
-      el.src = trailer.hls;
+      el.src = hlsUrl;
       void el.play().catch(() => undefined);
       return;
     }
@@ -119,7 +127,7 @@ function TrailerPlayer({ trailer }: { trailer: Trailer }) {
       player.on(Hls.Events.ERROR, (_e, data) => {
         if (data.fatal) setFailed(true);
       });
-      player.loadSource(trailer.hls);
+      player.loadSource(hlsUrl);
       player.attachMedia(el);
       player.on(Hls.Events.MANIFEST_PARSED, () => void el.play().catch(() => undefined));
     });
@@ -127,7 +135,7 @@ function TrailerPlayer({ trailer }: { trailer: Trailer }) {
       destroyed = true;
       hls?.destroy();
     };
-  }, [playing, trailer.hls]);
+  }, [playing, hlsUrl]);
 
   if (failed) {
     return (
@@ -153,6 +161,19 @@ function TrailerPlayer({ trailer }: { trailer: Trailer }) {
         </span>
         <span className={styles.playerName}>{trailer.name}</span>
       </button>
+    );
+  }
+  if (trailer.youtube) {
+    return (
+      <div className={styles.player}>
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailer.youtube)}?autoplay=1&rel=0`}
+          title={trailer.name}
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      </div>
     );
   }
   return (

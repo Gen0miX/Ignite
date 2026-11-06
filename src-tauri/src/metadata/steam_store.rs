@@ -13,8 +13,10 @@ use crate::library::merge::match_key;
 pub struct Trailer {
     pub name: String,
     pub thumbnail: String,
-    /// HLS master playlist (Steam no longer serves plain MP4 trailers).
-    pub hls: String,
+    /// HLS master playlist (Steam: no plain MP4 trailers any more).
+    pub hls: Option<String>,
+    /// YouTube video id (IGDB).
+    pub youtube: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, specta::Type)]
@@ -120,7 +122,8 @@ pub fn parse_details(body: &str, appid: &str) -> AppResult<Option<StoreMedia>> {
             (is_steam_cdn(&hls) && is_steam_cdn(&m.thumbnail)).then_some(Trailer {
                 name: m.name,
                 thumbnail: m.thumbnail,
-                hls,
+                hls: Some(hls),
+                youtube: None,
             })
         })
         .take(MAX_TRAILERS)

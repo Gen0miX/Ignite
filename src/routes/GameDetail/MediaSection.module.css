@@ -30,7 +30,8 @@
 }
 
 .player img,
-.player video {
+.player video,
+.player iframe {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -40,6 +41,10 @@
 
 .player video {
   object-fit: contain;
+}
+
+.player iframe {
+  border: 0;
 }
 
 .playButton {
