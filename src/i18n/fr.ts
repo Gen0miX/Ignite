@@ -305,7 +305,6 @@ export const fr = {
     exeBody: 'Un .exe, un raccourci .lnk ou un lien .url (glisser-déposer accepté).',
     emulator: 'Émulateur / ROMs',
     emulatorBody: 'Déclare un émulateur et son dossier de ROMs dans les réglages.',
-    soon: 'Arrive au jalon J5.',
     fileFilter: 'Jeux et raccourcis',
     dropHint: 'Glisse un fichier .exe, .lnk ou .url ici, ou parcours ton disque.',
     browse: 'Parcourir…',
@@ -560,7 +559,7 @@ export const fr = {
     newsEmpty: 'Pas d’actu récente pour ce jeu.',
     newsNone: 'Pas d’actus : ce jeu n’a pas de page Steam.',
     launchEditSoon:
-      'Les profils de lancement (arguments, commandes avant/après) arrivent au jalon J3.',
+      'Modifier les profils de lancement (arguments, commandes avant/après) : bientôt disponible.',
   },
   stats: {
     title: 'Statistiques',

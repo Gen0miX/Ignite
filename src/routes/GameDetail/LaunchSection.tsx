@@ -4,7 +4,7 @@ import styles from './GameDetailPage.module.css';
 
 const t = fr.game;
 
-/** Read-only launch and tracking info; launch profiles come with J3. */
+/** Read-only launch and tracking info; editing launch profiles is not built yet. */
 export function LaunchSection({ game }: { game: GameDetail }) {
   return (
     <section className={styles.card} aria-labelledby="sheet-launch">
