@@ -549,7 +549,7 @@ export const fr = {
     trackedPrefix: (p: string) => `tout exécutable dans ${p}`,
     trackedNone: 'aucun (jeu non installé)',
     media: 'Bande-annonce et images',
-    mediaLoading: 'Chargement des médias Steam…',
+    mediaLoading: 'Chargement des médias…',
     mediaError: 'Les médias Steam ne sont pas disponibles (hors ligne ?).',
     mediaNone: 'Aucune page Steam trouvée pour ce jeu : pas de bande-annonce ni d’images.',
     mediaEmpty: 'La page Steam de ce jeu n’a ni bande-annonce ni images.',

@@ -46,3 +46,9 @@
   color: var(--color-accent-ink);
   text-decoration: underline;
 }
+
+.skeletonItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

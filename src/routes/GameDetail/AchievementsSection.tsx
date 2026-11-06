@@ -5,6 +5,7 @@ import { Lock, RefreshCw, Trophy } from 'lucide-react';
 import type { AchievementItem } from '../../api/client';
 import { useAchievements, useRefreshAchievements } from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
+import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
 import { fr } from '../../i18n/fr';
 import { formatLastPlayed } from '../../lib/format';
 import { closest } from '../../lib/achievements';
@@ -55,7 +56,19 @@ export function AchievementsSection({
   if (!supported || v?.state === 'unsupported') {
     body = <p className={styles.muted}>{t.achievementsUnsupported}</p>;
   } else if (q.isPending) {
-    body = <p className={styles.muted}>{t.achievementsLoading}</p>;
+    body = (
+      <SkeletonGroup label={t.achievementsLoading}>
+        <Skeleton height={8} radius={4} />
+        {[0, 1, 2].map((i) => (
+          <span key={i} className={styles.achievement}>
+            <Skeleton width={28} height={28} />
+            <span className={styles.achievementText}>
+              <Skeleton width="60%" height={14} />
+            </span>
+          </span>
+        ))}
+      </SkeletonGroup>
+    );
   } else if (q.isError || !v) {
     body = <p className={styles.error}>{t.achievementsError}</p>;
   } else if (v.state === 'needsKey') {

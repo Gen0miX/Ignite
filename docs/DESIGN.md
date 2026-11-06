@@ -61,7 +61,7 @@ Le design de référence est la **direction B** : une interface dense et utilita
 ## États et retours
 
 - **En jeu** : quand une session est active, la carte du jeu porte une pastille « En jeu » (fond accent) et un minuteur en direct apparaît en bas de la barre latérale.
-- **Chargement** : squelettes aux mêmes dimensions que le contenu (jaquettes 2:3 en `--color-card`).
+- **Chargement** : squelettes aux mêmes dimensions que le contenu (jaquettes 2:3 en `--color-card`). Composant partagé `Skeleton` / `SkeletonGroup` (`components/Skeleton`) : blocs `--color-active` sur les cartes, pulsation douce (coupée si mouvement réduit), un seul message lu par les lecteurs d'écran (`role="status"`). Utilisé pour les succès, les actus et les médias de la fiche.
 - **Vide** : un message court et une action (ex. « Aucun jeu GOG trouvé · Ouvrir les réglages de la source »).
 - **Erreur de source** : badge `--color-warn` dans la barre latérale et message dans Réglages › Sources.
 - **Focus clavier** : `box-shadow: var(--focus-ring)` sur tous les éléments interactifs. Dans la grille, on se déplace avec les flèches et on lance avec Entrée.

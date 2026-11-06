@@ -234,3 +234,7 @@ button.player:hover .playButton {
 .navNext {
   right: var(--space-3);
 }
+
+.centered {
+  margin-inline: auto;
+}

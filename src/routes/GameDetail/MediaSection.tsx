@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import type { Screenshot, Trailer } from '../../api/client';
 import { useGameMedia } from '../../api/hooks';
 import { Dialog } from '../../components/Dialog/Dialog';
+import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
 import { fr } from '../../i18n/fr';
 import { usePrefs } from '../../lib/prefs';
 import styles from './MediaSection.module.css';
@@ -25,7 +26,23 @@ export function MediaSection({ gameId }: { gameId: string }) {
       <h2 id="sheet-media" className="section-label">
         {t.media}
       </h2>
-      {media.isPending && <p className={styles.muted}>{t.mediaLoading}</p>}
+      {media.isPending && (
+        <SkeletonGroup label={t.mediaLoading}>
+          {showTrailers && (
+            <Skeleton
+              className={styles.centered}
+              width="min(100%, calc(420px * 16 / 9))"
+              aspectRatio="16 / 9"
+              radius="var(--radius-lg)"
+            />
+          )}
+          <span className={styles.gallery}>
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} aspectRatio="16 / 9" radius="var(--radius-md)" />
+            ))}
+          </span>
+        </SkeletonGroup>
+      )}
       {media.isError && <p className={styles.muted}>{t.mediaError}</p>}
       {data && trailers.length === 0 && shots.length === 0 && (
         <p className={styles.muted}>{data.steamAppid ? t.mediaEmpty : t.mediaNone}</p>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useGameNews, useOpenLink } from '../../api/hooks';
+import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
 import { fr } from '../../i18n/fr';
 import { formatLastPlayed } from '../../lib/format';
 import styles from './NewsSection.module.css';
@@ -20,7 +21,17 @@ export function NewsSection({ gameId }: { gameId: string }) {
       <h2 id="sheet-news" className="section-label">
         {t.news}
       </h2>
-      {news.isPending && <p className={styles.muted}>{t.newsLoading}</p>}
+      {news.isPending && (
+        <SkeletonGroup label={t.newsLoading} className={styles.list}>
+          {[0, 1, 2].map((i) => (
+            <span key={i} className={styles.skeletonItem}>
+              <Skeleton width={90} height={12} />
+              <Skeleton width="80%" height={18} />
+              <Skeleton height={14} />
+            </span>
+          ))}
+        </SkeletonGroup>
+      )}
       {news.isError && <p className={styles.muted}>{t.newsError}</p>}
       {empty && <p className={styles.muted}>{t.newsEmpty}</p>}
       {items.length > 0 && (

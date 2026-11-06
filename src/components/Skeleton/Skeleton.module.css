@@ -1,0 +1,27 @@
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Sits on cards (--color-card), so one step lighter. */
+.block {
+  display: block;
+  flex: none;
+  height: 1em;
+  border-radius: var(--radius-sm);
+  background: var(--color-active);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .block {
+    animation: none;
+  }
+}
