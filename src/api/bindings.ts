@@ -67,7 +67,7 @@ export const commands = {
 	homeOverview: () => typedError<HomeOverview_Serialize, CommandError>(__TAURI_INVOKE("home_overview")),
 	homeTonight: (choice: Tonight) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("home_tonight", { choice })),
 	/**  Steam news of the games played in the last 30 days. */
-	homeNews: () => typedError<HomeNews, CommandError>(__TAURI_INVOKE("home_news")),
+	homeNews: () => typedError<HomeNews_Serialize, CommandError>(__TAURI_INVOKE("home_news")),
 	/**  Opens a news article in the default browser (https only). */
 	openLink: (url: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_link", { url })),
 	/**
@@ -76,7 +76,7 @@ export const commands = {
 	 */
 	gameStoreMedia: (gameId: string) => typedError<GameMedia_Serialize, CommandError>(__TAURI_INVOKE("game_store_media", { gameId })),
 	/**  Latest Steam news of the game (developer announcements first). */
-	gameNews: (gameId: string) => typedError<GameNews, CommandError>(__TAURI_INVOKE("game_news", { gameId })),
+	gameNews: (gameId: string) => typedError<GameNews_Serialize, CommandError>(__TAURI_INVOKE("game_news", { gameId })),
 	/**  Games of a couch-mode shelf. */
 	couchShelf: (shelf: Shelf) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("couch_shelf", { shelf })),
 	/**  Games the random wheel may land on for a mood. */
@@ -94,6 +94,8 @@ export const commands = {
 	 *  the database, never from the frontend.
 	 */
 	sourceOpenFolder: (sourceId: string) => typedError<null, CommandError>(__TAURI_INVOKE("source_open_folder", { sourceId })),
+	/**  Launches through a given source of the game (launch options menu). */
+	launchGameSource: (gameId: string, sourceId: string) => typedError<null, CommandError>(__TAURI_INVOKE("launch_game_source", { gameId, sourceId })),
 	sessionRecap: (sessionId: string) => typedError<SessionRecap_Serialize, CommandError>(__TAURI_INVOKE("session_recap", { sessionId })),
 	sessionRecapSave: (sessionId: string, input: RecapSave_Deserialize) => typedError<null, CommandError>(__TAURI_INVOKE("session_recap_save", { sessionId, input })),
 	/**  "Ne pas compter cette session": the session and its time are removed. */
@@ -512,10 +514,18 @@ export type GameMedia_Serialize = {
 	media: StoreMedia_Serialize,
 };
 
-export type GameNews = {
-	items: NewsItem[],
+export type GameNews = GameNews_Serialize | GameNews_Deserialize;
+
+export type GameNews_Deserialize = {
+	items: NewsItem_Deserialize[],
 	/**  Promotions and press articles, shown on demand. */
-	hidden: NewsItem[],
+	hidden: NewsItem_Deserialize[],
+};
+
+export type GameNews_Serialize = {
+	items: NewsItem_Serialize[],
+	/**  Promotions and press articles, shown on demand. */
+	hidden: NewsItem_Serialize[],
 };
 
 /**  User-chosen progress status of a game. */
@@ -613,17 +623,43 @@ export type HomeGame = HomeGame_Serialize | HomeGame_Deserialize;
 export type HomeGame_Deserialize = {
 	game: GameSummary_Deserialize,
 	avgSessionMinutes?: number | null,
+	/**  Co-op or split screen (IGDB modes). */
+	coop: boolean,
+	/**  HowLongToBeat main story, when known. */
+	hltbMinutes?: number | null,
+	/**  Wide image and logo, for the hero (resume and "Ensuite" games only). */
+	hero?: string | null,
+	logo?: string | null,
+	/**  "Où t'es-tu arrêté ?" from the last recap (hero games only). */
+	resumeNote?: string | null,
 };
 
 export type HomeGame_Serialize = {
 	game: GameSummary_Serialize,
 	avgSessionMinutes: number | null,
+	/**  Co-op or split screen (IGDB modes). */
+	coop: boolean,
+	/**  HowLongToBeat main story, when known. */
+	hltbMinutes: number | null,
+	/**  Wide image and logo, for the hero (resume and "Ensuite" games only). */
+	hero: string | null,
+	logo: string | null,
+	/**  "Où t'es-tu arrêté ?" from the last recap (hero games only). */
+	resumeNote: string | null,
 };
 
-export type HomeNews = {
-	items: NewsItem[],
+export type HomeNews = HomeNews_Serialize | HomeNews_Deserialize;
+
+export type HomeNews_Deserialize = {
+	items: NewsItem_Deserialize[],
 	/**  Promotions and press articles, shown on demand. */
-	hidden: NewsItem[],
+	hidden: NewsItem_Deserialize[],
+};
+
+export type HomeNews_Serialize = {
+	items: NewsItem_Serialize[],
+	/**  Promotions and press articles, shown on demand. */
+	hidden: NewsItem_Serialize[],
 };
 
 export type HomeOverview = HomeOverview_Serialize | HomeOverview_Deserialize;
@@ -761,7 +797,9 @@ export type LibraryView = { kind: "all" } | { kind: "installed" } | { kind: "fav
 /**  Moods of the random wheel. */
 export type Mood = "chill" | "intense" | "coop" | "never";
 
-export type NewsItem = {
+export type NewsItem = NewsItem_Serialize | NewsItem_Deserialize;
+
+export type NewsItem_Deserialize = {
 	gameId: string,
 	gameTitle: string,
 	title: string,
@@ -770,6 +808,29 @@ export type NewsItem = {
 	date: string,
 	/**  Short text without markup. */
 	excerpt: string,
+	/**  First image of the announcement (Steam CDN only). */
+	image?: string | null,
+	/**  Patch notes / update rather than an event or other news. */
+	patch: boolean,
+	/**  Wide image of the game, used when the news has none (home only). */
+	header?: string | null,
+};
+
+export type NewsItem_Serialize = {
+	gameId: string,
+	gameTitle: string,
+	title: string,
+	url: string,
+	/**  RFC 3339. */
+	date: string,
+	/**  Short text without markup. */
+	excerpt: string,
+	/**  First image of the announcement (Steam CDN only). */
+	image: string | null,
+	/**  Patch notes / update rather than an event or other news. */
+	patch: boolean,
+	/**  Wide image of the game, used when the news has none (home only). */
+	header: string | null,
 };
 
 export type PlaySession = PlaySession_Serialize | PlaySession_Deserialize;

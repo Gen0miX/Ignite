@@ -69,7 +69,7 @@ pub async fn home_news(app: AppHandle) -> CommandResult<HomeNews> {
     }
     let result = tauri::async_runtime::spawn_blocking(move || -> CommandResult<HomeNews> {
         let db = app.state::<Db>();
-        let targets: Vec<(String, String, String)> = {
+        let targets: Vec<(String, String, String, Option<String>)> = {
             let conn = db.conn();
             let since = chrono::Utc::now() - chrono::Duration::days(30);
             let mut recent: Vec<_> = query::summaries(&conn)?
@@ -90,7 +90,7 @@ pub async fn home_news(app: AppHandle) -> CommandResult<HomeNews> {
                     .find(|s| s.kind == SourceKind::Steam)
                     .and_then(|s| s.external_id);
                 if let Some(appid) = steam {
-                    out.push((appid, g.id, g.title));
+                    out.push((appid, g.id, g.title, g.header));
                 }
                 if out.len() >= NEWS_GAMES {
                     break;
@@ -100,11 +100,15 @@ pub async fn home_news(app: AppHandle) -> CommandResult<HomeNews> {
         };
         let mut items = Vec::new();
         let mut hidden = Vec::new();
-        for (appid, game_id, title) in targets {
+        for (appid, game_id, title, header) in targets {
             match news::fetch(&appid, &game_id, &title, 5) {
                 Ok((kept, promo)) => {
-                    items.extend(kept);
-                    hidden.extend(promo);
+                    let with_header = |mut n: NewsItem| {
+                        n.header = header.clone();
+                        n
+                    };
+                    items.extend(kept.into_iter().map(with_header));
+                    hidden.extend(promo.into_iter().map(with_header));
                 }
                 Err(e) => tracing::debug!(%appid, error = %e, "news fetch failed"),
             }

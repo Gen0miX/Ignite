@@ -104,6 +104,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         library::games_bulk_update,
         library::games_delete,
         library::source_open_folder,
+        library::launch_game_source,
         recap::session_recap,
         recap::session_recap_save,
         recap::session_discard,

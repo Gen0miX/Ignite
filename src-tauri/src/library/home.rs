@@ -13,6 +13,15 @@ use crate::models::GameStatus;
 pub struct HomeGame {
     pub game: GameSummary,
     pub avg_session_minutes: Option<u32>,
+    /// Co-op or split screen (IGDB modes).
+    pub coop: bool,
+    /// HowLongToBeat main story, when known.
+    pub hltb_minutes: Option<u32>,
+    /// Wide image and logo, for the hero (resume and "Ensuite" games only).
+    pub hero: Option<String>,
+    pub logo: Option<String>,
+    /// "Où t'es-tu arrêté ?" from the last recap (hero games only).
+    pub resume_note: Option<String>,
 }
 
 /// Time the user has tonight.
@@ -96,10 +105,31 @@ fn candidate(g: &GameSummary, ctx: &Context) -> Candidate {
 
 pub fn home_game(g: GameSummary, ctx: &Context) -> HomeGame {
     let avg = avg_minutes(ctx, &g.id).map(|m| m.round() as u32);
+    let facts = ctx.facts.get(&g.id);
     HomeGame {
-        game: g,
         avg_session_minutes: avg,
+        coop: facts.is_some_and(|f| {
+            f.modes
+                .iter()
+                .any(|m| m == "Coopération" || m == "Écran partagé")
+        }),
+        hltb_minutes: facts
+            .and_then(|f| f.hltb_main_minutes)
+            .map(|m| m.round() as u32),
+        hero: None,
+        logo: None,
+        resume_note: None,
+        game: g,
     }
+}
+
+/// Adds what the hero shows: wide image, logo and resume note.
+fn with_hero(conn: &Connection, mut g: HomeGame) -> AppResult<HomeGame> {
+    let mut art = crate::db::repo::artwork::for_game(conn, &g.game.id)?;
+    g.hero = art.remove("hero");
+    g.logo = art.remove("logo");
+    g.resume_note = crate::db::repo::games::resume_note(conn, &g.game.id)?.map(|(n, _)| n);
+    Ok(g)
 }
 
 pub fn tonight(conn: &Connection, choice: Tonight, now: DateTime<Utc>) -> AppResult<Vec<HomeGame>> {
@@ -143,13 +173,16 @@ pub fn overview(conn: &Connection) -> AppResult<HomeOverview> {
     let ctx = Context::load(conn, &list)?;
     let mut played: Vec<&GameSummary> = list.iter().filter(|g| g.last_played.is_some()).collect();
     played.sort_by(|a, b| b.last_played.cmp(&a.last_played));
-    let resume = played.first().map(|g| home_game((*g).clone(), &ctx));
+    let resume = played
+        .first()
+        .map(|g| with_hero(conn, home_game((*g).clone(), &ctx)))
+        .transpose()?;
     let recent = played
         .iter()
         .skip(1)
         .take(6)
-        .map(|g| home_game((*g).clone(), &ctx))
-        .collect();
+        .map(|g| with_hero(conn, home_game((*g).clone(), &ctx)))
+        .collect::<AppResult<_>>()?;
 
     let mut pile: Vec<&GameSummary> = list
         .iter()

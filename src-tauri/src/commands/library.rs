@@ -223,17 +223,44 @@ pub fn launch_game(
     tracker: tauri::State<'_, crate::tracker::TrackerState>,
     game_id: String,
 ) -> CommandResult<()> {
-    tracker.set_launch_hint(&game_id);
+    launch_with(&db, &tracker, &game_id, None)
+}
+
+/// Launches through a given source of the game (launch options menu).
+#[tauri::command]
+#[specta::specta]
+pub fn launch_game_source(
+    db: tauri::State<'_, Db>,
+    tracker: tauri::State<'_, crate::tracker::TrackerState>,
+    game_id: String,
+    source_id: String,
+) -> CommandResult<()> {
+    launch_with(&db, &tracker, &game_id, Some(&source_id))
+}
+
+fn launch_with(
+    db: &Db,
+    tracker: &crate::tracker::TrackerState,
+    game_id: &str,
+    source_id: Option<&str>,
+) -> CommandResult<()> {
+    tracker.set_launch_hint(game_id);
     let (sources, preferred) = {
         let conn = db.conn();
-        let game = games::get(&conn, &game_id)?;
+        let game = games::get(&conn, game_id)?;
         (
-            game_sources::list_for_game(&conn, &game_id)?,
+            game_sources::list_for_game(&conn, game_id)?,
             game.preferred_source_id,
         )
     };
-    let source = crate::launcher::pick_source(&sources, preferred.as_deref())
-        .ok_or_else(|| AppError::Invalid("no launchable source for this game".into()))?;
+    let source = match source_id {
+        Some(id) => sources
+            .iter()
+            .find(|s| s.id == id && s.installed)
+            .ok_or_else(|| AppError::Invalid("this source cannot launch the game".into()))?,
+        None => crate::launcher::pick_source(&sources, preferred.as_deref())
+            .ok_or_else(|| AppError::Invalid("no launchable source for this game".into()))?,
+    };
     if source.kind == SourceKind::Steam && !super::sources::steam_installed() {
         return Err(AppError::Invalid("Steam is not installed on this PC".into()).into());
     }

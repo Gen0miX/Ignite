@@ -18,6 +18,12 @@ pub struct NewsItem {
     pub date: String,
     /// Short text without markup.
     pub excerpt: String,
+    /// First image of the announcement (Steam CDN only).
+    pub image: Option<String>,
+    /// Patch notes / update rather than an event or other news.
+    pub patch: bool,
+    /// Wide image of the game, used when the news has none (home only).
+    pub header: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -71,6 +77,45 @@ pub fn is_promotion(title: &str, tags: &[String]) -> bool {
     WORDS.iter().any(|w| t.contains(w)) || tags.iter().any(|x| x == "mod_reviewed" || x == "ads")
 }
 
+/// First image of a Steam announcement: `[img]{STEAM_CLAN_IMAGE}/…[/img]`
+/// or `<img src="…">`, kept only on the Steam CDN (the CSP allows no other).
+pub fn first_image(contents: &str) -> Option<String> {
+    let candidates = contents
+        .split("[img]")
+        .skip(1)
+        .filter_map(|rest| rest.split("[/img]").next())
+        .chain(
+            contents
+                .split("src=\"")
+                .skip(1)
+                .filter_map(|rest| rest.split('"').next()),
+        );
+    candidates
+        .map(|u| {
+            u.trim().replace(
+                "{STEAM_CLAN_IMAGE}",
+                "https://clan.akamai.steamstatic.com/images",
+            )
+        })
+        .find(|u| crate::metadata::steam_store::is_steam_cdn(u))
+}
+
+/// Update notes rather than events or other news.
+pub fn is_patch(title: &str, tags: &[String]) -> bool {
+    let t = title.to_lowercase();
+    tags.iter().any(|x| x == "patchnotes")
+        || [
+            "patch",
+            "hotfix",
+            "update",
+            "mise à jour",
+            "changelog",
+            "version ",
+        ]
+        .iter()
+        .any(|w| t.contains(w))
+}
+
 /// Removes BBCode / HTML and collapses whitespace.
 pub fn excerpt(contents: &str, max: usize) -> String {
     let mut out = String::new();
@@ -110,6 +155,7 @@ pub fn parse(
             continue;
         };
         let target = if hide { &mut hidden } else { &mut kept };
+        let patch = is_patch(&item.title, &item.tags);
         target.push(NewsItem {
             game_id: game_id.to_string(),
             game_title: game_title.to_string(),
@@ -117,6 +163,9 @@ pub fn parse(
             url: item.url,
             date: date.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
             excerpt: excerpt(&item.contents, 220),
+            image: first_image(&item.contents),
+            patch,
+            header: None,
         });
     }
     Ok((kept, hidden))
@@ -132,7 +181,7 @@ pub fn fetch(
         .get("https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/")
         .query("appid", appid)
         .query("count", count.to_string())
-        .query("maxlength", "600")
+        .query("maxlength", "1500")
         .query("format", "json")
         .call()
         .map_err(|e| http::network_error(e, None))?;
@@ -166,5 +215,23 @@ mod tests {
     fn excerpts_are_truncated() {
         assert_eq!(excerpt("abc def ghi", 5), "abc d…");
         assert_eq!(excerpt("  a   b ", 10), "a b");
+    }
+
+    #[test]
+    fn finds_the_first_cdn_image_and_patch_notes() {
+        let c = "Intro [img]{STEAM_CLAN_IMAGE}/123/abc.png[/img] and [img]https://evil.example/x.png[/img]";
+        assert_eq!(
+            first_image(c).as_deref(),
+            Some("https://clan.akamai.steamstatic.com/images/123/abc.png")
+        );
+        assert_eq!(first_image("[img]https://evil.example/x.png[/img]"), None);
+        assert_eq!(
+            first_image(r#"<p><img src="https://shared.akamai.steamstatic.com/a.jpg"></p>"#)
+                .as_deref(),
+            Some("https://shared.akamai.steamstatic.com/a.jpg")
+        );
+        assert!(is_patch("Hotfix 1.0.3", &[]));
+        assert!(is_patch("Notes", &["patchnotes".into()]));
+        assert!(!is_patch("Winter festival", &[]));
     }
 }
