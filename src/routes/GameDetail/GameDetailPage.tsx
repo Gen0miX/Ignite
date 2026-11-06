@@ -14,7 +14,7 @@ import { sessionStats } from '../../lib/sessions';
 import { useState } from 'react';
 import { ImageIcon } from 'lucide-react';
 import { AchievementsSection } from './AchievementsSection';
-import { ArtworkPicker } from './ArtworkPicker';
+import { ArtworkPicker } from '../../components/ArtworkPicker/ArtworkPicker';
 import { DailyChart } from './DailyChart';
 import { GoalsSection } from './GoalsSection';
 import { LaunchSection } from './LaunchSection';

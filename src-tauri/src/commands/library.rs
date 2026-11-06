@@ -385,3 +385,88 @@ pub fn add_scanned_games(db: tauri::State<'_, Db>, games: Vec<ScannedGame>) -> C
     }
     Ok(added)
 }
+
+/// Changes applied to several games at once (multi-selection).
+#[derive(Debug, Clone, Default, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct BulkUpdate {
+    pub status: Option<GameStatus>,
+    pub hidden: Option<bool>,
+    pub favorite: Option<bool>,
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn games_bulk_update(
+    db: tauri::State<'_, Db>,
+    ids: Vec<String>,
+    update: BulkUpdate,
+) -> CommandResult<()> {
+    let patch = games::GamePatch {
+        status: update.status,
+        hidden: update.hidden,
+        favorite: update.favorite,
+        ..Default::default()
+    };
+    let mut conn = db.conn();
+    let tx = conn.transaction().map_err(AppError::from)?;
+    for id in &ids {
+        games::update(&tx, id, &patch)?;
+    }
+    tx.commit().map_err(AppError::from)?;
+    Ok(())
+}
+
+/// Only games made of executables added by hand can be deleted: the others
+/// would come back at the next sync of their launcher (hide them instead).
+pub fn deletable(kinds: &[SourceKind]) -> bool {
+    !kinds.is_empty() && kinds.iter().all(|k| *k == SourceKind::Local)
+}
+
+/// Deletes executable games with their sessions, goals and cached images.
+/// The executables themselves are left untouched.
+#[tauri::command]
+#[specta::specta]
+pub fn games_delete(
+    db: tauri::State<'_, Db>,
+    paths: tauri::State<'_, super::app::AppPaths>,
+    ids: Vec<String>,
+) -> CommandResult<()> {
+    let mut conn = db.conn();
+    let tx = conn.transaction().map_err(AppError::from)?;
+    for id in &ids {
+        let kinds: Vec<SourceKind> = game_sources::list_for_game(&tx, id)?
+            .into_iter()
+            .map(|s| s.kind)
+            .collect();
+        if !deletable(&kinds) {
+            return Err(
+                AppError::Invalid(format!("game {id} is not made of executables only")).into(),
+            );
+        }
+        games::delete(&tx, id)?;
+    }
+    tx.commit().map_err(AppError::from)?;
+    let root = crate::metadata::artwork::cache_root(&paths.data_dir);
+    for id in &ids {
+        // Ids are UUIDs: never a path outside the cache.
+        if uuid::Uuid::parse_str(id).is_ok() {
+            let _ = std::fs::remove_dir_all(root.join(id));
+        }
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod bulk_tests {
+    use super::*;
+
+    #[test]
+    fn only_executable_games_can_be_deleted() {
+        assert!(deletable(&[SourceKind::Local]));
+        assert!(deletable(&[SourceKind::Local, SourceKind::Local]));
+        assert!(!deletable(&[SourceKind::Local, SourceKind::Steam]));
+        assert!(!deletable(&[SourceKind::Gog]));
+        assert!(!deletable(&[]));
+    }
+}

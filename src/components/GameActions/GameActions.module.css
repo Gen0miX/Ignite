@@ -1,0 +1,84 @@
+.pickList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pickRow {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.pickRow:hover {
+  background: var(--color-active);
+}
+
+.pickRow input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent);
+}
+
+.pickName {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-md);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickCount {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.pickNew {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-line);
+}
+
+.pickLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-2);
+}
+
+.pickNewRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: var(--h-control);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-field-sunken);
+  color: var(--color-text);
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: var(--text-base);
+}
+
+.deleteList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: var(--space-5);
+  list-style: disc;
+  font-size: var(--text-base);
+}

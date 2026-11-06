@@ -2,7 +2,56 @@
 
 export const fr = {
   app: {
-    name: 'Ludothèque',
+    name: 'Ignite',
+  },
+  actions: {
+    menu: (title: string) => `Actions pour ${title}`,
+    play: 'Jouer',
+    openSheet: 'Ouvrir la fiche',
+    images: 'Modifier les images',
+    addToCollection: 'Ajouter à une collection',
+    hide: 'Masquer',
+    unhide: 'Réafficher',
+    favoriteAdd: 'Ajouter aux favoris',
+    favoriteRemove: 'Retirer des favoris',
+    delete: 'Supprimer',
+    select: (title: string) => `Sélectionner ${title}`,
+    deleteTitle: (n: number) => (n > 1 ? `Supprimer ${n} jeux ?` : 'Supprimer ce jeu ?'),
+    deleteBody:
+      'Le jeu disparaît de la bibliothèque avec ses sessions, objectifs et images. Les fichiers sur ton disque ne sont pas touchés.',
+    deleteOnlyExe:
+      'Seuls les exécutables ajoutés à la main se suppriment. Les jeux des launchers reviendraient à la prochaine synchronisation : masque-les plutôt.',
+    cancel: 'Annuler',
+    confirmDelete: 'Supprimer',
+    error: 'L’action a échoué.',
+  },
+  picker: {
+    title: 'Ajouter à une collection',
+    titleMany: (n: number) => `Ajouter ${n} jeux à une collection`,
+    close: 'Fermer',
+    empty: 'Aucune collection manuelle pour l’instant.',
+    smartNote:
+      'Les collections intelligentes se remplissent toutes seules et n’apparaissent pas ici.',
+    add: 'Ajouter',
+    added: 'Ajouté',
+    newLabel: 'Nouvelle collection',
+    newPlaceholder: 'Coop du samedi',
+    create: 'Créer et ajouter',
+    dragHint: 'Astuce : tu peux aussi glisser des jeux sur une collection du menu.',
+  },
+  selection: {
+    label: 'Sélection',
+    count: (n: number) => `${n} ${n > 1 ? 'jeux sélectionnés' : 'jeu sélectionné'}`,
+    status: 'Statut',
+    statusPlaceholder: 'Changer le statut…',
+    hide: 'Masquer',
+    unhide: 'Réafficher',
+    addToCollection: 'Collection',
+    delete: 'Supprimer',
+    deleteDisabled: 'Suppression possible seulement si tous les jeux sont des exécutables.',
+    all: 'Tout sélectionner',
+    clear: 'Annuler',
+    dragCount: (n: number) => `${n} ${n > 1 ? 'jeux' : 'jeu'}`,
   },
   home: {
     title: 'Accueil',
@@ -214,6 +263,9 @@ export const fr = {
     unhide: 'Réafficher dans la bibliothèque',
     hiddenNotice: 'Ce jeu est masqué de la bibliothèque.',
     openSheet: 'Ouvrir la fiche',
+    images: 'Images',
+    collections: 'Collections',
+    addToCollection: '+ Ajouter à une collection',
     saved: 'Enregistré',
   },
   addGame: {
@@ -300,7 +352,7 @@ export const fr = {
     kinds: { smart: 'Intelligente', manual: 'Manuelle' },
     kindHints: {
       smart: 'Se remplit toute seule selon des règles (tag, durée, statut…).',
-      manual: 'Tu y ajoutes les jeux toi-même depuis leur panneau.',
+      manual: 'Tu y ajoutes les jeux toi-même : menu ⋯ d’un jeu, sélection multiple, ou glisser-déposer sur la collection.',
     },
     rules: 'Règles',
     matchLabel: 'Les jeux qui respectent',

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, Play, Star, X } from 'lucide-react';
+import { Eye, EyeOff, FileText, FolderPlus, ImageIcon, Play, Star, Trash2, X } from 'lucide-react';
 import { artworkSrc, type GameDetail, type GameStatus } from '../../api/client';
 import {
   useAddTag,
@@ -11,12 +11,13 @@ import {
   useLaunchGame,
   useMergeGames,
   useRemoveTag,
-  useSetCollectionMember,
   useSplitSource,
   useUpdateGame,
 } from '../../api/hooks';
 import { fr } from '../../i18n/fr';
 import { formatBytes, formatLastPlayed, formatPlaytimeLong, titleTint } from '../../lib/format';
+import { isDeletable } from '../../lib/selection';
+import { useGameActions } from '../GameActions/useGameActions';
 import { SegmentedControl } from '../SegmentedControl/SegmentedControl';
 import { SourceBadge } from '../SourceBadge/SourceBadge';
 import buttons from '../Button/Button.module.css';
@@ -30,7 +31,12 @@ interface GamePanelProps {
 }
 
 export function GamePanel({ gameId, onClose }: GamePanelProps) {
-  const { data: game } = useGame(gameId);
+  const { data: game, isError } = useGame(gameId);
+
+  // The game was deleted (or merged away): nothing left to show.
+  useEffect(() => {
+    if (isError) onClose();
+  }, [isError, onClose]);
 
   // Escape closes the panel (also the drawer on narrow windows).
   useEffect(() => {
@@ -64,6 +70,7 @@ function PanelContent({ game }: { game: GameDetail }) {
   const s = game.summary;
   const update = useUpdateGame(s.id);
   const launch = useLaunchGame();
+  const actions = useGameActions();
   const banner = artworkSrc(game.hero ?? s.header ?? s.cover);
   const playSource = game.sources.find((src) => src.id === game.playSourceId);
   const total = s.playtimeMinutes;
@@ -122,6 +129,53 @@ function PanelContent({ game }: { game: GameDetail }) {
             {launchError}
           </p>
         )}
+
+        <div className={styles.actions}>
+          <Link to={`/game/${s.id}`} className={styles.action}>
+            <FileText size={18} aria-hidden="true" />
+            {fr.actions.openSheet}
+          </Link>
+          <button
+            type="button"
+            className={styles.action}
+            onClick={() => actions.open({ kind: 'images', game: s })}
+          >
+            <ImageIcon size={18} aria-hidden="true" />
+            {fr.panel.images}
+          </button>
+          <button
+            type="button"
+            className={styles.action}
+            onClick={() => actions.open({ kind: 'collections', ids: [s.id] })}
+          >
+            <FolderPlus size={18} aria-hidden="true" />
+            {fr.panel.collections}
+          </button>
+          <button
+            type="button"
+            className={styles.action}
+            onClick={() => update.mutate({ hidden: !s.hidden })}
+            disabled={update.isPending}
+          >
+            {s.hidden ? (
+              <Eye size={18} aria-hidden="true" />
+            ) : (
+              <EyeOff size={18} aria-hidden="true" />
+            )}
+            {s.hidden ? fr.actions.unhide : fr.actions.hide}
+          </button>
+          {isDeletable(s) && (
+            <button
+              type="button"
+              className={`${styles.action} ${styles.actionDanger}`}
+              onClick={() => actions.open({ kind: 'delete', ids: [s.id], titles: [s.title] })}
+            >
+              <Trash2 size={18} aria-hidden="true" />
+              {fr.actions.delete}
+            </button>
+          )}
+        </div>
+        {actions.element}
 
         <div className={styles.tiles}>
           <StatTile label={fr.panel.totalTime} value={formatPlaytimeLong(total)} />
@@ -193,26 +247,10 @@ function PanelContent({ game }: { game: GameDetail }) {
 
         <Tags game={game} />
 
-        <ManualCollections gameId={s.id} />
-
-        <div className={styles.footerActions}>
-          <Link to={`/game/${s.id}`} className={buttons.secondary}>
-            {fr.panel.openSheet}
-          </Link>
-          <button
-            type="button"
-            className={buttons.secondary}
-            onClick={() => update.mutate({ hidden: !s.hidden })}
-            disabled={update.isPending}
-          >
-            {s.hidden ? (
-              <Eye size={16} aria-hidden="true" />
-            ) : (
-              <EyeOff size={16} aria-hidden="true" />
-            )}
-            {s.hidden ? fr.panel.unhide : fr.panel.hide}
-          </button>
-        </div>
+        <ManualCollections
+          gameId={s.id}
+          onAdd={() => actions.open({ kind: 'collections', ids: [s.id] })}
+        />
       </div>
     </>
   );
@@ -433,40 +471,37 @@ function SourcesSection({ game }: { game: GameDetail }) {
   );
 }
 
-/** Add or remove the game from manual collections. */
-function ManualCollections({ gameId }: { gameId: string }) {
+/** Manual collections holding the game, as chips; changes go through the picker. */
+function ManualCollections({ gameId, onAdd }: { gameId: string; onAdd: () => void }) {
   const { data } = useCollections();
-  const setMember = useSetCollectionMember();
   const manual = data?.filter((c) => c.collection.kind === 'manual') ?? [];
   const { data: members } = useCollectionMembership(
     gameId,
     manual.map((c) => c.collection.id),
   );
+  const mine = manual.filter((c) => members?.has(c.collection.id));
   return (
     <section className={styles.section} aria-labelledby="panel-collections">
       <h3 id="panel-collections" className="section-label">
         {fr.collections.manualIn}
       </h3>
-      {manual.length === 0 ? (
-        <p className={styles.muted}>{fr.collections.noManual}</p>
-      ) : (
-        <ul className={styles.collectionList}>
-          {manual.map((c) => (
-            <li key={c.collection.id}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={members?.has(c.collection.id) ?? false}
-                  onChange={(e) =>
-                    setMember.mutate({ id: c.collection.id, gameId, member: e.target.checked })
-                  }
-                />
-                {c.collection.name}
-              </label>
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul className={styles.tags}>
+        {mine.map((c) => (
+          <li key={c.collection.id}>
+            <Link
+              to={`/library?view=collection-${c.collection.id}`}
+              className={`${styles.tag} ${styles.tagLink}`}
+            >
+              {c.collection.name}
+            </Link>
+          </li>
+        ))}
+        <li>
+          <button type="button" className={styles.tagAdd} onClick={onAdd}>
+            {fr.panel.addToCollection}
+          </button>
+        </li>
+      </ul>
     </section>
   );
 }

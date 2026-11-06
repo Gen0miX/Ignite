@@ -5,6 +5,7 @@ import {
   commands,
   isTauri,
   unwrap,
+  type BulkUpdate,
   type GameUpdate,
   type LibraryQuery,
   type SecretKind,
@@ -391,6 +392,51 @@ export function useRefreshAchievements(gameId: string) {
     onSuccess: (data) => {
       client.setQueryData(keys.achievements(gameId), data);
       void invalidate();
+    },
+  });
+}
+
+/** Status, hidden or favorite flag for several games (multi-selection). */
+export function useBulkUpdate() {
+  const invalidate = useInvalidateLibrary();
+  return useMutation({
+    mutationFn: ({ ids, update }: { ids: string[]; update: BulkUpdate }) =>
+      unwrap(commands.gamesBulkUpdate(ids, update)),
+    onSettled: () => invalidate(),
+  });
+}
+
+/** Deletes executable games (the files on disk are kept). */
+export function useDeleteGames() {
+  const invalidate = useInvalidateLibrary();
+  return useMutation({
+    mutationFn: (ids: string[]) => unwrap(commands.gamesDelete(ids)),
+    onSettled: () => invalidate(),
+  });
+}
+
+/** Adds games to a manual collection; creates it first when `newName` is set. */
+export function useAddToCollection() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      newName,
+      gameIds,
+    }: {
+      id?: string;
+      newName?: string;
+      gameIds: string[];
+    }) => {
+      const target = newName
+        ? (await unwrap(commands.collectionCreate(newName, 'manual', null))).id
+        : id!;
+      await unwrap(commands.collectionAddGames(target, gameIds));
+      return target;
+    },
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: ['collections'] });
+      void client.invalidateQueries({ queryKey: ['library'] });
     },
   });
 }

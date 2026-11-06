@@ -9,12 +9,26 @@ interface GameGridProps {
   games: GameSummary[];
   selectedId: string | null;
   playingIds?: Set<string>;
+  /** Multi-selection (ticked games). */
+  checkedIds: ReadonlySet<string>;
   onSelect: (id: string) => void;
+  onToggle: (id: string, shift: boolean) => void;
   onLaunch: (id: string) => void;
+  onMenu: (game: GameSummary, at: { x: number; y: number }) => void;
 }
 
 /** Cover grid with roving focus: arrows move, Enter launches, Home/End jump. */
-export function GameGrid({ games, selectedId, playingIds, onSelect, onLaunch }: GameGridProps) {
+export function GameGrid({
+  games,
+  selectedId,
+  playingIds,
+  checkedIds,
+  onSelect,
+  onToggle,
+  onLaunch,
+  onMenu,
+}: GameGridProps) {
+  const selecting = checkedIds.size > 0;
   const refs = useRef<(HTMLDivElement | null)[]>([]);
   const selectedIndex = games.findIndex((g) => g.id === selectedId);
   const focusIndex = selectedIndex >= 0 ? selectedIndex : 0;
@@ -24,7 +38,8 @@ export function GameGrid({ games, selectedId, playingIds, onSelect, onLaunch }: 
     if (!game) return;
     if (e.key === 'Enter') {
       e.preventDefault();
-      onLaunch(game.id);
+      if (selecting) onToggle(game.id, false);
+      else onLaunch(game.id);
       return;
     }
     const items = refs.current.slice(0, games.length).filter((el): el is HTMLDivElement => !!el);
@@ -47,6 +62,11 @@ export function GameGrid({ games, selectedId, playingIds, onSelect, onLaunch }: 
             }}
             game={game}
             selected={game.id === selectedId}
+            checked={checkedIds.has(game.id)}
+            selecting={selecting}
+            onToggle={(shift) => onToggle(game.id, shift)}
+            onMenu={(at) => onMenu(game, at)}
+            dragIds={() => (checkedIds.has(game.id) ? [...checkedIds] : [game.id])}
             playing={playingIds?.has(game.id) ?? false}
             tabIndex={i === focusIndex ? 0 : -1}
             onSelect={() => onSelect(game.id)}

@@ -157,3 +157,18 @@ pub fn stats_overview(
         today,
     )?)
 }
+
+/// Adds several games to a manual collection (selection, drag and drop).
+#[tauri::command]
+#[specta::specta]
+pub fn collection_add_games(
+    db: tauri::State<'_, Db>,
+    id: String,
+    game_ids: Vec<String>,
+) -> CommandResult<()> {
+    let conn = db.conn();
+    for game_id in &game_ids {
+        collections::set_member(&conn, &id, game_id, true)?;
+    }
+    Ok(())
+}

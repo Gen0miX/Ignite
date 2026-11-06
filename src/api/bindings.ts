@@ -76,6 +76,14 @@ export const commands = {
 	couchWheel: (mood: Mood) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("couch_wheel", { mood })),
 	appSettingsGet: () => __TAURI_INVOKE<AppSettings>("app_settings_get"),
 	appSettingsSet: (settings: AppSettings) => typedError<null, CommandError>(__TAURI_INVOKE("app_settings_set", { settings })),
+	gamesBulkUpdate: (ids: string[], update: BulkUpdate_Deserialize) => typedError<null, CommandError>(__TAURI_INVOKE("games_bulk_update", { ids, update })),
+	/**
+	 *  Deletes executable games with their sessions, goals and cached images.
+	 *  The executables themselves are left untouched.
+	 */
+	gamesDelete: (ids: string[]) => typedError<null, CommandError>(__TAURI_INVOKE("games_delete", { ids })),
+	/**  Adds several games to a manual collection (selection, drag and drop). */
+	collectionAddGames: (id: string, gameIds: string[]) => typedError<null, CommandError>(__TAURI_INVOKE("collection_add_games", { id, gameIds })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
 	sourcesStatus: () => typedError<SourceCard_Serialize[], CommandError>(__TAURI_INVOKE("sources_status")),
 	/**  Turns a source on or off. Disabling keeps its games in the library. */
@@ -242,6 +250,23 @@ export type ArtworkSearch_Serialize = {
 };
 
 export type ArtworkSlot = "cover" | "hero" | "logo";
+
+/**  Changes applied to several games at once (multi-selection). */
+export type BulkUpdate = BulkUpdate_Serialize | BulkUpdate_Deserialize;
+
+/**  Changes applied to several games at once (multi-selection). */
+export type BulkUpdate_Deserialize = {
+	status?: GameStatus | null,
+	hidden?: boolean | null,
+	favorite?: boolean | null,
+};
+
+/**  Changes applied to several games at once (multi-selection). */
+export type BulkUpdate_Serialize = {
+	status: GameStatus | null,
+	hidden: boolean | null,
+	favorite: boolean | null,
+};
 
 export type CandidateNote = 
 /**  Playtest, beta, demo, DLC variant... */

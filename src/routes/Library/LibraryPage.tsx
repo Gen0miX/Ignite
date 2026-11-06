@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Plus, RefreshCw, Search } from 'lucide-react';
-import { isTauri, type CollectionInfo, type LibraryView, type SortKey } from '../../api/client';
+import {
+  isTauri,
+  type CollectionInfo,
+  type GameSummary,
+  type LibraryView,
+  type SortKey,
+} from '../../api/client';
 import {
   useCollections,
   useDeleteCollection,
@@ -20,6 +26,10 @@ import { GameGrid } from '../../components/GameGrid/GameGrid';
 import { AddGameModal } from '../../components/AddGameModal/AddGameModal';
 import { CollectionEditor } from '../../components/CollectionEditor/CollectionEditor';
 import { GamePanel } from '../../components/GamePanel/GamePanel';
+import { useGameActions } from '../../components/GameActions/useGameActions';
+import { Menu } from '../../components/Menu/Menu';
+import { SelectionBar } from '../../components/SelectionBar/SelectionBar';
+import { clickSelection, pruneSelection } from '../../lib/selection';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { fr } from '../../i18n/fr';
 import { readParams, withParams } from '../../lib/libraryParams';
@@ -77,7 +87,7 @@ export function LibraryPage() {
   const launch = useLaunchGame();
   const active = useTrackerActive();
   const playingIds = useMemo(() => new Set(active.data?.map((a) => a.gameId)), [active.data]);
-  const games = list.data ?? [];
+  const games = useMemo(() => list.data ?? [], [list.data]);
   const collections = useCollections();
   const removeCollection = useDeleteCollection();
   const check = useSearchCheck(text);
@@ -92,6 +102,32 @@ export function LibraryPage() {
     [setParams],
   );
   const closePanel = useCallback(() => select(null), [select]);
+
+  // Multi-selection: ticked games, and the anchor for Shift+click ranges.
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [anchor, setAnchor] = useState<string | null>(null);
+  const ids = useMemo(() => games.map((g) => g.id), [games]);
+  const visibleChecked = useMemo(() => pruneSelection(checked, ids), [checked, ids]);
+  const checkedGames = games.filter((g) => visibleChecked.has(g.id));
+  const clearSelection = useCallback(() => setChecked(new Set()), []);
+  const toggle = (id: string, shift: boolean) => {
+    setChecked(clickSelection(visibleChecked, ids, id, anchor, shift));
+    setAnchor(id);
+  };
+  useEffect(() => {
+    if (visibleChecked.size === 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') clearSelection();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [visibleChecked.size, clearSelection]);
+
+  const actions = useGameActions();
+  const [menu, setMenu] = useState<{ game: GameSummary; at: { x: number; y: number } } | null>(
+    null,
+  );
+  const closeMenu = useCallback(() => setMenu(null), []);
 
   const libraryEmpty = counts.data?.all === 0;
   const sourceCount = counts.data?.sources.length ?? 0;
@@ -135,8 +171,11 @@ export function LibraryPage() {
         games={games}
         selectedId={selected}
         playingIds={playingIds}
+        checkedIds={visibleChecked}
         onSelect={(id) => id !== selected && select(id)}
+        onToggle={toggle}
         onLaunch={(id) => launch.mutate(id)}
+        onMenu={(game, at) => setMenu({ game, at })}
       />
     );
   }
@@ -256,7 +295,33 @@ export function LibraryPage() {
           </p>
         )}
         {body}
+        {visibleChecked.size > 0 && (
+          <SelectionBar
+            games={checkedGames}
+            total={games.length}
+            onSelectAll={() => setChecked(new Set(ids))}
+            onClear={clearSelection}
+            onCollections={() => actions.open({ kind: 'collections', ids: [...visibleChecked] })}
+            onDelete={() =>
+              actions.open({
+                kind: 'delete',
+                ids: checkedGames.map((g) => g.id),
+                titles: checkedGames.map((g) => g.title),
+                onDeleted: clearSelection,
+              })
+            }
+          />
+        )}
       </PageMain>
+      {menu && (
+        <Menu
+          label={fr.actions.menu(menu.game.title)}
+          at={menu.at}
+          items={actions.menuItems(menu.game)}
+          onClose={closeMenu}
+        />
+      )}
+      {actions.element}
       {editor && (
         <CollectionEditor
           collection={editor.mode === 'edit' ? (currentCollection ?? null) : null}
