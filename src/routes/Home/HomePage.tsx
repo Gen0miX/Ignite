@@ -10,7 +10,7 @@ import {
   type HomeGame,
   type Tonight,
 } from '../../api/client';
-import { useLaunchGame } from '../../api/hooks';
+import { useGame, useLaunchGame } from '../../api/hooks';
 import { PageMain } from '../../app/AppShell';
 import buttons from '../../components/Button/Button.module.css';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
@@ -42,7 +42,12 @@ function MiniCard({ g, meta }: { g: HomeGame; meta?: string }) {
 function Resume({ g }: { g: HomeGame }) {
   const launch = useLaunchGame();
   const s = g.game;
-  const banner = artworkSrc(s.header ?? s.cover);
+  // The wide background image when there is one; wait for it rather than
+  // showing the header first and swapping.
+  const detail = useGame(s.id);
+  const banner = detail.isPending
+    ? undefined
+    : artworkSrc(detail.data?.hero ?? s.header ?? s.cover);
   return (
     <section
       className={styles.hero}

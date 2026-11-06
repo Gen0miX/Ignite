@@ -204,7 +204,10 @@ Pour chaque `game_source` :
 
 ## 5 quater. Navigation et actions sur les jeux
 
-- **Menu latéral** : un rail d'icônes (Accueil, Bibliothèque, Statistiques, Canapé ; Importer, Réglages en bas ; minuteur du jeu en cours) visible partout, et un panneau Bibliothèque (vues, collections, statuts, sources, sections repliables mémorisées dans `localStorage`) affiché seulement sur `/library` et `/game/:id`.
+- **Menu latéral** : un rail d'icônes (Accueil, Bibliothèque, Statistiques, Canapé ; Importer, Réglages en bas ; minuteur du jeu en cours) visible partout, et un panneau Bibliothèque (vues, collections, statuts, sources, sections repliables mémorisées dans `localStorage`) affiché seulement sur `/library` et `/game/:id`. Le bouton en bas du rail réduit le menu aux icônes (libellés en infobulle, panneau masqué), mémorisé dans `localStorage` (`ignite.menu`).
+- **Jeux masqués** : absents de la bibliothèque, de l'accueil et des stats ; on les retrouve dans Réglages › Jeux masqués (réafficher un par un ou tous, ou la vue `/library?view=hidden`).
+- **Retour visuel** : après une action (sélection multiple, menu d'une carte), une notification brève (`Toaster`, `aria-live`) confirme le changement, les cartes modifiées s'illuminent un instant et la sélection est vidée.
+- **Titre des fiches** : le logo du jeu remplace son nom sur la fiche et dans le panneau quand il existe (texte alternatif = titre, retour au texte si l'image ne charge pas).
 - **Actions sur une carte** : bouton « ⋯ », clic droit ou Maj+F10 (jouer, fiche, images, collection, favori, masquer, supprimer). Le panneau du jeu reprend ces actions sous le bouton Jouer.
 - **Sélection multiple** : case sur la carte, Ctrl/Maj+clic, Espace ; barre d'actions (statut, masquer, collection, supprimer, tout sélectionner), Échap pour annuler. Commandes `games_bulk_update`, `collection_add_games`.
 - **Suppression** (`games_delete`) : seulement les jeux dont toutes les sources sont des exécutables ajoutés à la main ; les jeux des launchers reviendraient à la synchro, on les masque. Sessions, objectifs et images en cache partent avec le jeu ; les fichiers du disque ne sont pas touchés.

@@ -6,6 +6,7 @@ import type { ActiveGame, GameSummary } from '../../api/client';
 import { fr } from '../../i18n/fr';
 import { formatClock } from '../../lib/sessions';
 import styles from './NowPlaying.module.css';
+import { useMenuPrefs } from '../Sidebar/menuPrefs';
 
 /** Seconds played: last value from the backend plus time since it was read. */
 function useLiveSeconds(game: ActiveGame, fetchedAt: number): number {
@@ -72,15 +73,16 @@ function RailRow({
   const seconds = useLiveSeconds(game, fetchedAt);
   const title = titleOf(client, game.gameId) ?? fr.tracking.nowPlaying;
   const clock = formatClock(seconds);
+  const collapsed = useMenuPrefs((s) => s.collapsed);
   return (
     <Link
       to={`/game/${game.gameId}`}
-      className={styles.rail}
+      className={`${styles.rail} ${collapsed ? styles.railCompact : ''}`}
       title={`${fr.tracking.nowPlaying} : ${title} · ${clock}`}
       aria-label={`${fr.tracking.nowPlaying} : ${title}, ${clock}`}
     >
       <span className={styles.dot} aria-hidden="true" />
-      <span className={styles.railLabel}>{fr.tracking.inGame}</span>
+      {!collapsed && <span className={styles.railLabel}>{fr.tracking.inGame}</span>}
       <span className={styles.railClock}>
         {clock}
         {extra > 0 ? ` +${extra}` : ''}

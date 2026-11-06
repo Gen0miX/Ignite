@@ -242,10 +242,43 @@
   pointer-events: none;
 }
 
-.hiddenMark {
+/* Top-right corner: hidden mark, then the status dot. */
+.corner {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.status {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px rgb(20 16 14 / 85%),
+    0 1px 4px rgb(0 0 0 / 50%);
+}
+
+.status_todo {
+  background: var(--status-todo);
+}
+
+.status_playing {
+  background: var(--status-playing);
+}
+
+.status_done {
+  background: var(--status-done);
+}
+
+.status_dropped {
+  background: var(--status-dropped);
+}
+
+.hiddenMark {
   display: flex;
   padding: 4px;
   border-radius: var(--radius-sm);
@@ -256,4 +289,29 @@
 .card {
   touch-action: none;
   user-select: none;
+}
+
+/* Just changed (multi-selection, menu action): a short glow. */
+.flash .coverBox {
+  animation: flash 1.5s ease-out;
+}
+
+@keyframes flash {
+  0%,
+  35% {
+    box-shadow:
+      0 0 0 3px var(--color-accent),
+      0 0 24px 4px rgb(255 122 69 / 55%);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flash .coverBox {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--color-accent);
+  }
 }

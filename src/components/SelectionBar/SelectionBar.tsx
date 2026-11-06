@@ -16,6 +16,8 @@ interface SelectionBarProps {
   onClear: () => void;
   onCollections: () => void;
   onDelete: () => void;
+  /** A change was applied: confirm it, then clear the selection. */
+  onDone: (message: string, ids: string[]) => void;
 }
 
 /** Actions on the ticked games, docked at the bottom of the library. */
@@ -26,11 +28,19 @@ export function SelectionBar({
   onClear,
   onCollections,
   onDelete,
+  onDone,
 }: SelectionBarProps) {
   const bulk = useBulkUpdate();
   const ids = games.map((g) => g.id);
   const allHidden = games.every((g) => g.hidden);
   const deletable = games.length > 0 && games.every(isDeletable);
+  const setStatus = (status: GameStatus) =>
+    bulk.mutate(
+      { ids, update: { status } },
+      {
+        onSuccess: () => onDone(fr.toast.status(ids.length, fr.statusSingular[status]), ids),
+      },
+    );
 
   return (
     <div role="toolbar" aria-label={t.label} className={styles.bar}>
@@ -48,9 +58,7 @@ export function SelectionBar({
         <select
           value=""
           disabled={bulk.isPending}
-          onChange={(e) =>
-            e.target.value && bulk.mutate({ ids, update: { status: e.target.value as GameStatus } })
-          }
+          onChange={(e) => e.target.value && setStatus(e.target.value as GameStatus)}
         >
           <option value="">{t.statusPlaceholder}</option>
           {STATUSES.map((s) => (
@@ -64,7 +72,15 @@ export function SelectionBar({
         type="button"
         className={buttons.secondary}
         disabled={bulk.isPending}
-        onClick={() => bulk.mutate({ ids, update: { hidden: !allHidden } })}
+        onClick={() =>
+          bulk.mutate(
+            { ids, update: { hidden: !allHidden } },
+            {
+              onSuccess: () =>
+                onDone((allHidden ? fr.toast.unhidden : fr.toast.hidden)(ids.length), ids),
+            },
+          )
+        }
       >
         {allHidden ? <Eye size={16} aria-hidden="true" /> : <EyeOff size={16} aria-hidden="true" />}
         {allHidden ? t.unhide : t.hide}

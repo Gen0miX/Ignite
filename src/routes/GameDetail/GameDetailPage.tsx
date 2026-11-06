@@ -7,6 +7,7 @@ import buttons from '../../components/Button/Button.module.css';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
+import { GameTitle } from '../../components/GameTitle/GameTitle';
 import { SourceBadge } from '../../components/SourceBadge/SourceBadge';
 import { fr } from '../../i18n/fr';
 import { formatPlaytimeLong, titleTint } from '../../lib/format';
@@ -80,7 +81,13 @@ function Sheet({ game }: { game: GameDetail }) {
               <SourceBadge key={k} kind={k} />
             ))}
           </div>
-          <h1 className={styles.title}>{s.title}</h1>
+          <GameTitle
+            as="h1"
+            size="page"
+            title={s.title}
+            logo={game.logo}
+            className={styles.title}
+          />
           <div className={styles.heroActions}>
             <button
               type="button"

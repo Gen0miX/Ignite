@@ -29,6 +29,7 @@ import { GamePanel } from '../../components/GamePanel/GamePanel';
 import { useGameActions } from '../../components/GameActions/useGameActions';
 import { Menu } from '../../components/Menu/Menu';
 import { SelectionBar } from '../../components/SelectionBar/SelectionBar';
+import { toast } from '../../components/Toaster/toasts';
 import { clickSelection, pruneSelection } from '../../lib/selection';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { fr } from '../../i18n/fr';
@@ -301,13 +302,26 @@ export function LibraryPage() {
             total={games.length}
             onSelectAll={() => setChecked(new Set(ids))}
             onClear={clearSelection}
-            onCollections={() => actions.open({ kind: 'collections', ids: [...visibleChecked] })}
+            onCollections={() =>
+              actions.open({
+                kind: 'collections',
+                ids: [...visibleChecked],
+                onAdded: clearSelection,
+              })
+            }
+            onDone={(message, changed) => {
+              toast(message, changed);
+              clearSelection();
+            }}
             onDelete={() =>
               actions.open({
                 kind: 'delete',
                 ids: checkedGames.map((g) => g.id),
                 titles: checkedGames.map((g) => g.title),
-                onDeleted: clearSelection,
+                onDeleted: () => {
+                  toast(fr.toast.deleted(checkedGames.length));
+                  clearSelection();
+                },
               })
             }
           />

@@ -6,12 +6,15 @@ import {
   Gamepad2,
   Home,
   LibraryBig,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   type LucideIcon,
 } from 'lucide-react';
 import { fr } from '../../i18n/fr';
 import { AppLogo } from '../AppLogo/AppLogo';
 import { RailNowPlaying } from '../NowPlaying/NowPlaying';
+import { useMenuPrefs } from './menuPrefs';
 import styles from './Rail.module.css';
 
 interface RailLinkProps {
@@ -26,14 +29,16 @@ interface RailLinkProps {
 function RailLink({ to, label, icon: Icon, match, badge }: RailLinkProps) {
   const { pathname } = useLocation();
   const active = match(pathname);
+  const collapsed = useMenuPrefs((s) => s.collapsed);
   return (
     <Link
       to={to}
       className={`${styles.item} ${active ? styles.active : ''}`}
       aria-current={active ? 'page' : undefined}
+      title={collapsed ? label : undefined}
     >
       <Icon size={22} aria-hidden="true" />
-      <span className={styles.label}>{label}</span>
+      <span className={collapsed ? 'visually-hidden' : styles.label}>{label}</span>
       {badge}
     </Link>
   );
@@ -43,8 +48,12 @@ const starts = (prefix: string) => (p: string) => p === prefix || p.startsWith(`
 
 /** App screens, always visible; the library filters live in the panel next to it. */
 export function Rail() {
+  const collapsed = useMenuPrefs((s) => s.collapsed);
+  const toggle = useMenuPrefs((s) => s.toggle);
+  const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
+  const toggleLabel = collapsed ? fr.nav.expand : fr.nav.collapse;
   return (
-    <nav aria-label={fr.nav.main} className={styles.rail}>
+    <nav aria-label={fr.nav.main} className={`${styles.rail} ${collapsed ? styles.collapsed : ''}`}>
       <AppLogo />
       <div className={styles.group}>
         <RailLink to="/" label={fr.nav.home} icon={Home} match={(p) => p === '/'} />
@@ -66,6 +75,16 @@ export function Rail() {
           icon={Settings}
           match={starts('/settings')}
         />
+        <button
+          type="button"
+          className={styles.toggle}
+          aria-label={toggleLabel}
+          aria-expanded={!collapsed}
+          title={toggleLabel}
+          onClick={toggle}
+        >
+          <ToggleIcon size={18} aria-hidden="true" />
+        </button>
       </div>
     </nav>
   );

@@ -22,6 +22,11 @@
   box-shadow: var(--focus-ring);
 }
 
+/* The wrapper draws the ring: no second one around the input itself. */
+.search input:focus-visible {
+  box-shadow: none;
+}
+
 .search input {
   flex: 1;
   min-width: 0;

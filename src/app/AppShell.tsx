@@ -6,6 +6,7 @@ import { DragGhost } from '../lib/gameDrag';
 import { usePad } from '../lib/usePad';
 import { useLibraryEvents } from '../api/hooks';
 import { Sidebar } from '../components/Sidebar/Sidebar';
+import { Toaster } from '../components/Toaster/Toaster';
 import styles from './AppShell.module.css';
 
 /** Fluid 3-column layout: sidebar, content, and the page's optional side panel. */
@@ -27,6 +28,7 @@ export function AppShell() {
       <Sidebar />
       <Outlet />
       <DragGhost />
+      <Toaster />
     </div>
   );
 }

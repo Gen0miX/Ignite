@@ -18,6 +18,7 @@ import { fr } from '../../i18n/fr';
 import { formatBytes, formatLastPlayed, formatPlaytimeLong, titleTint } from '../../lib/format';
 import { isDeletable } from '../../lib/selection';
 import { useGameActions } from '../GameActions/useGameActions';
+import { GameTitle } from '../GameTitle/GameTitle';
 import { SegmentedControl } from '../SegmentedControl/SegmentedControl';
 import { SourceBadge } from '../SourceBadge/SourceBadge';
 import buttons from '../Button/Button.module.css';
@@ -90,7 +91,7 @@ function PanelContent({ game }: { game: GameDetail }) {
       >
         {banner && <img src={banner} alt="" />}
         <div className={styles.bannerShade} />
-        <h2 className={styles.title}>{s.title}</h2>
+        <GameTitle title={s.title} logo={game.logo} className={styles.title} />
       </div>
 
       <div className={styles.body}>

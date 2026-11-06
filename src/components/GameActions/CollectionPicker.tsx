@@ -10,6 +10,7 @@ import buttons from '../Button/Button.module.css';
 import { Dialog } from '../Dialog/Dialog';
 import dialog from '../Dialog/Dialog.module.css';
 import { fr } from '../../i18n/fr';
+import { toast } from '../Toaster/toasts';
 import styles from './GameActions.module.css';
 
 const t = fr.picker;
@@ -17,13 +18,15 @@ const t = fr.picker;
 interface CollectionPickerProps {
   gameIds: string[];
   onClose: () => void;
+  /** Called after games were added to a collection (the confirmation is shown here). */
+  onAdded?: () => void;
 }
 
 /**
  * Manual collections of one game (toggle) or of a selection (add), with
  * a field to create a collection on the spot.
  */
-export function CollectionPicker({ gameIds, onClose }: CollectionPickerProps) {
+export function CollectionPicker({ gameIds, onClose, onAdded }: CollectionPickerProps) {
   const single = gameIds.length === 1 ? gameIds[0]! : null;
   const { data } = useCollections();
   const manual = data?.filter((c) => c.collection.kind === 'manual') ?? [];
@@ -36,6 +39,11 @@ export function CollectionPicker({ gameIds, onClose }: CollectionPickerProps) {
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [name, setName] = useState('');
 
+  const confirm = (collectionName: string) => {
+    toast(fr.toast.addedTo(gameIds.length, collectionName), gameIds);
+    onAdded?.();
+  };
+
   const create = (e: FormEvent) => {
     e.preventDefault();
     const value = name.trim();
@@ -46,6 +54,7 @@ export function CollectionPicker({ gameIds, onClose }: CollectionPickerProps) {
         onSuccess: (id) => {
           setName('');
           setAdded((s) => new Set(s).add(id));
+          if (!single) confirm(value);
         },
       },
     );
@@ -93,7 +102,12 @@ export function CollectionPicker({ gameIds, onClose }: CollectionPickerProps) {
                   onClick={() =>
                     add.mutate(
                       { id, gameIds },
-                      { onSuccess: () => setAdded((s) => new Set(s).add(id)) },
+                      {
+                        onSuccess: () => {
+                          setAdded((s) => new Set(s).add(id));
+                          confirm(c.collection.name);
+                        },
+                      },
                     )
                   }
                 >

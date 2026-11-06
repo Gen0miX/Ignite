@@ -53,6 +53,18 @@ export const fr = {
     clear: 'Annuler',
     dragCount: (n: number) => `${n} ${n > 1 ? 'jeux' : 'jeu'}`,
   },
+  toast: {
+    close: 'Fermer la notification',
+    status: (n: number, label: string) =>
+      `${n > 1 ? `${n} jeux passés` : '1 jeu passé'} en « ${label} »`,
+    hidden: (n: number) => (n > 1 ? `${n} jeux masqués` : '1 jeu masqué'),
+    unhidden: (n: number) => (n > 1 ? `${n} jeux réaffichés` : '1 jeu réaffiché'),
+    favoriteAdded: (title: string) => `${title} ajouté aux favoris`,
+    favoriteRemoved: (title: string) => `${title} retiré des favoris`,
+    addedTo: (n: number, name: string) =>
+      `${n > 1 ? `${n} jeux ajoutés` : '1 jeu ajouté'} à « ${name} »`,
+    deleted: (n: number) => (n > 1 ? `${n} jeux supprimés` : '1 jeu supprimé'),
+  },
   home: {
     title: 'Accueil',
     resume: (when: string) => `Reprendre · joué ${when}`,
@@ -145,6 +157,8 @@ export const fr = {
     favorites: 'Favoris',
     stats: 'Statistiques',
     settings: 'Réglages',
+    collapse: 'Réduire le menu',
+    expand: 'Déplier le menu',
   },
   sidebar: {
     sources: 'Sources',
@@ -592,6 +606,17 @@ export const fr = {
         'Lancement via le client Riot. Pour League of Legends, seul le processus de la partie est chronométré, pas le client.',
     },
     trackingTitle: 'Règles de suivi',
+    hidden: {
+      title: 'Jeux masqués',
+      intro:
+        'Ces jeux n’apparaissent pas dans la bibliothèque, l’accueil ni les statistiques. Réaffiche-les ici.',
+      empty: 'Aucun jeu masqué.',
+      unhide: 'Réafficher',
+      unhideNamed: (title: string) => `Réafficher ${title}`,
+      unhideAll: 'Tout réafficher',
+      openInLibrary: 'Gérer dans la bibliothèque',
+      count: (n: number) => (n === 1 ? '1 jeu masqué' : `${n} jeux masqués`),
+    },
     app: {
       title: 'Application',
       closeToTray: 'Garder dans la zone de notification à la fermeture',

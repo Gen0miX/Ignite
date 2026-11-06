@@ -4,6 +4,7 @@ import type { GameSummary } from '../../api/client';
 import { fr } from '../../i18n/fr';
 import { formatPlaytimeShort } from '../../lib/format';
 import { useCardDrag } from '../../lib/gameDrag';
+import { useToasts } from '../Toaster/toasts';
 import { progressLabel } from '../../lib/sessions';
 import { SourceBadge } from '../SourceBadge/SourceBadge';
 import { Cover } from './Cover';
@@ -50,6 +51,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
   ref,
 ) {
   const drag = useCardDrag(dragIds);
+  const flashing = useToasts((s) => s.flashed.has(game.id));
   const meta = [formatPlaytimeShort(game.playtimeMinutes)];
   const progress = progressLabel(game.achievements, game.goals);
   if (progress) meta.push(progress);
@@ -73,7 +75,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
       role="gridcell"
       aria-selected={selected}
       tabIndex={tabIndex}
-      className={`${styles.card} ${selected ? styles.selected : ''} ${checked ? styles.checked : ''} ${selecting ? styles.selecting : ''}`}
+      className={`${styles.card} ${selected ? styles.selected : ''} ${checked ? styles.checked : ''} ${selecting ? styles.selecting : ''} ${flashing ? styles.flash : ''}`}
       onClick={onClick}
       onDoubleClick={() => !selecting && onLaunch()}
       onFocus={() => !selecting && onSelect()}
@@ -95,18 +97,25 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
         }
         onKeyDown(e);
       }}
-      aria-label={game.title}
+      aria-label={`${game.title}, ${fr.statusSingular[game.status]}`}
       data-game-id={game.id}
       {...drag.handlers}
     >
       <div className={styles.coverBox}>
         <Cover title={game.title} cover={game.cover} header={game.header} />
         {playing && <span className={styles.playing}>{fr.tracking.inGame}</span>}
-        {game.hidden && (
-          <span className={styles.hiddenMark} title={fr.library.hiddenTitle}>
-            <EyeOff size={12} aria-hidden="true" />
-          </span>
-        )}
+        <span className={styles.corner}>
+          {game.hidden && (
+            <span className={styles.hiddenMark} title={fr.library.hiddenTitle}>
+              <EyeOff size={12} aria-hidden="true" />
+            </span>
+          )}
+          <span
+            className={`${styles.status} ${styles[`status_${game.status}`]}`}
+            title={fr.statusSingular[game.status]}
+            aria-hidden="true"
+          />
+        </span>
         {game.sources[0] && (
           <span className={styles.badge}>
             <SourceBadge kind={game.sources[0]} overlay />

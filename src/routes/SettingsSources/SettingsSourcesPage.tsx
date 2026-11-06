@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   commands,
@@ -10,7 +11,9 @@ import {
   type SourceStatus,
 } from '../../api/client';
 import {
+  useBulkUpdate,
   useClearSecret,
+  useLibraryList,
   useSetSecret,
   useSecretsStatus,
   useSetSourceEnabled,
@@ -29,6 +32,7 @@ import { SourceChip } from '../../components/SourceBadge/SourceBadge';
 import { Switch } from '../../components/Switch/Switch';
 import { fr } from '../../i18n/fr';
 import { formatLastPlayed } from '../../lib/format';
+import { scrollToSection } from '../../lib/scrollToSection';
 import styles from './SettingsSourcesPage.module.css';
 import { EmulatorsCard } from './EmulatorsCard';
 
@@ -495,6 +499,65 @@ function AppCard() {
   );
 }
 
+const HIDDEN_QUERY = { view: { kind: 'hidden' }, text: null, sort: 'name' } as const;
+
+/** Hidden games live here, out of the library panel. */
+function HiddenGamesCard() {
+  const list = useLibraryList(HIDDEN_QUERY);
+  const bulk = useBulkUpdate();
+  const th = t.hidden;
+  const games = list.data ?? [];
+  const unhide = (ids: string[]) => bulk.mutate({ ids, update: { hidden: false } });
+  return (
+    <section className={styles.card} aria-labelledby="hidden-title">
+      <div className={styles.cardHeader}>
+        <div className={styles.cardTitle}>
+          <h2 id="hidden-title" className="section-label">
+            {th.title}
+          </h2>
+          <span className={styles.muted}>{th.intro}</span>
+        </div>
+      </div>
+      {games.length === 0 ? (
+        <p className={styles.muted}>{list.isLoading ? t.loading : th.empty}</p>
+      ) : (
+        <>
+          <ul className={styles.hiddenList}>
+            {games.map((g) => (
+              <li key={g.id}>
+                <span className={styles.hiddenName}>{g.title}</span>
+                <button
+                  type="button"
+                  className={buttons.secondary}
+                  aria-label={th.unhideNamed(g.title)}
+                  disabled={bulk.isPending}
+                  onClick={() => unhide([g.id])}
+                >
+                  {th.unhide}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className={styles.hiddenActions}>
+            <span className={styles.muted}>{th.count(games.length)}</span>
+            <Link to="/library?view=hidden" className={buttons.secondary}>
+              {th.openInLibrary}
+            </Link>
+            <button
+              type="button"
+              className={buttons.secondary}
+              disabled={bulk.isPending}
+              onClick={() => unhide(games.map((g) => g.id))}
+            >
+              {th.unhideAll}
+            </button>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 function MetadataCard() {
   return (
     <section className={styles.card} aria-labelledby="metadata-title">
@@ -549,18 +612,34 @@ function AboutCard() {
   );
 }
 
+const TOC: [string, string][] = [
+  ['settings-sources', t.sourcesSection],
+  ['emulators-title', t.emulators.title],
+  ['tracking-title', t.trackingTitle],
+  ['app-title', t.app.title],
+  ['hidden-title', t.hidden.title],
+  ['metadata-title', t.metadataTitle],
+  ['settings-about', t.about],
+];
+
 export function SettingsSourcesPage() {
   const sources = useSourcesStatus();
   return (
     <PageMain>
       <PageHeader title={t.sourcesTitle} />
       <nav className={styles.toc} aria-label={t.sourcesTitle}>
-        <a href="#settings-sources">{t.sourcesSection}</a>
-        <a href="#emulators-title">{t.emulators.title}</a>
-        <a href="#tracking-title">{t.trackingTitle}</a>
-        <a href="#app-title">{t.app.title}</a>
-        <a href="#metadata-title">{t.metadataTitle}</a>
-        <a href="#settings-about">{t.about}</a>
+        {TOC.map(([id, label]) => (
+          <a
+            key={id}
+            href={`#${id}`}
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToSection(id);
+            }}
+          >
+            {label}
+          </a>
+        ))}
       </nav>
       <h2 id="settings-sources" className="section-label">
         {t.sourcesSection}
@@ -585,6 +664,7 @@ export function SettingsSourcesPage() {
       )}
       {isTauri() && <TrackingCard />}
       {isTauri() && <AppCard />}
+      {isTauri() && <HiddenGamesCard />}
       {isTauri() && <MetadataCard />}
       <AboutCard />
     </PageMain>

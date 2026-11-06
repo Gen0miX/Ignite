@@ -5,6 +5,7 @@ import type { GameSummary } from '../../api/client';
 import { useBulkUpdate, useLaunchGame } from '../../api/hooks';
 import { fr } from '../../i18n/fr';
 import { isDeletable } from '../../lib/selection';
+import { toast } from '../Toaster/toasts';
 import { ArtworkPicker } from '../ArtworkPicker/ArtworkPicker';
 import type { MenuItem } from '../Menu/Menu';
 import { CollectionPicker } from './CollectionPicker';
@@ -14,7 +15,7 @@ const t = fr.actions;
 
 type Open =
   | { kind: 'images'; game: { id: string; title: string } }
-  | { kind: 'collections'; ids: string[] }
+  | { kind: 'collections'; ids: string[]; onAdded?: () => void }
   | { kind: 'delete'; ids: string[]; titles: string[]; onDeleted?: () => void };
 
 /** Actions on a game (card menu, panel, selection bar) and the dialogs they open. */
@@ -49,7 +50,16 @@ export function useGameActions() {
     {
       label: g.favorite ? t.favoriteRemove : t.favoriteAdd,
       icon: <Star size={16} aria-hidden="true" />,
-      onSelect: () => bulk.mutate({ ids: [g.id], update: { favorite: !g.favorite } }),
+      onSelect: () =>
+        bulk.mutate(
+          { ids: [g.id], update: { favorite: !g.favorite } },
+          {
+            onSuccess: () =>
+              toast((g.favorite ? fr.toast.favoriteRemoved : fr.toast.favoriteAdded)(g.title), [
+                g.id,
+              ]),
+          },
+        ),
       separator: true,
     },
     {
@@ -59,7 +69,11 @@ export function useGameActions() {
       ) : (
         <EyeOff size={16} aria-hidden="true" />
       ),
-      onSelect: () => bulk.mutate({ ids: [g.id], update: { hidden: !g.hidden } }),
+      onSelect: () =>
+        bulk.mutate(
+          { ids: [g.id], update: { hidden: !g.hidden } },
+          { onSuccess: () => toast((g.hidden ? fr.toast.unhidden : fr.toast.hidden)(1), [g.id]) },
+        ),
     },
     ...(isDeletable(g)
       ? [
@@ -77,7 +91,7 @@ export function useGameActions() {
   if (open?.kind === 'images') {
     element = <ArtworkPicker gameId={open.game.id} title={open.game.title} onClose={close} />;
   } else if (open?.kind === 'collections') {
-    element = <CollectionPicker gameIds={open.ids} onClose={close} />;
+    element = <CollectionPicker gameIds={open.ids} onClose={close} onAdded={open.onAdded} />;
   } else if (open?.kind === 'delete') {
     element = (
       <DeleteGamesDialog

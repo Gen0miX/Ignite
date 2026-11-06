@@ -71,3 +71,8 @@
   font-family: var(--font-mono);
   font-size: 11px;
 }
+
+.railCompact {
+  width: 52px;
+  min-height: 48px;
+}
