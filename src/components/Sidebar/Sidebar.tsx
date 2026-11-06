@@ -17,7 +17,6 @@ import { SourceChip } from '../SourceBadge/SourceBadge';
 import { StatusDot } from '../StatusDot/StatusDot';
 import { NowPlaying } from '../NowPlaying/NowPlaying';
 import { NavItem } from './NavItem';
-import { useMenuPrefs } from './menuPrefs';
 import { Rail } from './Rail';
 import styles from './Sidebar.module.css';
 
@@ -233,15 +232,14 @@ function LibraryPanel() {
   );
 }
 
-/** Rail on every screen, plus the library panel on library screens (unless the menu is reduced to icons). */
+/** Rail on every screen, plus the library panel on library screens (kept when the rail is reduced). */
 export function Sidebar() {
   const { pathname } = useLocation();
-  const collapsed = useMenuPrefs((s) => s.collapsed);
   const library = pathname.startsWith('/library') || pathname.startsWith('/game');
   return (
     <>
       <Rail />
-      {library && !collapsed && <LibraryPanel />}
+      {library && <LibraryPanel />}
     </>
   );
 }

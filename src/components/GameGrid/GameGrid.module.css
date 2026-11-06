@@ -4,6 +4,7 @@
 
 /* One ARIA row holding every card; the visual layout is a CSS grid. */
 .row {
+  position: relative; /* offsetParent of the cards, for the layout animation */
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 18px 14px;
