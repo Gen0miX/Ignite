@@ -1,4 +1,5 @@
 import {
+  folderName,
   formatBytes,
   formatLastPlayed,
   formatLastPlayedShort,
@@ -70,5 +71,16 @@ describe('formatLastPlayedShort', () => {
     expect(formatLastPlayedShort(at(2026, 10, 1), now)).toBe('il y a 4 j');
     expect(formatLastPlayedShort(at(2026, 8, 12), now)).toBe('12 sept.');
     expect(formatLastPlayedShort(at(2024, 9, 12), now)).toBe('oct. 2024');
+  });
+});
+
+describe('folderName', () => {
+  it('keeps only the last folder', () => {
+    expect(folderName(String.raw`C:\Program Files (x86)\Steam\steamapps\common\ELDEN RING`)).toBe(
+      'ELDEN RING',
+    );
+    expect(folderName(String.raw`D:\Games\Hades\\`)).toBe('Hades');
+    expect(folderName('/home/me/games/celeste')).toBe('celeste');
+    expect(folderName(String.raw`C:\\`)).toBe('C:');
   });
 });

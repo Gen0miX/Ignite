@@ -89,6 +89,11 @@ export const commands = {
 	 *  The executables themselves are left untouched.
 	 */
 	gamesDelete: (ids: string[]) => typedError<null, CommandError>(__TAURI_INVOKE("games_delete", { ids })),
+	/**
+	 *  Opens the install folder of a source in the Explorer. The path comes from
+	 *  the database, never from the frontend.
+	 */
+	sourceOpenFolder: (sourceId: string) => typedError<null, CommandError>(__TAURI_INVOKE("source_open_folder", { sourceId })),
 	/**  Adds several games to a manual collection (selection, drag and drop). */
 	collectionAddGames: (id: string, gameIds: string[]) => typedError<null, CommandError>(__TAURI_INVOKE("collection_add_games", { id, gameIds })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),

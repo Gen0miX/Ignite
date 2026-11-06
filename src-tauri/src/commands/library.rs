@@ -479,3 +479,18 @@ mod bulk_tests {
         assert!(!deletable(&[]));
     }
 }
+
+/// Opens the install folder of a source in the Explorer. The path comes from
+/// the database, never from the frontend.
+#[tauri::command]
+#[specta::specta]
+pub fn source_open_folder(db: tauri::State<'_, Db>, source_id: String) -> CommandResult<()> {
+    let source = game_sources::get(&db.conn(), &source_id)?;
+    let path = source
+        .install_path
+        .filter(|p| std::path::Path::new(p).is_dir())
+        .ok_or_else(|| AppError::NotFound(format!("install folder of {source_id}")))?;
+    tauri_plugin_opener::open_path(&path, None::<&str>)
+        .map_err(|e| AppError::Invalid(format!("cannot open folder: {e}")).into())
+}
+

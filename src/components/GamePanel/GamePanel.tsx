@@ -25,6 +25,7 @@ import {
 } from '../../lib/format';
 import { useGameActions } from '../GameActions/useGameActions';
 import { GameTitle } from '../GameTitle/GameTitle';
+import { InstallFolder } from '../InstallFolder/InstallFolder';
 import { Menu } from '../Menu/Menu';
 import { SegmentedControl } from '../SegmentedControl/SegmentedControl';
 import { SourceBadge } from '../SourceBadge/SourceBadge';
@@ -236,8 +237,14 @@ function PanelContent({ game }: { game: GameDetail }) {
             {game.sources.map((src) => (
               <div key={src.id} className={styles.detailGroup}>
                 <dt>{fr.panel.installPath}</dt>
-                <dd className="mono">
-                  {src.installed ? (src.installPath ?? '—') : fr.panel.notInstalled}
+                <dd>
+                  {!src.installed ? (
+                    fr.panel.notInstalled
+                  ) : src.installPath ? (
+                    <InstallFolder sourceId={src.id} path={src.installPath} />
+                  ) : (
+                    '—'
+                  )}
                 </dd>
                 {src.installed && src.sizeBytes ? (
                   <>

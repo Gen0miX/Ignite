@@ -87,6 +87,12 @@ export function useOpenLink() {
   return useMutation({ mutationFn: (url: string) => unwrap(commands.openLink(url)) });
 }
 
+export function useOpenFolder() {
+  return useMutation({
+    mutationFn: (sourceId: string) => unwrap(commands.sourceOpenFolder(sourceId)),
+  });
+}
+
 function useInvalidateLibrary() {
   const client = useQueryClient();
   return () => Promise.all(LIBRARY_KEYS.map((queryKey) => client.invalidateQueries({ queryKey })));

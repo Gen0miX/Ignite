@@ -1,5 +1,7 @@
 import type { GameDetail } from '../../api/client';
+import { InstallFolder } from '../../components/InstallFolder/InstallFolder';
 import { fr } from '../../i18n/fr';
+import { folderName } from '../../lib/format';
 import styles from './GameDetailPage.module.css';
 
 const t = fr.game;
@@ -18,12 +20,20 @@ export function LaunchSection({ game }: { game: GameDetail }) {
           <dt>{t.launchTarget}</dt>
           <dd className="mono">{src.launchUri ?? '—'}</dd>
           <dt>{t.installPath}</dt>
-          <dd className="mono">
-            {src.installed ? (src.installPath ?? '—') : fr.panel.notInstalled}
+          <dd>
+            {!src.installed ? (
+              fr.panel.notInstalled
+            ) : src.installPath ? (
+              <InstallFolder sourceId={src.id} path={src.installPath} />
+            ) : (
+              '—'
+            )}
           </dd>
           <dt>{t.tracked}</dt>
-          <dd>
-            {src.installed && src.installPath ? t.trackedPrefix(src.installPath) : t.trackedNone}
+          <dd title={src.installed && src.installPath ? src.installPath : undefined}>
+            {src.installed && src.installPath
+              ? t.trackedPrefix(folderName(src.installPath))
+              : t.trackedNone}
           </dd>
         </dl>
       ))}

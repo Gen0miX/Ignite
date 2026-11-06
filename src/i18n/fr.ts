@@ -240,6 +240,9 @@ export const fr = {
   },
   panel: {
     moreActions: "Plus d'actions",
+    openFolder: 'Ouvrir le dossier',
+    openFolderLabel: (name: string) => `Ouvrir le dossier ${name} dans l’Explorateur`,
+    openFolderError: 'Le dossier est introuvable.',
     label: 'Jeu sélectionné',
     close: 'Fermer le panneau',
     play: 'Jouer',
