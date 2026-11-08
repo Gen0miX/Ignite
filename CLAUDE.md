@@ -42,7 +42,7 @@ secrets via `keyring-core` + `windows-native-keyring-store` (recommandé par key
 
 **Attention, base de données en dev** : une instance lancée par les outils de Claude (Bash/PowerShell de l'app Claude) voit son `%APPDATA%` **virtualisé** par Windows vers `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\com.ignite.app\`. Pour tester sur la vraie base de l'utilisateur, lance `pnpm tauri dev` depuis le panneau Terminal (non virtualisé), et lis la base réelle depuis ce même terminal. L'app installée n'est pas concernée.
 
-Nom : l'app s'appelle **Ignite** (`productName`, textes UI, logo `design/logo/ignite.svg` → `pnpm tauri icon design/logo/ignite.svg`). L'identifiant est `com.ignite.app` (base `ignite.db`) : `src-tauri/src/legacy.rs` déplace au démarrage les données de l'ancien `com.ludotheque.app` / `ludotheque.db`. Le nom du crate (`ludotheque`) et le service du coffre (`ludotheque`) restent inchangés : renommer le service ferait perdre les clés enregistrées.
+Nom : l'app s'appelle **Ignite** (`productName`, textes UI, logo `design/logo/ignite.svg` → `pnpm tauri icon design/logo/ignite.svg`). L'identifiant est `com.ignite.app` (base `ignite.db`) : `src-tauri/src/legacy.rs` déplace au démarrage les données de l'ancien `com.ludotheque.app` / `ludotheque.db`. Le nom du crate (`ludotheque`) et le service du coffre (`ludotheque`) restent inchangés : renommer le service ferait perdre les clés enregistrées. De même, `bundle.publisher` reste `ludotheque` (clé de registre où l'installeur retrouve l'installation précédente).
 
 (Mets à jour cette section si tu changes l'outillage.)
 
