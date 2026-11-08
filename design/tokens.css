@@ -34,6 +34,7 @@
   --color-ok: #7cd68a;
   --color-warn: #f2b33d;
   --color-danger: #e05a6a;
+  --rarity-ultra: #ffd0b8; /* succès ultra-rares (< 5 % des joueurs) */
 
   /* Couleurs de source (badges, barres de répartition) — identiques quel que soit le thème */
   --source-steam: #7cc4ff;

@@ -373,6 +373,13 @@ export function useLibraryEvents() {
         else unlisteners.push(fn);
       });
     }
+    // Achievement icons now in the image cache: show them.
+    void listen<string>('achievements-icons-ready', ({ payload }) => {
+      void client.invalidateQueries({ queryKey: keys.achievements(payload) });
+    }).then((fn) => {
+      if (cancelled) fn();
+      else unlisteners.push(fn);
+    });
     return () => {
       cancelled = true;
       unlisteners.forEach((fn) => fn());

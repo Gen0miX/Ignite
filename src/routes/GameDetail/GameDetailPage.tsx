@@ -251,7 +251,13 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
         (platformAchievements ? (
           <AchievementsSection
             gameId={s.id}
-            supported
+            sourceLabel={
+              s.sources.includes('emulator')
+                ? 'RetroAchievements'
+                : s.sources.includes('steam')
+                  ? fr.sources.steam
+                  : fr.sources.gog
+            }
             isEmulated={s.sources.includes('emulator')}
           />
         ) : (

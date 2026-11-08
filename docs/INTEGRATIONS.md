@@ -76,6 +76,11 @@ Battle.net, EA app, Ubisoft Connect et Riot ne lisent que les **jeux installés*
 - **EA app — non testé** : entrées `Publisher = Electronic Arts` avec un dossier d'installation ; source considérée comme présente si `C:\ProgramData\EA Desktop` existe.
 - **Ubisoft Connect — non testé** : `HKLM\SOFTWARE\WOW6432Node\Ubisoft\Launcher\Installs\<id>\InstallDir`, lancement `uplay://launch/<id>/0`.
 
+## Icônes et succès cachés
+
+- **Succès cachés** : `GetSchemaForGame` renvoie `hidden` (0/1) pour chaque succès Steam ; il est gardé dans `achievements.hidden` (migration 0009). GOG et RetroAchievements n'en ont pas.
+- **Icônes** : jamais affichées en lien direct. Elles sont copiées dans `artwork/achievements/` (nom = empreinte FNV-1a de l'URL), en arrière-plan à l'ouverture de l'onglet Succès et après la resynchronisation de fin de session, puis l'événement `achievements-icons-ready` recharge la liste. Hôtes acceptés : `steamcdn-a.akamaihd.net`, `*.steamstatic.com`, `images.gog.com`, `*.gog-statics.com`, `media.retroachievements.org`. Les succès verrouillés sont grisés en CSS : pas besoin des icônes `icongray`.
+
 ## Battle.net
 
 - Jeux installés : `C:\ProgramData\Battle.net\Agent\product.db` (protobuf). Solution de repli plus simple : les clés de désinstallation dans le registre (`HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*`, `Publisher = Blizzard Entertainment`).
