@@ -34,16 +34,43 @@ pub fn move_dir(base: &Path) -> PathBuf {
             return new;
         }
     }
-    match fs::rename(&old, &new) {
-        Ok(()) => {
-            tracing::info!(from = %old.display(), to = %new.display(), "data folder moved");
-            new
-        }
-        Err(e) => {
+    if let Err(e) = fs::rename(&old, &new) {
+        // A handle on the folder itself (an Explorer or shell window opened
+        // there, an antivirus scan) refuses the rename while its contents
+        // can still move: move them one by one.
+        tracing::info!(error = %e, path = %old.display(), "data folder busy, moving its contents");
+        if let Err(e) = move_contents(&old, &new) {
             tracing::warn!(error = %e, path = %old.display(), "data folder not moved, kept in place");
-            old
+            return old;
         }
+        // The emptied folder may still be held: it goes on a later start.
+        let _ = fs::remove_dir(&old);
     }
+    tracing::info!(from = %old.display(), to = %new.display(), "data folder moved");
+    new
+}
+
+/// Moves every entry of `old` into a new `new` folder; on a failure, puts
+/// back what was moved and removes `new`, so the data is never split.
+fn move_contents(old: &Path, new: &Path) -> std::io::Result<()> {
+    fs::create_dir(new)?;
+    let mut moved: Vec<(PathBuf, PathBuf)> = Vec::new();
+    let result = (|| {
+        for entry in fs::read_dir(old)? {
+            let from = entry?.path();
+            let to = new.join(from.file_name().unwrap_or_default());
+            fs::rename(&from, &to)?;
+            moved.push((from, to));
+        }
+        Ok(())
+    })();
+    if result.is_err() {
+        for (from, to) in moved.iter().rev() {
+            let _ = fs::rename(to, from);
+        }
+        let _ = fs::remove_dir(new);
+    }
+    result
 }
 
 /// Database path in `dir`: renames `ludotheque.db` (with its `-wal`/`-shm`)
@@ -160,6 +187,56 @@ mod tests {
         let dir = move_dir(base.path());
         assert_eq!(dir, base.path().join(APP_ID));
         assert_eq!(db_path(&dir), dir.join("ignite.db"));
+    }
+
+    /// Opens like a process that does not let others delete or rename it.
+    #[cfg(windows)]
+    fn hold(path: &Path) -> fs::File {
+        use std::os::windows::fs::OpenOptionsExt;
+        const FILE_FLAG_BACKUP_SEMANTICS: u32 = 0x0200_0000; // needed for a folder
+        fs::OpenOptions::new()
+            .read(true)
+            .share_mode(0x1 | 0x2)
+            .custom_flags(FILE_FLAG_BACKUP_SEMANTICS)
+            .open(path)
+            .unwrap()
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_held_folder_has_its_contents_moved() {
+        let base = tempfile::tempdir().unwrap();
+        let old = base.path().join(LEGACY_ID);
+        write(&old.join("ludotheque.db"), "db");
+        write(&old.join("artwork/g1/cover.jpg"), "img");
+        let held = hold(&old);
+        assert!(fs::rename(&old, base.path().join("probe")).is_err());
+
+        let dir = move_dir(base.path());
+        assert_eq!(dir, base.path().join(APP_ID));
+        assert_eq!(fs::read_to_string(dir.join("ludotheque.db")).unwrap(), "db");
+        assert!(dir.join("artwork/g1/cover.jpg").exists());
+        assert_eq!(fs::read_dir(&old).unwrap().count(), 0);
+        drop(held);
+        // Next start: the empty leftover does not hide the moved data.
+        assert_eq!(move_dir(base.path()), base.path().join(APP_ID));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_held_file_keeps_everything_in_the_old_folder() {
+        let base = tempfile::tempdir().unwrap();
+        let old = base.path().join(LEGACY_ID);
+        write(&old.join("a.txt"), "a");
+        write(&old.join("ludotheque.db"), "db");
+        write(&old.join("z.txt"), "z");
+        let _held = hold(&old.join("ludotheque.db"));
+
+        assert_eq!(move_dir(base.path()), old);
+        for name in ["a.txt", "ludotheque.db", "z.txt"] {
+            assert!(old.join(name).exists(), "{name} put back");
+        }
+        assert!(!base.path().join(APP_ID).exists());
     }
 
     #[cfg(windows)]
