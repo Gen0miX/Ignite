@@ -6,6 +6,7 @@ import { useAchievements, useRefreshAchievements } from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
 import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
+import { SkeletonImage } from '../../components/Skeleton/SkeletonImage';
 import { fr } from '../../i18n/fr';
 import {
   defaultView,
@@ -338,18 +339,21 @@ function Icon({ item, masked = false }: { item: AchievementItem; masked?: boolea
   const src = artworkSrc(item.icon);
   const unlocked = !!item.unlockedAt;
   const r = rarity(item.globalPercent);
+  const showImage = unlocked && !masked && src && !failed;
+  // Downloading into the image cache: the box pulses until the icon arrives.
+  const pending = unlocked && !masked && !src && item.iconPending;
   return (
     <span
-      className={`${styles.icon} ${unlocked ? styles[`b_${r}`] : styles.iconLocked}`}
+      className={`${styles.icon} ${unlocked ? styles[`b_${r}`] : styles.iconLocked} img-host ${pending ? 'img-pending' : ''}`}
       aria-hidden="true"
     >
       {masked ? (
         <Eye size={22} />
       ) : !unlocked ? (
         <Lock size={20} />
-      ) : src && !failed ? (
-        <img src={src} alt="" loading="lazy" onError={() => setFailed(true)} />
-      ) : (
+      ) : showImage ? (
+        <SkeletonImage src={src} loading="lazy" onError={() => setFailed(true)} />
+      ) : pending ? null : (
         <Trophy size={22} />
       )}
     </span>

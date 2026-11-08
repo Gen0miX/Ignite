@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use super::artwork::{cache_root, download_named};
 
 /// Hosts the icons come from (Steam, GOG, RetroAchievements).
-fn allowed(url: &str) -> bool {
+pub(crate) fn allowed(url: &str) -> bool {
     let Some(rest) = url.strip_prefix("https://") else {
         return false;
     };

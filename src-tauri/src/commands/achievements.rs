@@ -43,6 +43,8 @@ pub struct AchievementItem {
     pub global_percent: Option<f64>,
     /// Icon in the image cache (`asset:`); `None` until downloaded.
     pub icon: Option<String>,
+    /// The icon is being downloaded: the UI shows a loading placeholder.
+    pub icon_pending: bool,
     /// Steam hidden achievement: description masked until unlocked or revealed.
     pub hidden: bool,
 }
@@ -74,6 +76,7 @@ fn view(
             global_percent: r.global_percent,
             // Remote URL here; `with_local_icons` swaps it for the cached file.
             icon: r.icon_url,
+            icon_pending: false,
             hidden: r.hidden,
         })
         .collect();
@@ -135,6 +138,30 @@ pub const ICONS_READY_EVENT: &str = "achievements-icons-ready";
 static FETCHING: std::sync::Mutex<Option<std::collections::HashSet<String>>> =
     std::sync::Mutex::new(None);
 
+/// Icons whose download failed during this run: not retried until restart,
+/// so the list does not reload in a loop and shows the trophy instead.
+static FAILED: std::sync::Mutex<Option<std::collections::HashSet<String>>> =
+    std::sync::Mutex::new(None);
+
+fn failed_before(url: &str) -> bool {
+    FAILED
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .is_some_and(|set| set.contains(url))
+}
+
+/// Remembers the URLs still not in the cache after a download pass.
+fn record_failures(dir: &std::path::Path, urls: &[String]) {
+    let mut guard = FAILED.lock().unwrap_or_else(|e| e.into_inner());
+    let set = guard.get_or_insert_with(Default::default);
+    for url in urls {
+        if achievement_icons::cached(dir, url).is_none() {
+            set.insert(url.clone());
+        }
+    }
+}
+
 /// Replaces remote icon URLs by their cached copy; returns the URLs to fetch.
 /// Locked achievements show a padlock, so only unlocked icons are kept.
 fn with_local_icons(
@@ -152,7 +179,11 @@ fn with_local_icons(
         }
         match achievement_icons::cached(&dir, &url) {
             Some(path) => item.icon = Some(path.display().to_string()),
-            None => missing.push(url),
+            None if achievement_icons::allowed(&url) && !failed_before(&url) => {
+                item.icon_pending = true;
+                missing.push(url);
+            }
+            None => {}
         }
     }
     (view, missing)
@@ -171,13 +202,13 @@ fn fetch_icons_later(app: AppHandle, game_id: String, urls: Vec<String>) {
     }
     std::thread::spawn(move || {
         let dir = achievement_icons::dir(&app.state::<AppPaths>().data_dir);
-        let added = achievement_icons::fetch_missing(&dir, &urls);
+        achievement_icons::fetch_missing(&dir, &urls);
+        record_failures(&dir, &urls);
         if let Some(set) = FETCHING.lock().unwrap_or_else(|e| e.into_inner()).as_mut() {
             set.remove(&game_id);
         }
-        if added > 0 {
-            let _ = app.emit(ICONS_READY_EVENT, &game_id);
-        }
+        // Always: the placeholders turn into icons, or into trophies.
+        let _ = app.emit(ICONS_READY_EVENT, &game_id);
     });
 }
 
@@ -187,6 +218,7 @@ pub fn fetch_icons_now(app: &AppHandle, game_id: &str) {
         let (_, missing) = with_local_icons(app, view);
         let dir = achievement_icons::dir(&app.state::<AppPaths>().data_dir);
         achievement_icons::fetch_missing(&dir, &missing);
+        record_failures(&dir, &missing);
     }
 }
 

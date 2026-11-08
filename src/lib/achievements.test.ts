@@ -23,6 +23,7 @@ const a = (
   unlockedAt,
   globalPercent: percent,
   icon: null,
+  iconPending: false,
   hidden: false,
   ...extra,
 });

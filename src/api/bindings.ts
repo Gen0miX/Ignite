@@ -173,6 +173,8 @@ export type AchievementItem_Deserialize = {
 	globalPercent?: number | null,
 	/**  Icon in the image cache (`asset:`); `None` until downloaded. */
 	icon?: string | null,
+	/**  The icon is being downloaded: the UI shows a loading placeholder. */
+	iconPending: boolean,
 	/**  Steam hidden achievement: description masked until unlocked or revealed. */
 	hidden: boolean,
 };
@@ -185,6 +187,8 @@ export type AchievementItem_Serialize = {
 	globalPercent: number | null,
 	/**  Icon in the image cache (`asset:`); `None` until downloaded. */
 	icon: string | null,
+	/**  The icon is being downloaded: the UI shows a loading placeholder. */
+	iconPending: boolean,
 	/**  Steam hidden achievement: description masked until unlocked or revealed. */
 	hidden: boolean,
 };

@@ -133,7 +133,9 @@ a {
   transition: opacity 160ms ease-out;
 }
 
-.img-host:has(.img-loading) {
+/* `.img-pending`: an image still downloading (no <img> yet), same pulse. */
+.img-host:has(.img-loading),
+.img-pending {
   background-color: var(--color-active);
   animation: img-pulse 1.4s ease-in-out infinite;
 }
