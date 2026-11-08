@@ -123,6 +123,11 @@ fn filter(key: &str, value: &str) -> Option<Rule> {
             let (op, v) = numeric(value, 60.0)?;
             Some(cond(Field::PlaytimeMinutes, op, v))
         }
+        // duree:<20 = main story under 20 h (time to beat).
+        "duree" | "durée" | "ttb" | "hltb" => {
+            let (op, v) = numeric(value.trim_end_matches('h'), 60.0)?;
+            Some(cond(Field::HltbMainMinutes, op, v))
+        }
         "session" | "sessions" => {
             let (op, v) = numeric(value, 1.0)?;
             Some(cond(Field::AvgSessionMinutes, op, v))
@@ -209,6 +214,20 @@ mod tests {
         }
     }
 
+    #[test]
+    fn duree_filters_on_the_main_story_time() {
+        let f = Facts {
+            hltb_main_minutes: Some(1500.0),
+            ..facts()
+        };
+        let at = Utc.with_ymd_and_hms(2026, 11, 6, 0, 0, 0).unwrap();
+        let ok = |q: &str| parse(q).rule.matches(&f, at);
+        assert!(ok("duree:20-30"));
+        assert!(ok("duree:>20h"));
+        assert!(!ok("duree:<20"));
+        assert!(parse("duree:<20").warnings.is_empty());
+    }
+
     fn hit(q: &str) -> bool {
         let p = parse(q);
         p.rule.validate().unwrap();
@@ -236,6 +255,7 @@ mod tests {
     #[test]
     fn numbers_ranges_and_units() {
         assert!(hit("heures:50-60"));
+        assert!(!hit("duree:<20")); // no time to beat known: no match
         assert!(hit("heures:>=53"));
         assert!(!hit("heures:<20"));
         assert!(hit("session:<60"));

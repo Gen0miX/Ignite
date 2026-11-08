@@ -10,3 +10,4 @@ pub mod goals;
 pub mod sessions;
 pub mod settings;
 pub mod tags;
+pub mod time_to_beat;

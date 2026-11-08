@@ -18,6 +18,7 @@ use super::steam_store::{Screenshot, Trailer};
 
 const TOKEN_URL: &str = "https://id.twitch.tv/oauth2/token";
 const GAMES_URL: &str = "https://api.igdb.com/v4/games";
+const TIME_TO_BEAT_URL: &str = "https://api.igdb.com/v4/game_time_to_beats";
 const FIELDS: &str =
     "fields name,summary,total_rating_count,screenshots.image_id,artworks.image_id,\
 videos.video_id,videos.name;";
@@ -194,10 +195,14 @@ fn forget_token() {
 }
 
 fn query(client_id: &str, secret: &str, body: &str) -> AppResult<String> {
+    query_at(client_id, secret, GAMES_URL, body)
+}
+
+fn query_at(client_id: &str, secret: &str, url: &str, body: &str) -> AppResult<String> {
     for attempt in 0..2 {
         let token = token(client_id, secret)?;
         let result = http::agent()
-            .post(GAMES_URL)
+            .post(url)
             .header("Client-ID", client_id)
             .header("Authorization", &format!("Bearer {token}"))
             .header("Accept", "application/json")
@@ -232,6 +237,157 @@ pub fn fetch(
     }
     let body = query(client_id, secret, &search_query(title))?;
     parse_search(&body, title)
+}
+
+// ---------------------------------------------------------------------------
+// Time to beat (docs/TIME-TO-BEAT.md)
+
+/// IGDB `game_time_to_beats`, in minutes: `hastily` = main story,
+/// `normally` = main + extras, `completely` = completionist.
+#[derive(Debug, Clone, PartialEq)]
+pub struct IgdbTimeToBeat {
+    pub main_minutes: Option<u32>,
+    pub extra_minutes: Option<u32>,
+    pub completionist_minutes: Option<u32>,
+    pub count: Option<u32>,
+}
+
+#[derive(Deserialize)]
+struct RawTimeToBeat {
+    #[serde(default)]
+    hastily: Option<u64>,
+    #[serde(default)]
+    normally: Option<u64>,
+    #[serde(default)]
+    completely: Option<u64>,
+    #[serde(default)]
+    count: Option<u32>,
+}
+
+fn minutes(secs: Option<u64>) -> Option<u32> {
+    secs.filter(|s| *s > 0)
+        .map(|s| ((s + 30) / 60).min(u32::MAX as u64) as u32)
+}
+
+/// `None` when IGDB has no entry for the game (an empty list).
+pub fn parse_time_to_beat(body: &str) -> AppResult<Option<IgdbTimeToBeat>> {
+    let rows: Vec<RawTimeToBeat> = serde_json::from_str(body)?;
+    Ok(rows
+        .into_iter()
+        .next()
+        .map(|r| IgdbTimeToBeat {
+            main_minutes: minutes(r.hastily),
+            extra_minutes: minutes(r.normally),
+            completionist_minutes: minutes(r.completely),
+            count: r.count,
+        })
+        .filter(|t| {
+            t.main_minutes.is_some()
+                || t.extra_minutes.is_some()
+                || t.completionist_minutes.is_some()
+        }))
+}
+
+pub fn fetch_time_to_beat(
+    client_id: &str,
+    secret: &str,
+    igdb_id: i64,
+) -> AppResult<Option<IgdbTimeToBeat>> {
+    let body = query_at(
+        client_id,
+        secret,
+        TIME_TO_BEAT_URL,
+        &format!("fields hastily,normally,completely,count; where game_id = {igdb_id};"),
+    )?;
+    parse_time_to_beat(&body)
+}
+
+/// A game IGDB proposes when the title match is not exact.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct IgdbCandidate {
+    /// IGDB ids fit in 32 bits (and TypeScript numbers).
+    pub id: u32,
+    pub name: String,
+    pub year: Option<i32>,
+    pub url: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct RawCandidate {
+    id: i64,
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    first_release_date: Option<i64>,
+    #[serde(default)]
+    url: Option<String>,
+    #[serde(default)]
+    total_rating_count: Option<u32>,
+}
+
+/// The IGDB game found for a title: the one with the same title (most rated
+/// first), else up to 5 candidates for the user to choose from.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Match {
+    Found(IgdbCandidate),
+    Candidates(Vec<IgdbCandidate>),
+}
+
+fn candidate(c: RawCandidate) -> IgdbCandidate {
+    IgdbCandidate {
+        id: u32::try_from(c.id).unwrap_or(0),
+        year: c
+            .first_release_date
+            .and_then(|t| chrono::DateTime::from_timestamp(t, 0))
+            .map(|d| chrono::Datelike::year(&d)),
+        name: c.name,
+        url: c.url.filter(|u| u.starts_with("https://www.igdb.com/")),
+    }
+}
+
+pub fn parse_match(body: &str, title: &str) -> AppResult<Match> {
+    let mut games: Vec<RawCandidate> = serde_json::from_str(body)?;
+    let key = match_key(title);
+    games.sort_by_key(|g| std::cmp::Reverse(g.total_rating_count));
+    if let Some(i) = games
+        .iter()
+        .position(|g| !key.is_empty() && match_key(&g.name) == key)
+    {
+        return Ok(Match::Found(candidate(games.swap_remove(i))));
+    }
+    Ok(Match::Candidates(
+        games.into_iter().take(5).map(candidate).collect(),
+    ))
+}
+
+const MATCH_FIELDS: &str = "fields name,first_release_date,url,total_rating_count;";
+
+/// The IGDB game of a library game: `known_id` when set, else a title search.
+pub fn find_game(
+    client_id: &str,
+    secret: &str,
+    known_id: Option<i64>,
+    title: &str,
+) -> AppResult<Match> {
+    if let Some(id) = known_id {
+        let body = query(
+            client_id,
+            secret,
+            &format!("{MATCH_FIELDS} where id = {id};"),
+        )?;
+        let games: Vec<RawCandidate> = serde_json::from_str(&body)?;
+        if let Some(g) = games.into_iter().next() {
+            return Ok(Match::Found(candidate(g)));
+        }
+    }
+    let clean: String = title.chars().filter(|c| *c != '"' && *c != '\\').collect();
+    let body = query(
+        client_id,
+        secret,
+        &format!("search \"{}\"; {MATCH_FIELDS} limit 10;", clean.trim()),
+    )?;
+    parse_match(&body, title)
 }
 
 #[cfg(test)]
@@ -273,6 +429,41 @@ mod tests {
             search_query(r#"Say "Hi"\ "#),
             format!("search \"Say Hi\"; {FIELDS} limit 10;")
         );
+    }
+
+    #[test]
+    fn reads_time_to_beat_in_minutes() {
+        let body = include_str!("../../tests/fixtures/igdb_time_to_beat.json");
+        let t = parse_time_to_beat(body).unwrap().unwrap();
+        assert_eq!(t.main_minutes, Some(2321)); // 139 240 s
+        assert_eq!(t.extra_minutes, Some(4227));
+        assert_eq!(t.completionist_minutes, Some(9045));
+        assert_eq!(t.count, Some(13));
+        assert_eq!(parse_time_to_beat("[]").unwrap(), None);
+        assert_eq!(parse_time_to_beat(r#"[{"count":2}]"#).unwrap(), None);
+    }
+
+    #[test]
+    fn exact_title_is_found_else_candidates() {
+        let body = include_str!("../../tests/fixtures/igdb_search_candidates.json");
+        match parse_match(body, "Kingdom Come: Deliverance II").unwrap() {
+            Match::Found(c) => {
+                assert_eq!(c.id, 119313);
+                assert_eq!(c.year, Some(2025));
+                assert_eq!(
+                    c.url.as_deref(),
+                    Some("https://www.igdb.com/games/kingdom-come-deliverance-ii")
+                );
+            }
+            other => panic!("{other:?}"),
+        }
+        match parse_match(body, "Kingdom Come Deliverance 2").unwrap() {
+            Match::Candidates(list) => {
+                assert_eq!(list.len(), 3);
+                assert_eq!(list[0].id, 2005); // most rated first
+            }
+            other => panic!("{other:?}"),
+        }
     }
 
     #[test]

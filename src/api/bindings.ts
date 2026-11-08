@@ -107,6 +107,13 @@ export const commands = {
 	 *  used when the modal cannot open now (couch mode, another game running).
 	 */
 	notify: (title: string, body: string) => typedError<null, CommandError>(__TAURI_INVOKE("notify", { title, body })),
+	/**  Time to beat of a game (IGDB fetched when missing or older than 30 days). */
+	timeToBeatGet: (gameId: string) => typedError<TimeToBeatView_Serialize, CommandError>(__TAURI_INVOKE("time_to_beat_get", { gameId })),
+	/**  "Actualiser": new IGDB lookup, candidates forgotten. */
+	timeToBeatRefresh: (gameId: string) => typedError<TimeToBeatView_Serialize, CommandError>(__TAURI_INVOKE("time_to_beat_refresh", { gameId })),
+	/**  The user picked the right IGDB game among the candidates. */
+	timeToBeatPick: (gameId: string, igdbId: number) => typedError<TimeToBeatView_Serialize, CommandError>(__TAURI_INVOKE("time_to_beat_pick", { gameId, igdbId })),
+	timeToBeatSetManual: (gameId: string, values: ManualTimeToBeat_Deserialize | null) => typedError<TimeToBeatView_Serialize, CommandError>(__TAURI_INVOKE("time_to_beat_set_manual", { gameId, values })),
 	/**  Adds several games to a manual collection (selection, drag and drop). */
 	collectionAddGames: (id: string, gameIds: string[]) => typedError<null, CommandError>(__TAURI_INVOKE("collection_add_games", { id, gameIds })),
 	librarySync: () => typedError<SyncReport[], CommandError>(__TAURI_INVOKE("library_sync")),
@@ -688,6 +695,27 @@ export type IdlePeriod = {
 	endedAt: string,
 };
 
+/**  A game IGDB proposes when the title match is not exact. */
+export type IgdbCandidate = IgdbCandidate_Serialize | IgdbCandidate_Deserialize;
+
+/**  A game IGDB proposes when the title match is not exact. */
+export type IgdbCandidate_Deserialize = {
+	/**  IGDB ids fit in 32 bits (and TypeScript numbers). */
+	id: number,
+	name: string,
+	year?: number | null,
+	url?: string | null,
+};
+
+/**  A game IGDB proposes when the title match is not exact. */
+export type IgdbCandidate_Serialize = {
+	/**  IGDB ids fit in 32 bits (and TypeScript numbers). */
+	id: number,
+	name: string,
+	year: number | null,
+	url: string | null,
+};
+
 /**  What the user decided for one candidate. */
 export type ImportAction = { type: "import" } | 
 /**  Import and merge into an existing game. */
@@ -793,6 +821,23 @@ export type LibraryView = { kind: "all" } | { kind: "installed" } | { kind: "fav
 { kind: "hidden" } | { kind: "status"; value: GameStatus } | { kind: "source"; value: SourceKind } | 
 /**  A manual or smart collection, by id. */
 { kind: "collection"; value: string };
+
+/**  The user's correction, in minutes; `None` removes it. */
+export type ManualTimeToBeat = ManualTimeToBeat_Serialize | ManualTimeToBeat_Deserialize;
+
+/**  The user's correction, in minutes; `None` removes it. */
+export type ManualTimeToBeat_Deserialize = {
+	main?: number | null,
+	extra?: number | null,
+	completionist?: number | null,
+};
+
+/**  The user's correction, in minutes; `None` removes it. */
+export type ManualTimeToBeat_Serialize = {
+	main: number | null,
+	extra: number | null,
+	completionist: number | null,
+};
 
 /**  Moods of the random wheel. */
 export type Mood = "chill" | "intense" | "coop" | "never";
@@ -1319,6 +1364,62 @@ export type Tag = {
 	name: string,
 };
 
+export type TimeToBeat = TimeToBeat_Serialize | TimeToBeat_Deserialize;
+
+export type TimeToBeatView = TimeToBeatView_Serialize | TimeToBeatView_Deserialize;
+
+export type TimeToBeatView_Deserialize = {
+	/**  Manual correction where set, else IGDB; `None` when unknown. */
+	best?: TimeToBeat_Deserialize | null,
+	sources: TimeToBeat_Deserialize[],
+	/**  IGDB games to choose from when the title match was not exact. */
+	candidates: IgdbCandidate_Deserialize[],
+	igdbKeysMissing: boolean,
+	/**  Last fetch failed (offline…); cached values are still returned. */
+	error?: string | null,
+};
+
+export type TimeToBeatView_Serialize = {
+	/**  Manual correction where set, else IGDB; `None` when unknown. */
+	best: TimeToBeat_Serialize | null,
+	sources: TimeToBeat_Serialize[],
+	/**  IGDB games to choose from when the title match was not exact. */
+	candidates: IgdbCandidate_Serialize[],
+	igdbKeysMissing: boolean,
+	/**  Last fetch failed (offline…); cached values are still returned. */
+	error: string | null,
+};
+
+export type TimeToBeat_Deserialize = {
+	provider: TtbProvider,
+	externalId?: string | null,
+	/**  "Histoire". */
+	mainMinutes?: number | null,
+	/**  "Histoire + extras". */
+	extraMinutes?: number | null,
+	/**  "Complétionniste". */
+	completionistMinutes?: number | null,
+	/**  Players behind the values, when the provider says. */
+	sampleCount?: number | null,
+	url?: string | null,
+	fetchedAt: string,
+};
+
+export type TimeToBeat_Serialize = {
+	provider: TtbProvider,
+	externalId: string | null,
+	/**  "Histoire". */
+	mainMinutes: number | null,
+	/**  "Histoire + extras". */
+	extraMinutes: number | null,
+	/**  "Complétionniste". */
+	completionistMinutes: number | null,
+	/**  Players behind the values, when the provider says. */
+	sampleCount: number | null,
+	url: string | null,
+	fetchedAt: string,
+};
+
 /**  Part of a session: played (`idle = false`) or idle time removed. */
 export type TimelineSegment = {
 	start: string,
@@ -1386,6 +1487,8 @@ export type Trailer_Serialize = {
 	/**  YouTube video id (IGDB). */
 	youtube: string | null,
 };
+
+export type TtbProvider = "manual" | "igdb";
 
 /* Tauri Specta runtime */
 async function typedError<T, E>(result: Promise<T>): Promise<{ status: "ok"; data: T } | { status: "error"; error: E }> {

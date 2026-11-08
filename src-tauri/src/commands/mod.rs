@@ -14,6 +14,7 @@ pub mod play;
 pub mod recap;
 pub mod secrets;
 pub mod sources;
+pub mod time_to_beat;
 pub mod tracking;
 
 use serde::Serialize;
@@ -110,6 +111,10 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         recap::session_discard,
         recap::window_reveal,
         recap::notify,
+        time_to_beat::time_to_beat_get,
+        time_to_beat::time_to_beat_refresh,
+        time_to_beat::time_to_beat_pick,
+        time_to_beat::time_to_beat_set_manual,
         collections::collection_add_games,
         sources::library_sync,
         sources::sources_status,
