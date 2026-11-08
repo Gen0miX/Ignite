@@ -94,8 +94,10 @@ Tout est en **lecture seule** : Ignite liste et lit les fichiers, ne les déplac
 
 ## Battle.net
 
-- Jeux installés : `C:\ProgramData\Battle.net\Agent\product.db` (protobuf). Solution de repli plus simple : les clés de désinstallation dans le registre (`HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*`, `Publisher = Blizzard Entertainment`).
-- Lancement : `battlenet://<ProductCode>` (ex. `Fen` pour Diablo IV, à vérifier), ou `Battle.net.exe --exec="launch <code>"`.
+- Jeux installés : `C:\ProgramData\Battle.net\Agent\product.db` (protobuf), lu en premier, en lecture seule. **Vérifié** sur la machine de l'utilisateur (Battle.net 2.53, novembre 2026) : message `Database`, champ 1 répété = `ProductInstall { 1 uid, 2 product_code, 3 settings { 1 install_path (avec des `/`), 13 sous-dossier du jeu (`_forever_`) }, 4 état { 1 base { 1 installé } }, 6 famille }`. Les produits `agent`, `bna` (l'app) et `bdk` sont ignorés. Le fichier ne donne pas le nom du jeu : table de codes connus (`wowf` → World of Warcraft Forever), sinon le nom du dossier.
+- Les clés de désinstallation (`Publisher = Blizzard Entertainment`) complètent la liste, sans doublon (même uid ou même dossier). Elles ne suffisent pas : WoW Forever n'en a pas.
+- Lancement : `battlenet://<code>` (`Fen` pour Diablo IV d'après la table de codes ; pour un code inconnu, le code de `product.db`, ex. `battlenet://wowf`, **à vérifier**). Autre piste : `Battle.net.exe --exec="launch <code>"`.
+- Suivi du temps : processus lancés depuis le dossier du jeu (`World of Warcraft\_forever_`).
 - Pas d'API publique pour le temps ni les succès : suivi local et objectifs perso.
 
 ## EA app / Ubisoft Connect / Riot / Xbox

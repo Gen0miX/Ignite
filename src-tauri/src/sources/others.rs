@@ -127,6 +127,221 @@ fn uid_of(uninstall: &str) -> Option<String> {
     )
 }
 
+// Minimal protobuf reading for `product.db` (only the fields we need).
+
+fn pb_varint(b: &[u8], i: &mut usize) -> Option<u64> {
+    let mut value = 0u64;
+    for shift in (0..64).step_by(7) {
+        let byte = *b.get(*i)?;
+        *i += 1;
+        value |= u64::from(byte & 0x7F) << shift;
+        if byte < 0x80 {
+            return Some(value);
+        }
+    }
+    None
+}
+
+enum PbValue<'a> {
+    Int(u64),
+    Bytes(&'a [u8]),
+}
+
+type PbFields<'a> = Vec<(u64, PbValue<'a>)>;
+
+/// Top-level fields of a protobuf message; `None` if it is malformed.
+fn pb_fields(b: &[u8]) -> Option<PbFields<'_>> {
+    let mut i = 0;
+    let mut out = Vec::new();
+    while i < b.len() {
+        let key = pb_varint(b, &mut i)?;
+        let value = match key & 7 {
+            0 => PbValue::Int(pb_varint(b, &mut i)?),
+            2 => {
+                let len = usize::try_from(pb_varint(b, &mut i)?).ok()?;
+                let end = i.checked_add(len).filter(|e| *e <= b.len())?;
+                let v = &b[i..end];
+                i = end;
+                PbValue::Bytes(v)
+            }
+            1 => {
+                i += 8;
+                PbValue::Int(0)
+            }
+            5 => {
+                i += 4;
+                PbValue::Int(0)
+            }
+            _ => return None,
+        };
+        if i > b.len() {
+            return None;
+        }
+        out.push((key >> 3, value));
+    }
+    Some(out)
+}
+
+fn pb_bytes<'a>(fields: &[(u64, PbValue<'a>)], n: u64) -> Option<&'a [u8]> {
+    fields.iter().find_map(|(f, v)| match v {
+        PbValue::Bytes(b) if *f == n => Some(*b),
+        _ => None,
+    })
+}
+
+fn pb_str(fields: &[(u64, PbValue<'_>)], n: u64) -> Option<String> {
+    pb_bytes(fields, n)
+        .and_then(|b| std::str::from_utf8(b).ok())
+        .map(str::to_string)
+        .filter(|s| !s.is_empty())
+}
+
+fn pb_int(fields: &[(u64, PbValue<'_>)], n: u64) -> Option<u64> {
+    fields.iter().find_map(|(f, v)| match v {
+        PbValue::Int(x) if *f == n => Some(*x),
+        _ => None,
+    })
+}
+
+/// A product installed through the Battle.net app (`product.db`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct BnetInstall {
+    pub uid: String,
+    pub product_code: String,
+    pub install_path: String,
+    /// The game's own folder inside `install_path` (`_forever_`, `_retail_`).
+    pub subfolder: Option<String>,
+    pub installed: bool,
+}
+
+/// Products of the Battle.net app itself, not games.
+const BNET_TOOLS: &[&str] = &["agent", "bna", "bdk", "bdko", "battle.net"];
+
+/// Reads `%ProgramData%\Battle.net\Agent\product.db`, a protobuf `Database`:
+/// field 1 = `ProductInstall { 1 uid, 2 product_code, 3 settings { 1
+/// install_path, 13 subfolder }, 4 state { 1 base { 1 installed } } }`.
+/// Checked on the user's PC (Battle.net 2.53, November 2026).
+pub fn parse_product_db(bytes: &[u8]) -> Vec<BnetInstall> {
+    let Some(db) = pb_fields(bytes) else {
+        return vec![];
+    };
+    db.iter()
+        .filter_map(|(f, v)| match v {
+            PbValue::Bytes(b) if *f == 1 => pb_fields(b),
+            _ => None,
+        })
+        .filter_map(|p| {
+            let uid = pb_str(&p, 1)?;
+            let product_code = pb_str(&p, 2).unwrap_or_else(|| uid.clone());
+            if BNET_TOOLS.contains(&uid.to_lowercase().as_str())
+                || BNET_TOOLS.contains(&product_code.to_lowercase().as_str())
+            {
+                return None;
+            }
+            let settings = pb_fields(pb_bytes(&p, 3)?)?;
+            let install_path = pb_str(&settings, 1)?.replace('/', "\\");
+            let installed = pb_bytes(&p, 4)
+                .and_then(pb_fields)
+                .and_then(|state| pb_bytes(&state, 1).and_then(pb_fields))
+                .and_then(|base| pb_int(&base, 1))
+                .is_some_and(|v| v == 1);
+            Some(BnetInstall {
+                uid,
+                product_code,
+                install_path,
+                subfolder: pb_str(&settings, 13),
+                installed,
+            })
+        })
+        .collect()
+}
+
+pub fn product_db_path() -> Option<std::path::PathBuf> {
+    let pd = std::env::var_os("PROGRAMDATA")?;
+    Some(
+        std::path::PathBuf::from(pd)
+            .join("Battle.net")
+            .join("Agent")
+            .join("product.db"),
+    )
+}
+
+/// `product.db` has no game names: known product codes, else the folder name.
+fn bnet_title(install: &BnetInstall) -> String {
+    let known = match install.product_code.to_lowercase().as_str() {
+        "wow" => Some("World of Warcraft"),
+        "wowf" => Some("World of Warcraft Forever"),
+        "wow_classic" => Some("World of Warcraft Classic"),
+        "wow_classic_era" => Some("World of Warcraft Classic Era"),
+        "fenris" => Some("Diablo IV"),
+        "diablo3" | "d3" => Some("Diablo III"),
+        "osi" => Some("Diablo II: Resurrected"),
+        "pro" | "prometheus" => Some("Overwatch 2"),
+        "hs_beta" => Some("Hearthstone"),
+        "heroes" => Some("Heroes of the Storm"),
+        "s2" => Some("StarCraft II"),
+        "s1" => Some("StarCraft Remastered"),
+        "w3" => Some("Warcraft III: Reforged"),
+        _ => None,
+    };
+    known.map(str::to_string).unwrap_or_else(|| {
+        Path::new(&install.install_path)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| install.product_code.clone())
+    })
+}
+
+/// Games installed through the Battle.net app, from `product.db`.
+pub fn battlenet_product_games(installs: &[BnetInstall]) -> Vec<DetectedGame> {
+    installs
+        .iter()
+        .filter(|i| i.installed)
+        .map(|i| {
+            let folder = match &i.subfolder {
+                Some(sub) => Path::new(&i.install_path).join(sub),
+                None => Path::new(&i.install_path).to_path_buf(),
+            };
+            let folder = folder.display().to_string();
+            let code = battlenet_code(&i.product_code)
+                .map(str::to_string)
+                .unwrap_or_else(|| i.product_code.clone());
+            DetectedGame {
+                external_id: i.uid.clone(),
+                title: bnet_title(i),
+                installed: true,
+                launch_uri: Some(format!("battlenet://{code}")),
+                process_matchers: matchers_json(&[ProcessMatcher::PathPrefix(folder.clone())]),
+                install_path: Some(folder),
+                ..Default::default()
+            }
+        })
+        .collect()
+}
+
+/// `product.db` first (it lists every install, even those without an
+/// uninstall entry, like WoW Forever), then uninstall entries it misses.
+pub fn battlenet_all(installs: &[BnetInstall], entries: &[UninstallEntry]) -> Vec<DetectedGame> {
+    let mut games = battlenet_product_games(installs);
+    let same = |a: &str, b: &str| {
+        a.trim_end_matches('\\')
+            .eq_ignore_ascii_case(b.trim_end_matches('\\'))
+    };
+    for g in battlenet_games(entries) {
+        let covered = installs.iter().any(|i| {
+            i.uid.eq_ignore_ascii_case(&g.external_id)
+                || g.install_path
+                    .as_deref()
+                    .is_some_and(|gp| same(gp, &i.install_path))
+        });
+        if !covered {
+            games.push(g);
+        }
+    }
+    games.sort_by(|a, b| a.external_id.cmp(&b.external_id));
+    games
+}
+
 pub fn battlenet_games(entries: &[UninstallEntry]) -> Vec<DetectedGame> {
     let mut games: Vec<DetectedGame> = entries
         .iter()
@@ -285,7 +500,14 @@ impl OtherSource {
         let entries = crate::sources::uninstall::read_all();
         match self.kind {
             SourceKind::Riot => riot_games(&entries, riot_client().as_deref()),
-            SourceKind::Battlenet => battlenet_games(&entries),
+            SourceKind::Battlenet => {
+                // Read only: a plain file read, the file is never written.
+                let installs = product_db_path()
+                    .and_then(|p| std::fs::read(p).ok())
+                    .map(|b| parse_product_db(&b))
+                    .unwrap_or_default();
+                battlenet_all(&installs, &entries)
+            }
             SourceKind::Ea => ea_games(&entries),
             SourceKind::Ubisoft => ubisoft_games(&ubisoft_installs(), &entries),
             _ => Vec::new(),
@@ -504,6 +726,81 @@ mod tests {
                     .collect::<Vec<_>>()
             );
         }
+    }
+
+    #[test]
+    fn battlenet_product_db_lists_games_without_uninstall_entry() {
+        // Tiny protobuf writer, same layout as the real product.db.
+        fn field(n: u64, body: &[u8]) -> Vec<u8> {
+            let mut out = vec![((n << 3) | 2) as u8, body.len() as u8];
+            out.extend_from_slice(body);
+            out
+        }
+        fn int(n: u64, v: u8) -> Vec<u8> {
+            vec![(n << 3) as u8, v]
+        }
+        fn product(uid: &str, code: &str, path: &str, sub: Option<&str>, installed: u8) -> Vec<u8> {
+            let mut settings = field(1, path.as_bytes());
+            settings.extend(field(2, b"eu"));
+            settings.extend(int(3, 2));
+            if let Some(sub) = sub {
+                settings.extend(field(13, sub.as_bytes()));
+            }
+            let base = [int(1, installed), int(2, 1), field(7, b"1.60.1")].concat();
+            let state = field(1, &base);
+            let mut p = field(1, uid.as_bytes());
+            p.extend(field(2, code.as_bytes()));
+            p.extend(field(3, &settings));
+            p.extend(field(4, &state));
+            p.extend(field(6, b"wow"));
+            field(1, &p)
+        }
+        let db = [
+            product("agent", "agent", "C:/ProgramData/Battle.net/Agent", None, 1),
+            product(
+                "battle.net",
+                "bna",
+                "C:/Program Files (x86)/Battle.net",
+                None,
+                1,
+            ),
+            product(
+                "wowf",
+                "wowf",
+                "C:/Program Files (x86)/World of Warcraft",
+                Some("_forever_"),
+                1,
+            ),
+            product("fenris", "fenris", "D:/Games/Diablo IV", None, 0),
+        ]
+        .concat();
+
+        let installs = parse_product_db(&db);
+        assert_eq!(installs.len(), 2, "the app itself is skipped");
+        assert_eq!(
+            installs[0].install_path,
+            r"C:\Program Files (x86)\World of Warcraft"
+        );
+        assert!(!installs[1].installed);
+
+        let mut d4 = entry("Diablo IV", "Diablo IV®", "Blizzard Entertainment");
+        d4.install_location = Some(r"D:\Games\Diablo IV".into());
+        d4.uninstall_string = Some(
+            r#""C:\ProgramData\Battle.net\Agent\Blizzard Uninstaller.exe" --uid=fenris"#.into(),
+        );
+        let games = battlenet_all(&installs, &[d4]);
+        let wow = games.iter().find(|g| g.external_id == "wowf").unwrap();
+        assert_eq!(wow.title, "World of Warcraft Forever");
+        assert_eq!(wow.launch_uri.as_deref(), Some("battlenet://wowf"));
+        assert_eq!(
+            wow.install_path.as_deref(),
+            Some(r"C:\Program Files (x86)\World of Warcraft\_forever_")
+        );
+        // Diablo IV is not installed per product.db, and its uninstall entry
+        // is the same install: no duplicate either way.
+        assert_eq!(games.len(), 1);
+
+        assert!(parse_product_db(b"\xff\xff garbage").is_empty());
     }
 
     #[test]
