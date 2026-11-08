@@ -4,6 +4,7 @@
 pub mod achievements;
 pub mod app;
 pub mod artwork;
+pub mod captures;
 pub mod collections;
 pub mod emulators;
 pub mod home;
@@ -133,6 +134,18 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         play::goal_rename,
         play::goal_delete,
         achievements::achievements_get,
+        artwork::artwork_use_store_image,
+        captures::captures_list,
+        captures::captures_scan,
+        captures::capture_set_caption,
+        captures::capture_use_as_hero,
+        captures::capture_copy,
+        captures::capture_reveal,
+        captures::capture_open,
+        captures::capture_open_folder,
+        captures::capture_folders_list,
+        captures::capture_folder_add,
+        captures::capture_folder_remove,
     ])
 }
 

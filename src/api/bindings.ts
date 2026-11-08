@@ -137,6 +137,29 @@ export const commands = {
 	goalRename: (id: string, title: string) => typedError<null, CommandError>(__TAURI_INVOKE("goal_rename", { id, title })),
 	goalDelete: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("goal_delete", { id })),
 	achievementsGet: (gameId: string, refresh: boolean) => typedError<AchievementsView_Serialize, CommandError>(__TAURI_INVOKE("achievements_get", { gameId, refresh })),
+	/**
+	 *  "Images officielles": a store screenshot becomes the game's hero (copied
+	 *  into the image cache like any other artwork).
+	 */
+	artworkUseStoreImage: (gameId: string, url: string) => typedError<GameDetail_Serialize, CommandError>(__TAURI_INVOKE("artwork_use_store_image", { gameId, url })),
+	capturesList: (gameId: string) => typedError<CapturesView_Serialize, CommandError>(__TAURI_INVOKE("captures_list", { gameId })),
+	capturesScan: () => __TAURI_INVOKE<void>("captures_scan"),
+	captureSetCaption: (id: string, caption: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("capture_set_caption", { id, caption })),
+	/**
+	 *  "Utiliser comme fond du jeu": a copy goes into the image cache as the
+	 *  game's hero; the capture itself is left alone.
+	 */
+	captureUseAsHero: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("capture_use_as_hero", { id })),
+	captureCopy: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("capture_copy", { id })),
+	captureReveal: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("capture_reveal", { id })),
+	/**  Opens the capture with the default app of Windows. */
+	captureOpen: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("capture_open", { id })),
+	/**  "Ouvrir le dossier": the folder holding this capture. */
+	captureOpenFolder: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("capture_open_folder", { id })),
+	captureFoldersList: () => typedError<CaptureFolder_Serialize[], CommandError>(__TAURI_INVOKE("capture_folders_list")),
+	/**  Adds a folder for one game, or for all games (`game_id` = `None`). */
+	captureFolderAdd: (path: string, gameId: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("capture_folder_add", { path, gameId })),
+	captureFolderRemove: (path: string) => typedError<null, CommandError>(__TAURI_INVOKE("capture_folder_remove", { path })),
 };
 
 /* Types */
@@ -323,6 +346,95 @@ export type CandidateState =
 { kind: "imported"; gameId: string } | 
 /**  Looks like a game already in the library on another platform. */
 { kind: "duplicate"; gameId: string; title: string };
+
+export type Capture = Capture_Serialize | Capture_Deserialize;
+
+export type CaptureFolder = CaptureFolder_Serialize | CaptureFolder_Deserialize;
+
+export type CaptureFolder_Deserialize = {
+	path: string,
+	/**  `None` = "all games": files are matched to games by name. */
+	gameId?: string | null,
+	gameTitle?: string | null,
+};
+
+export type CaptureFolder_Serialize = {
+	path: string,
+	/**  `None` = "all games": files are matched to games by name. */
+	gameId: string | null,
+	gameTitle: string | null,
+};
+
+export type CaptureItem = CaptureItem_Serialize | CaptureItem_Deserialize;
+
+export type CaptureItem_Deserialize = {
+	capture: Capture_Deserialize,
+	/**  Session the capture was taken in (its time is within the session). */
+	session?: CaptureSession | null,
+};
+
+export type CaptureItem_Serialize = {
+	capture: Capture_Serialize,
+	/**  Session the capture was taken in (its time is within the session). */
+	session: CaptureSession | null,
+};
+
+export type CaptureKind = "image" | "video";
+
+export type CaptureSession = {
+	id: string,
+	startedAt: string,
+	endedAt: string,
+	durationSeconds: number,
+};
+
+export type CaptureSource = "steam" | "gamebar" | "folder";
+
+export type Capture_Deserialize = {
+	id: string,
+	gameId: string,
+	source: CaptureSource,
+	path: string,
+	kind: CaptureKind,
+	takenAt: string,
+	width?: number | null,
+	height?: number | null,
+	/**  File size in bytes (capped at 4 GB). */
+	bytes: number,
+	caption?: string | null,
+	thumbPath?: string | null,
+};
+
+export type Capture_Serialize = {
+	id: string,
+	gameId: string,
+	source: CaptureSource,
+	path: string,
+	kind: CaptureKind,
+	takenAt: string,
+	width: number | null,
+	height: number | null,
+	/**  File size in bytes (capped at 4 GB). */
+	bytes: number,
+	caption: string | null,
+	thumbPath: string | null,
+};
+
+export type CapturesView = CapturesView_Serialize | CapturesView_Deserialize;
+
+export type CapturesView_Deserialize = {
+	items: CaptureItem_Deserialize[],
+	/**  Folders added for this game or for all games. */
+	folders: CaptureFolder_Deserialize[],
+	scanning: boolean,
+};
+
+export type CapturesView_Serialize = {
+	items: CaptureItem_Serialize[],
+	/**  Folders added for this game or for all games. */
+	folders: CaptureFolder_Serialize[],
+	scanning: boolean,
+};
 
 export type Collection = Collection_Serialize | Collection_Deserialize;
 
@@ -1087,6 +1199,8 @@ export type SessionRecap_Deserialize = {
 	resumeNote?: string | null,
 	rating?: number | null,
 	status: GameStatus,
+	/**  Captures taken during the session (newest first). */
+	captures: Capture_Deserialize[],
 };
 
 export type SessionRecap_Serialize = {
@@ -1109,6 +1223,8 @@ export type SessionRecap_Serialize = {
 	resumeNote: string | null,
 	rating: number | null,
 	status: GameStatus,
+	/**  Captures taken during the session (newest first). */
+	captures: Capture_Serialize[],
 };
 
 export type SgdbGameOption = SgdbGameOption_Serialize | SgdbGameOption_Deserialize;

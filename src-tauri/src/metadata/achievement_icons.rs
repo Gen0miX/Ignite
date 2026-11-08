@@ -20,7 +20,7 @@ fn allowed(url: &str) -> bool {
 }
 
 /// FNV-1a 64: stable across runs and Rust versions (unlike `DefaultHasher`).
-fn file_stem(url: &str) -> String {
+pub(crate) fn file_stem(url: &str) -> String {
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
     for b in url.bytes() {
         hash ^= u64::from(b);

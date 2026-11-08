@@ -42,6 +42,7 @@ pub fn run() {
     }
     app.plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec![tray::MINIMIZED_ARG]),
@@ -82,6 +83,8 @@ pub fn run() {
                 if let Err(e) = commands::sources::run_sync(&handle) {
                     tracing::warn!(error = %e, "startup sync failed");
                 }
+                // After the sync, so new games get their captures.
+                commands::captures::scan_now(&handle);
             });
             Ok(())
         })

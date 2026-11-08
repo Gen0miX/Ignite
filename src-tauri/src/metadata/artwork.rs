@@ -53,6 +53,65 @@ pub fn download_named(dir: &Path, name: &str, url: &str) -> AppResult<PathBuf> {
     Ok(path)
 }
 
+/// Largest capture accepted as a background (4K PNGs are big).
+const MAX_LOCAL_IMAGE_BYTES: u64 = 64 * 1024 * 1024;
+
+/// Uses `path` (already in the game's cache folder) for `slot`, and deletes
+/// the image it replaces when that one is ours.
+pub fn replace_slot(
+    conn: &rusqlite::Connection,
+    dir: &Path,
+    game_id: &str,
+    slot: &str,
+    path: &Path,
+    provider: &str,
+    source_url: Option<String>,
+) -> AppResult<()> {
+    let previous = artwork::for_game(conn, game_id)?.remove(slot);
+    artwork::upsert(
+        conn,
+        &ArtworkRow {
+            game_id: game_id.to_string(),
+            kind: slot.to_string(),
+            local_path: path.display().to_string(),
+            provider: Some(provider.to_string()),
+            source_url,
+        },
+    )?;
+    if let Some(old) = previous.filter(|p| Path::new(p) != path) {
+        if Path::new(&old).starts_with(dir) {
+            let _ = std::fs::remove_file(old);
+        }
+    }
+    Ok(())
+}
+
+/// Copies a local image (a capture) into the cache and uses it for `slot`,
+/// like "Changer les images". The original file is only read.
+pub fn set_from_file(
+    conn: &rusqlite::Connection,
+    data_dir: &Path,
+    game_id: &str,
+    slot: &str,
+    source: &Path,
+) -> AppResult<PathBuf> {
+    let mut bytes = Vec::new();
+    std::fs::File::open(source)?
+        .take(MAX_LOCAL_IMAGE_BYTES)
+        .read_to_end(&mut bytes)?;
+    let ext = image_extension(&bytes).ok_or_else(|| AppError::Invalid("not an image".into()))?;
+    let dir = cache_root(data_dir).join(game_id);
+    std::fs::create_dir_all(&dir)?;
+    // A new name each time, so the webview never shows a cached old image.
+    let name = format!("{slot}-capture-{}", &crate::db::new_id()[..8]);
+    let path = dir.join(format!("{name}.{ext}"));
+    let tmp = dir.join(format!("{name}.{ext}.part"));
+    std::fs::write(&tmp, &bytes)?;
+    std::fs::rename(&tmp, &path)?;
+    replace_slot(conn, &dir, game_id, slot, &path, "capture", None)?;
+    Ok(path)
+}
+
 fn download(url: &str) -> AppResult<Vec<u8>> {
     let mut response = http::agent()
         .get(url)
@@ -193,6 +252,31 @@ mod tests {
         assert_eq!(image_extension(b"RIFF\0\0\0\0WEBPVP8"), Some("webp"));
         assert_eq!(image_extension(b"<html>"), None);
         assert_eq!(image_extension(b""), None);
+    }
+
+    #[test]
+    fn a_capture_becomes_the_hero_without_touching_the_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let db = Db::open_in_memory().unwrap();
+        let conn = db.conn();
+        let g = games::insert(&conn, "Endless Space 2").unwrap();
+        let shot = tmp.path().join("20251029112231_1.jpg");
+        std::fs::write(&shot, JPEG).unwrap();
+
+        let first = set_from_file(&conn, tmp.path(), &g.id, "hero", &shot).unwrap();
+        assert!(first.starts_with(cache_root(tmp.path()).join(&g.id)));
+        assert_eq!(std::fs::read(&first).unwrap(), JPEG);
+        let second = set_from_file(&conn, tmp.path(), &g.id, "hero", &shot).unwrap();
+        assert!(!first.exists(), "the replaced copy is ours: deleted");
+        assert_eq!(
+            artwork::for_game(&conn, &g.id).unwrap().get("hero"),
+            Some(&second.display().to_string())
+        );
+        assert_eq!(std::fs::read(&shot).unwrap(), JPEG, "original untouched");
+
+        let text = tmp.path().join("notes.txt");
+        std::fs::write(&text, b"hello").unwrap();
+        assert!(set_from_file(&conn, tmp.path(), &g.id, "hero", &text).is_err());
     }
 
     #[test]

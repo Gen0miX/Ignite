@@ -111,6 +111,8 @@ pub struct SessionRecap {
     pub resume_note: Option<String>,
     pub rating: Option<u8>,
     pub status: GameStatus,
+    /// Captures taken during the session (newest first).
+    pub captures: Vec<crate::db::repo::screenshots::Capture>,
 }
 
 fn parse(t: &str) -> AppResult<DateTime<Utc>> {
@@ -234,6 +236,10 @@ pub fn build(
         .filter(|g| g.done_at.is_none())
         .collect();
     let mut art = artwork::for_game(conn, &game.id)?;
+    let captures = crate::db::repo::screenshots::list_for_game(conn, &game.id)?
+        .into_iter()
+        .filter(|c| parse(&c.taken_at).is_ok_and(|t| start <= t && t <= end))
+        .collect();
 
     Ok(SessionRecap {
         active_seconds: session.duration_seconds,
@@ -253,6 +259,7 @@ pub fn build(
         resume_note: games::resume_note(conn, &game.id)?.map(|(n, _)| n),
         rating: sessions::rating(conn, session_id)?,
         status: game.status,
+        captures,
         game: RecapGame {
             id: game.id,
             title: game.title,
@@ -382,6 +389,8 @@ pub fn session_written(app: &AppHandle, session_id: &str, game_id: &str) {
     if has_achievements {
         set_syncing(session_id, true);
     }
+    // Captures taken during the session show in the recap.
+    super::captures::scan_now(app);
     let _ = app.emit(RECAP_READY_EVENT, payload.clone());
     if !has_achievements {
         return;

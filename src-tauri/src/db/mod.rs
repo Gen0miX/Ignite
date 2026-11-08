@@ -25,6 +25,7 @@ fn migrations() -> Migrations<'static> {
         M::up(include_str!(
             "../../migrations/0009_achievements_hidden.sql"
         )),
+        M::up(include_str!("../../migrations/0010_screenshots.sql")),
     ])
 }
 
@@ -116,6 +117,8 @@ mod tests {
                 "launch_profiles",
                 "play_sessions",
                 "playtime_snapshots",
+                "screenshot_folders",
+                "screenshots",
                 "session_idle_periods",
                 "settings",
                 "tags",
@@ -134,7 +137,7 @@ mod tests {
             .conn()
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .unwrap();
-        assert_eq!(version, 9);
+        assert_eq!(version, 10);
         drop(db);
         let _ = std::fs::remove_dir_all(dir);
     }

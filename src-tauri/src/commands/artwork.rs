@@ -334,6 +334,43 @@ pub async fn artwork_set(
     load_detail(&app.state::<Db>(), &game_id)
 }
 
+/// Store images (Steam, IGDB) that can become the game's background.
+fn is_store_image(url: &str) -> bool {
+    let Some(rest) = url.strip_prefix("https://") else {
+        return false;
+    };
+    let host = rest.split(['/', '?', '#']).next().unwrap_or("");
+    host.ends_with(".steamstatic.com") || host == "images.igdb.com"
+}
+
+/// "Images officielles": a store screenshot becomes the game's hero (copied
+/// into the image cache like any other artwork).
+#[tauri::command]
+#[specta::specta]
+pub async fn artwork_use_store_image(
+    app: AppHandle,
+    game_id: String,
+    url: String,
+) -> CommandResult<GameDetail> {
+    if !is_store_image(&url) {
+        return Err(AppError::Invalid("only store images can be used".into()).into());
+    }
+    let app2 = app.clone();
+    let id = game_id.clone();
+    tauri::async_runtime::spawn_blocking(move || -> AppResult<()> {
+        let db = app2.state::<Db>();
+        games::get(&db.conn(), &id)?;
+        let dir = cache_root(&app2.state::<AppPaths>().data_dir).join(&id);
+        let name = format!("hero-store-{}", &crate::db::new_id()[..8]);
+        let path = download_named(&dir, &name, &url)?;
+        let conn = db.conn();
+        crate::metadata::artwork::replace_slot(&conn, &dir, &id, "hero", &path, "store", Some(url))
+    })
+    .await
+    .map_err(|e| AppError::Invalid(format!("artwork task failed: {e}")))??;
+    load_detail(&app.state::<Db>(), &game_id)
+}
+
 // --- Automatic fill after a sync ---------------------------------------------
 
 /// Pause between two games, to stay gentle with SteamGridDB.
@@ -521,6 +558,20 @@ mod tests {
             name: name.into(),
             release_date: None,
         }
+    }
+
+    #[test]
+    fn only_store_images_become_backgrounds() {
+        assert!(is_store_image(
+            "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1/ss_a.1920x1080.jpg"
+        ));
+        assert!(is_store_image(
+            "https://images.igdb.com/igdb/image/upload/t_1080p/a.jpg"
+        ));
+        assert!(!is_store_image(
+            "https://evil.example/x.steamstatic.com/a.jpg"
+        ));
+        assert!(!is_store_image("http://cdn.akamai.steamstatic.com/a.jpg"));
     }
 
     #[test]

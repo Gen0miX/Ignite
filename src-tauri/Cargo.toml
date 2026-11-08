@@ -36,6 +36,8 @@ specta-typescript = "=0.0.13"
 tauri-plugin-autostart = "2.7.0"
 tauri-plugin-notification = "2"
 tauri-plugin-single-instance = "2"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+tauri-plugin-clipboard-manager = "2"
 
 [profile.dev]
 incremental = true

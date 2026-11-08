@@ -53,6 +53,7 @@ const recap: SessionRecap = {
   resumeNote: null,
   rating: null,
   status: 'todo',
+  captures: [],
 };
 
 vi.mock('../api/client', async (importOriginal) => {

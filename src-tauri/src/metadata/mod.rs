@@ -8,3 +8,4 @@ pub mod news;
 pub mod retroachievements;
 pub mod steam_store;
 pub mod steamgriddb;
+pub mod thumbs;
