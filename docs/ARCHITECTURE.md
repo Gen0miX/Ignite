@@ -202,6 +202,7 @@ Pour chaque `game_source` :
 - **Zone de notification** (`tray.rs`) : infobulle et première ligne du menu = jeu en cours et son minuteur (rafraîchis toutes les 15 s) ; menu Afficher / Mode Canapé / Quitter. Fermer la fenêtre la cache (réglage `app.close_to_tray`, actif par défaut) pour que le suivi continue.
 - **Démarrer avec Windows** : `tauri-plugin-autostart` (clé `Run` du registre) avec `--minimized` ; la fenêtre est créée invisible et ne s'affiche pas dans ce cas.
 - **Installeur** : NSIS, installation par utilisateur (sans droits administrateur), en français.
+- **Dossier des données** : `%APPDATA%\com.ignite.app\` (base `ignite.db`, `artwork\`) et `%LOCALAPPDATA%\com.ignite.app\` (données WebView). Au démarrage, `legacy.rs` déplace une seule fois les dossiers de l'ancien identifiant `com.ludotheque.app` et renomme `ludotheque.db` (avec ses `-wal`/`-shm`) ; si un fichier est verrouillé (ancienne version encore ouverte), l'ancien dossier reste utilisé et le déplacement est retenté au lancement suivant.
 
 ## 5 quater. Navigation et actions sur les jeux
 

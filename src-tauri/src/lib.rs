@@ -3,6 +3,7 @@ pub mod db;
 pub mod error;
 pub mod http;
 pub mod launcher;
+pub mod legacy;
 pub mod library;
 pub mod metadata;
 pub mod models;
@@ -28,6 +29,9 @@ pub fn run() {
     #[cfg(debug_assertions)]
     commands::export_bindings();
 
+    // Before the window (WebView data) and the database open.
+    let kept_legacy_dir = legacy::migrate();
+
     #[allow(unused_mut)]
     let mut app = tauri::Builder::default();
     // A second launch (shortcut, autostart) shows the running Ignite instead
@@ -51,8 +55,11 @@ pub fn run() {
         .setup(move |app| {
             builder.mount_events(app);
 
-            let data_dir = app.path().app_data_dir()?;
-            let db_path = data_dir.join(db::DB_FILE_NAME);
+            let data_dir = match kept_legacy_dir {
+                Some(dir) => dir,
+                None => app.path().app_data_dir()?,
+            };
+            let db_path = legacy::db_path(&data_dir);
             let database = db::Db::open(&db_path)?;
             tracing::info!(path = %db_path.display(), "database ready");
 

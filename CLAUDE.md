@@ -13,7 +13,7 @@ Lis dans cet ordre avant de coder :
 ## Stack (décidée)
 
 - **Tauri 2** (backend Rust) + **React 19 + TypeScript + Vite** (frontend)
-- **SQLite** via `rusqlite` (migrations embarquées dans `src-tauri/migrations/`, fichier `%APPDATA%\com.ludotheque.app\ludotheque.db`)
+- **SQLite** via `rusqlite` (migrations embarquées dans `src-tauri/migrations/`, fichier `%APPDATA%\com.ignite.app\ignite.db`)
 - État frontend : **TanStack Query** pour les données backend, **Zustand** pour l'état UI
 - Style : CSS Modules + variables CSS de `design/tokens.css` (pas de Tailwind, pas de librairie de composants lourde)
 - Icônes : `lucide-react` (trait 2 px, cohérent avec les maquettes)
@@ -40,9 +40,9 @@ Versions épinglées à connaître : `specta`/`tauri-specta` `=2.0.0-rc.26` et `
 `rusqlite` 0.40 (contrainte de `rusqlite_migration` 2.6) ; TypeScript 6.0 (typescript-eslint ne supporte pas TS 7) ;
 secrets via `keyring-core` + `windows-native-keyring-store` (recommandé par keyring 4 pour une app).
 
-**Attention, base de données en dev** : une instance lancée par les outils de Claude (Bash/PowerShell de l'app Claude) voit son `%APPDATA%` **virtualisé** par Windows vers `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\com.ludotheque.app\`. Pour tester sur la vraie base de l'utilisateur, lance `pnpm tauri dev` depuis le panneau Terminal (non virtualisé), et lis la base réelle depuis ce même terminal. L'app installée n'est pas concernée.
+**Attention, base de données en dev** : une instance lancée par les outils de Claude (Bash/PowerShell de l'app Claude) voit son `%APPDATA%` **virtualisé** par Windows vers `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\com.ignite.app\`. Pour tester sur la vraie base de l'utilisateur, lance `pnpm tauri dev` depuis le panneau Terminal (non virtualisé), et lis la base réelle depuis ce même terminal. L'app installée n'est pas concernée.
 
-Nom : l'app s'appelle **Ignite** (`productName`, textes UI, logo `design/logo/ignite.svg` → `pnpm tauri icon design/logo/ignite.svg`). L'identifiant `com.ludotheque.app` et le nom du crate restent inchangés : ils fixent l'emplacement de la base et du coffre, ne les renomme pas.
+Nom : l'app s'appelle **Ignite** (`productName`, textes UI, logo `design/logo/ignite.svg` → `pnpm tauri icon design/logo/ignite.svg`). L'identifiant est `com.ignite.app` (base `ignite.db`) : `src-tauri/src/legacy.rs` déplace au démarrage les données de l'ancien `com.ludotheque.app` / `ludotheque.db`. Le nom du crate (`ludotheque`) et le service du coffre (`ludotheque`) restent inchangés : renommer le service ferait perdre les clés enregistrées.
 
 (Mets à jour cette section si tu changes l'outillage.)
 

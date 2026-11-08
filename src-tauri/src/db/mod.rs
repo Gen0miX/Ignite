@@ -10,7 +10,7 @@ use rusqlite_migration::{Migrations, M};
 
 use crate::error::AppResult;
 
-pub const DB_FILE_NAME: &str = "ludotheque.db";
+pub const DB_FILE_NAME: &str = "ignite.db";
 
 fn migrations() -> Migrations<'static> {
     Migrations::new(vec![
