@@ -79,7 +79,7 @@ Battle.net, EA app, Ubisoft Connect et Riot ne lisent que les **jeux installés*
 ## Icônes et succès cachés
 
 - **Succès cachés** : `GetSchemaForGame` renvoie `hidden` (0/1) pour chaque succès Steam ; il est gardé dans `achievements.hidden` (migration 0009). GOG et RetroAchievements n'en ont pas.
-- **Icônes** : jamais affichées en lien direct. Elles sont copiées dans `artwork/achievements/` (nom = empreinte FNV-1a de l'URL), en arrière-plan à l'ouverture de l'onglet Succès et après la resynchronisation de fin de session, puis l'événement `achievements-icons-ready` recharge la liste. Hôtes acceptés : `steamcdn-a.akamaihd.net`, `*.steamstatic.com`, `images.gog.com`, `*.gog-statics.com`, `media.retroachievements.org`. Les succès verrouillés sont grisés en CSS : pas besoin des icônes `icongray`.
+- **Icônes** : jamais affichées en lien direct. Elles sont copiées dans `artwork/achievements/` (nom = empreinte FNV-1a de l'URL), en arrière-plan à l'ouverture de l'onglet Succès et après la resynchronisation de fin de session, puis l'événement `achievements-icons-ready` recharge la liste. Hôtes acceptés : `steamcdn-a.akamaihd.net`, `*.steamstatic.com`, `images.gog.com`, `*.gog-statics.com`, `media.retroachievements.org`. Un succès verrouillé montre un cadenas : seules les icônes des succès débloqués sont téléchargées, et `icongray` n'est pas utilisé.
 
 ## Battle.net
 

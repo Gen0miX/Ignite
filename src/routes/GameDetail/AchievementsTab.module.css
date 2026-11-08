@@ -251,11 +251,6 @@
   color: var(--color-muted);
 }
 
-.iconLocked img {
-  filter: grayscale(1);
-  opacity: 0.5;
-}
-
 .b_ultra {
   border-color: var(--rarity-ultra);
 }

@@ -136,6 +136,7 @@ static FETCHING: std::sync::Mutex<Option<std::collections::HashSet<String>>> =
     std::sync::Mutex::new(None);
 
 /// Replaces remote icon URLs by their cached copy; returns the URLs to fetch.
+/// Locked achievements show a padlock, so only unlocked icons are kept.
 fn with_local_icons(
     app: &AppHandle,
     mut view: AchievementsView,
@@ -146,6 +147,9 @@ fn with_local_icons(
         let Some(url) = item.icon.take() else {
             continue;
         };
+        if item.unlocked_at.is_none() {
+            continue;
+        }
         match achievement_icons::cached(&dir, &url) {
             Some(path) => item.icon = Some(path.display().to_string()),
             None => missing.push(url),

@@ -345,12 +345,12 @@ function Icon({ item, masked = false }: { item: AchievementItem; masked?: boolea
     >
       {masked ? (
         <Eye size={22} />
+      ) : !unlocked ? (
+        <Lock size={20} />
       ) : src && !failed ? (
         <img src={src} alt="" loading="lazy" onError={() => setFailed(true)} />
-      ) : unlocked ? (
-        <Trophy size={22} />
       ) : (
-        <Lock size={20} />
+        <Trophy size={22} />
       )}
     </span>
   );
