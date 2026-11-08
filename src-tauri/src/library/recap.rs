@@ -250,6 +250,7 @@ mod tests {
             icon_url: None,
             unlocked_at: unlocked.map(Into::into),
             global_percent: Some(12.0),
+            hidden: false,
         }
     }
 

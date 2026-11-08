@@ -16,6 +16,8 @@ pub struct AchievementRow {
     /// RFC 3339 when unlocked.
     pub unlocked_at: Option<String>,
     pub global_percent: Option<f64>,
+    /// Steam "hidden" achievement: description masked until unlocked.
+    pub hidden: bool,
 }
 
 /// Replaces the cache of one source. `list = None` records "no achievements".
@@ -42,7 +44,8 @@ pub fn replace_for_source_tx(
     )?;
     for a in list.unwrap_or_default() {
         conn.execute(
-            "INSERT INTO achievements (id, game_source_id, api_name, name, description, icon_url,                unlocked_at, global_percent) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            "INSERT INTO achievements (id, game_source_id, api_name, name, description, icon_url, \
+               unlocked_at, global_percent, hidden) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             params![
                 new_id(),
                 source_id,
@@ -51,7 +54,8 @@ pub fn replace_for_source_tx(
                 a.description,
                 a.icon_url,
                 a.unlocked_at,
-                a.global_percent
+                a.global_percent,
+                a.hidden
             ],
         )?;
     }
@@ -65,7 +69,7 @@ pub fn replace_for_source_tx(
 
 pub fn list_for_source(conn: &Connection, source_id: &str) -> AppResult<Vec<AchievementRow>> {
     let mut stmt = conn.prepare(
-        "SELECT api_name, name, description, icon_url, unlocked_at, global_percent \
+        "SELECT api_name, name, description, icon_url, unlocked_at, global_percent, hidden \
          FROM achievements WHERE game_source_id = ?1 ORDER BY api_name",
     )?;
     let rows = stmt.query_map([source_id], |r| {
@@ -76,6 +80,7 @@ pub fn list_for_source(conn: &Connection, source_id: &str) -> AppResult<Vec<Achi
             icon_url: r.get(3)?,
             unlocked_at: r.get(4)?,
             global_percent: r.get(5)?,
+            hidden: r.get(6)?,
         })
     })?;
     Ok(rows.collect::<Result<_, _>>()?)
@@ -124,6 +129,7 @@ mod tests {
             icon_url: None,
             unlocked_at: unlocked.then(|| "2026-01-01T00:00:00Z".into()),
             global_percent: Some(12.5),
+            hidden: false,
         }
     }
 

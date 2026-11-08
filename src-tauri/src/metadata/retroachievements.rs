@@ -142,6 +142,7 @@ pub fn parse_progress(body: &str) -> AppResult<Vec<AchievementRow>> {
                 .badge
                 .map(|b| format!("https://media.retroachievements.org/Badge/{b}.png")),
             unlocked_at: a.earned_hardcore.or(a.earned).as_deref().and_then(ra_date),
+            hidden: false,
             global_percent: match (num(&a.awarded), players) {
                 (Some(n), Some(total)) => Some((n / total * 1000.0).round() / 10.0),
                 _ => None,

@@ -239,6 +239,7 @@ fn achievements(
                     name,
                     description: description.filter(|d| !d.is_empty()),
                     icon_url: icon,
+                    hidden: false,
                     unlocked_at: (unlocked == Some(1))
                         .then(|| time.as_deref().and_then(galaxy_date))
                         .flatten(),

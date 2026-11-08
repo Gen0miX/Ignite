@@ -147,7 +147,13 @@ fn played_days(conn: &Connection) -> AppResult<BTreeSet<chrono::NaiveDate>> {
     Ok(days)
 }
 
-pub fn build(conn: &Connection, session_id: &str, syncing: bool) -> AppResult<SessionRecap> {
+/// `icons`: the achievement icon cache folder (icons are never hotlinked).
+pub fn build(
+    conn: &Connection,
+    session_id: &str,
+    syncing: bool,
+    icons: Option<&std::path::Path>,
+) -> AppResult<SessionRecap> {
     let session = sessions::get(conn, session_id)?;
     let game = games::get(conn, &session.game_id)?;
     let start = parse(session.started_at.as_deref().unwrap_or_default())?;
@@ -204,7 +210,14 @@ pub fn build(conn: &Connection, session_id: &str, syncing: bool) -> AppResult<Se
                         .into_iter()
                         .map(|r| RecapAchievement {
                             name: r.name.unwrap_or(r.api_name),
-                            icon: r.icon_url,
+                            icon: r
+                                .icon_url
+                                .as_deref()
+                                .zip(icons)
+                                .and_then(|(url, dir)| {
+                                    crate::metadata::achievement_icons::cached(dir, url)
+                                })
+                                .map(|p| p.display().to_string()),
                             global_percent: r.global_percent,
                         })
                         .collect(),
@@ -253,8 +266,18 @@ pub fn build(conn: &Connection, session_id: &str, syncing: bool) -> AppResult<Se
 
 #[tauri::command]
 #[specta::specta]
-pub fn session_recap(db: tauri::State<'_, Db>, session_id: String) -> CommandResult<SessionRecap> {
-    Ok(build(&db.conn(), &session_id, is_syncing(&session_id))?)
+pub fn session_recap(
+    db: tauri::State<'_, Db>,
+    paths: tauri::State<'_, super::app::AppPaths>,
+    session_id: String,
+) -> CommandResult<SessionRecap> {
+    let icons = crate::metadata::achievement_icons::dir(&paths.data_dir);
+    Ok(build(
+        &db.conn(),
+        &session_id,
+        is_syncing(&session_id),
+        Some(&icons),
+    )?)
 }
 
 #[derive(Debug, Default, Deserialize, specta::Type)]
@@ -370,6 +393,7 @@ pub fn session_written(app: &AppHandle, session_id: &str, game_id: &str) {
         if let Err(e) = super::achievements::refresh(&app, &game_id) {
             tracing::warn!(error = ?e, "recap: achievements resync failed");
         }
+        super::achievements::fetch_icons_now(&app, &game_id);
         set_syncing(&session_id, false);
         let _ = app.emit(RECAP_UPDATED_EVENT, payload);
     });
@@ -422,7 +446,7 @@ mod tests {
         .unwrap();
         goals::add(&conn, &g.id, "Finir l'acte 3").unwrap();
 
-        let r = build(&conn, "now", false).unwrap();
+        let r = build(&conn, "now", false, None).unwrap();
         assert_eq!(r.average_seconds, Some(2400));
         assert_eq!(r.total_minutes, (1800 + 2400 + 3000 + 8040) / 60);
         assert!(!r.total_approx);
@@ -442,7 +466,7 @@ mod tests {
             },
         )
         .unwrap();
-        let r = build(&conn, "now", false).unwrap();
+        let r = build(&conn, "now", false, None).unwrap();
         assert_eq!(r.resume_note.as_deref(), Some("Acte 3, avant le boss"));
         assert_eq!(r.session.note.as_deref(), Some("Acte 3, avant le boss"));
         assert_eq!(r.rating, Some(4));

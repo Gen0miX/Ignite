@@ -148,6 +148,10 @@ export type AchievementItem_Deserialize = {
 	description?: string | null,
 	unlockedAt?: string | null,
 	globalPercent?: number | null,
+	/**  Icon in the image cache (`asset:`); `None` until downloaded. */
+	icon?: string | null,
+	/**  Steam hidden achievement: description masked until unlocked or revealed. */
+	hidden: boolean,
 };
 
 export type AchievementItem_Serialize = {
@@ -156,6 +160,10 @@ export type AchievementItem_Serialize = {
 	description: string | null,
 	unlockedAt: string | null,
 	globalPercent: number | null,
+	/**  Icon in the image cache (`asset:`); `None` until downloaded. */
+	icon: string | null,
+	/**  Steam hidden achievement: description masked until unlocked or revealed. */
+	hidden: boolean,
 };
 
 export type AchievementsState = 

@@ -22,6 +22,9 @@ fn migrations() -> Migrations<'static> {
         M::up(include_str!("../../migrations/0006_retroachievements.sql")),
         M::up(include_str!("../../migrations/0007_session_recap.sql")),
         M::up(include_str!("../../migrations/0008_time_to_beat.sql")),
+        M::up(include_str!(
+            "../../migrations/0009_achievements_hidden.sql"
+        )),
     ])
 }
 
@@ -131,7 +134,7 @@ mod tests {
             .conn()
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .unwrap();
-        assert_eq!(version, 8);
+        assert_eq!(version, 9);
         drop(db);
         let _ = std::fs::remove_dir_all(dir);
     }

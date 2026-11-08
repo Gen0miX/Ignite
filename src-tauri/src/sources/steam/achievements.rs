@@ -34,6 +34,7 @@ pub struct SteamAchievement {
     /// Unix seconds; `None` when locked.
     pub unlocked_at: Option<u64>,
     pub global_percent: Option<f64>,
+    pub hidden: bool,
 }
 
 #[derive(Deserialize)]
@@ -82,6 +83,8 @@ struct SchemaAchievement {
     display_name: Option<String>,
     description: Option<String>,
     icon: Option<String>,
+    #[serde(default)]
+    hidden: u8,
 }
 
 /// `apiname → (achieved, unlocktime)`. `Ok(None)` = the game has no achievements.
@@ -115,6 +118,7 @@ pub struct SchemaEntry {
     pub name: Option<String>,
     pub description: Option<String>,
     pub icon: Option<String>,
+    pub hidden: bool,
 }
 
 pub fn parse_schema(body: &str) -> AppResult<Vec<SchemaEntry>> {
@@ -130,6 +134,7 @@ pub fn parse_schema(body: &str) -> AppResult<Vec<SchemaEntry>> {
             name: a.display_name,
             description: a.description.filter(|d| !d.is_empty()),
             icon: a.icon,
+            hidden: a.hidden == 1,
         })
         .collect())
 }
@@ -244,6 +249,7 @@ pub fn merge(
                 icon_url: None,
                 unlocked_at: *at,
                 global_percent: global.get(name).copied(),
+                hidden: false,
             })
             .collect()
     } else {
@@ -255,7 +261,9 @@ pub fn merge(
                      name,
                      description,
                      icon,
+                     hidden,
                  }| SteamAchievement {
+                    hidden,
                     unlocked_at: unlocked.get(&api_name).copied().flatten(),
                     global_percent: global.get(&api_name).copied(),
                     api_name,
@@ -291,10 +299,12 @@ mod tests {
     #[test]
     fn parses_schema_and_global_percentages() {
         let schema = r#"{"game":{"gameName":"X","availableGameStats":{"achievements":[
-            {"name":"A","displayName":"Premier pas","description":"","icon":"https://x/a.jpg","hidden":0}]}}}"#;
+            {"name":"A","displayName":"Premier pas","description":"","icon":"https://x/a.jpg","hidden":0},
+            {"name":"S","displayName":"Secret","icon":"https://x/s.jpg","hidden":1}]}}}"#;
         let s = parse_schema(schema).unwrap();
         assert_eq!(s[0].name.as_deref(), Some("Premier pas"));
         assert_eq!(s[0].description, None);
+        assert!(!s[0].hidden && s[1].hidden);
         assert!(parse_schema(r#"{"game":{}}"#).unwrap().is_empty());
 
         let global = r#"{"achievementpercentages":{"achievements":[
@@ -314,12 +324,14 @@ mod tests {
                 name: Some("Un".into()),
                 description: None,
                 icon: None,
+                hidden: false,
             },
             SchemaEntry {
                 api_name: "B".into(),
                 name: Some("Deux".into()),
                 description: None,
                 icon: None,
+                hidden: true,
             },
         ];
         let list = merge(
@@ -330,6 +342,7 @@ mod tests {
         assert_eq!(list.len(), 2);
         assert_eq!(list[0].unlocked_at, Some(10));
         assert_eq!(list[1].global_percent, Some(1.5));
+        assert!(list[1].hidden && !list[0].hidden);
         // Without a schema, the player list is used.
         assert_eq!(merge(unlocked, vec![], HashMap::new()).len(), 2);
     }

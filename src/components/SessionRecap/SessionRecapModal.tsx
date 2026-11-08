@@ -495,8 +495,10 @@ function Achievements({ recap }: { recap: SessionRecap }) {
   );
 }
 
-function AchievementIcon({ src }: { src: string | null }) {
+/** `path`: the icon in the image cache (never a remote URL). */
+function AchievementIcon({ src: path }: { src: string | null }) {
   const [failed, setFailed] = useState(false);
+  const src = artworkSrc(path);
   return (
     <span className={`${styles.achIcon} img-host`} aria-hidden="true">
       {src && !failed ? (

@@ -1,13 +1,15 @@
 //! Achievements of a game (Steam for now), cached in SQLite.
 
 use serde::Serialize;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
+use super::app::AppPaths;
 use super::CommandResult;
 use crate::db::repo::achievements::{self, AchievementRow};
 use crate::db::repo::game_sources;
 use crate::db::Db;
 use crate::error::AppError;
+use crate::metadata::achievement_icons;
 use crate::models::SourceKind;
 use crate::secrets::Secrets;
 use crate::sources::steam::achievements as steam;
@@ -39,6 +41,10 @@ pub struct AchievementItem {
     pub description: Option<String>,
     pub unlocked_at: Option<String>,
     pub global_percent: Option<f64>,
+    /// Icon in the image cache (`asset:`); `None` until downloaded.
+    pub icon: Option<String>,
+    /// Steam hidden achievement: description masked until unlocked or revealed.
+    pub hidden: bool,
 }
 
 #[derive(Debug, Clone, Serialize, specta::Type)]
@@ -66,6 +72,9 @@ fn view(
             description: r.description,
             unlocked_at: r.unlocked_at,
             global_percent: r.global_percent,
+            // Remote URL here; `with_local_icons` swaps it for the cached file.
+            icon: r.icon_url,
+            hidden: r.hidden,
         })
         .collect();
     AchievementsView {
@@ -106,10 +115,75 @@ pub async fn achievements_get(
     game_id: String,
     refresh: bool,
 ) -> CommandResult<AchievementsView> {
-    let result = tauri::async_runtime::spawn_blocking(move || load(&app, &game_id, refresh))
-        .await
-        .map_err(|e| AppError::Invalid(format!("achievements task failed: {e}")))?;
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        let view = load(&app, &game_id, refresh)?;
+        let (view, missing) = with_local_icons(&app, view);
+        if !missing.is_empty() {
+            fetch_icons_later(app.clone(), game_id, missing);
+        }
+        Ok::<_, super::CommandError>(view)
+    })
+    .await
+    .map_err(|e| AppError::Invalid(format!("achievements task failed: {e}")))?;
     result
+}
+
+/// Emitted once the icons of a game are in the cache: the UI reloads them.
+pub const ICONS_READY_EVENT: &str = "achievements-icons-ready";
+
+/// Games whose icons are being downloaded (one download per game at a time).
+static FETCHING: std::sync::Mutex<Option<std::collections::HashSet<String>>> =
+    std::sync::Mutex::new(None);
+
+/// Replaces remote icon URLs by their cached copy; returns the URLs to fetch.
+fn with_local_icons(
+    app: &AppHandle,
+    mut view: AchievementsView,
+) -> (AchievementsView, Vec<String>) {
+    let dir = achievement_icons::dir(&app.state::<AppPaths>().data_dir);
+    let mut missing = Vec::new();
+    for item in &mut view.items {
+        let Some(url) = item.icon.take() else {
+            continue;
+        };
+        match achievement_icons::cached(&dir, &url) {
+            Some(path) => item.icon = Some(path.display().to_string()),
+            None => missing.push(url),
+        }
+    }
+    (view, missing)
+}
+
+/// Downloads the missing icons in the background, then tells the UI.
+fn fetch_icons_later(app: AppHandle, game_id: String, urls: Vec<String>) {
+    {
+        let mut guard = FETCHING.lock().unwrap_or_else(|e| e.into_inner());
+        if !guard
+            .get_or_insert_with(Default::default)
+            .insert(game_id.clone())
+        {
+            return;
+        }
+    }
+    std::thread::spawn(move || {
+        let dir = achievement_icons::dir(&app.state::<AppPaths>().data_dir);
+        let added = achievement_icons::fetch_missing(&dir, &urls);
+        if let Some(set) = FETCHING.lock().unwrap_or_else(|e| e.into_inner()).as_mut() {
+            set.remove(&game_id);
+        }
+        if added > 0 {
+            let _ = app.emit(ICONS_READY_EVENT, &game_id);
+        }
+    });
+}
+
+/// Icons of a game's achievements, downloaded now (end-of-session recap).
+pub fn fetch_icons_now(app: &AppHandle, game_id: &str) {
+    if let Ok(view) = load(app, game_id, false) {
+        let (_, missing) = with_local_icons(app, view);
+        let dir = achievement_icons::dir(&app.state::<AppPaths>().data_dir);
+        achievement_icons::fetch_missing(&dir, &missing);
+    }
 }
 
 /// Refetches the achievements of a game (end of session).
@@ -167,6 +241,7 @@ fn load(app: &AppHandle, game_id: &str, refresh: bool) -> CommandResult<Achievem
                         icon_url: a.icon_url,
                         unlocked_at: a.unlocked_at.and_then(unix_to_rfc3339),
                         global_percent: a.global_percent,
+                        hidden: a.hidden,
                     })
                     .collect()
             });
@@ -271,6 +346,7 @@ mod cache_tests {
             icon_url: None,
             unlocked_at: unlocked.map(Into::into),
             global_percent: Some(30.0),
+            hidden: false,
         };
         achievements::replace_for_source(
             &mut conn,
