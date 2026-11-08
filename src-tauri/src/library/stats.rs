@@ -666,6 +666,12 @@ mod tests {
             },
         )
         .unwrap();
+        // `completed_at` is "now" for real: pin it inside the tested week.
+        conn.execute(
+            "UPDATE games SET completed_at = '2026-11-05T12:00:00Z' WHERE id = ?1",
+            [&celeste.id],
+        )
+        .unwrap();
 
         let today = d("2026-11-06");
         let week = overview(&conn, StatsRange::Week, &[], today).unwrap();
