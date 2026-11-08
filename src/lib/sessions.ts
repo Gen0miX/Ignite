@@ -34,6 +34,41 @@ export function dailyMinutes(sessions: PlaySession[], days = 30, now = new Date(
   return bars;
 }
 
+export interface WeekBar {
+  /** Local date (YYYY-MM-DD) of the week's Monday. */
+  monday: string;
+  minutes: number;
+  isCurrent: boolean;
+}
+
+/**
+ * Minutes played per week (Monday to Sunday) over the last `weeks` weeks,
+ * oldest first. A session counts in the week it started; estimates are ignored.
+ */
+export function weeklyMinutes(sessions: PlaySession[], weeks = 12, now = new Date()): WeekBar[] {
+  const monday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - ((now.getDay() + 6) % 7),
+  );
+  const bars: WeekBar[] = [];
+  const index = new Map<string, number>();
+  for (let i = weeks - 1; i >= 0; i -= 1) {
+    const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - 7 * i);
+    const key = localDay(d);
+    index.set(key, bars.length);
+    bars.push({ monday: key, minutes: 0, isCurrent: i === 0 });
+  }
+  for (const s of sessions) {
+    if (!s.startedAt) continue;
+    const d = new Date(s.startedAt);
+    const m = new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
+    const i = index.get(localDay(m));
+    if (i !== undefined) bars[i]!.minutes += Math.round(s.durationSeconds / 60);
+  }
+  return bars;
+}
+
 export interface SessionStats {
   /** Dated sessions (estimates excluded). */
   count: number;

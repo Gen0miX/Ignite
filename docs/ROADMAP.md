@@ -61,3 +61,13 @@ Chaque tâche = une PR ou un commit, avec ses tests. Ne passe au jalon suivant q
 - [x] Accueil « Cinéma » adapté au thème Braise, avec « Ce soir, j'ai… ».
 - [x] Mode Canapé (manette).
 - [x] Installeur, démarrage avec Windows (option), icône dans la zone de notification avec le minuteur.
+
+## J6 — Fiche en onglets, durées de vie, succès et captures
+
+Specs : `docs/FICHE-ONGLETS.md`, `docs/TIME-TO-BEAT.md`.
+
+- [x] Fiche en onglets (`/game/:id/:tab`) : Aperçu, Succès (ou Objectifs), Actus, Lancement ; bandeau compact de 96 px hors Aperçu ; temps de jeu sur 12 semaines ; 5 dernières sessions avec le journal complet dépliable.
+- [ ] Durées de vie via IGDB (`game_time_to_beats`) : migration 0008, carte « Durée de vie », tuile « Pour le finir », correction manuelle, jeton `duree:`. HowLongToBeat écarté : le site refuse les clients qui ne se font pas passer pour un navigateur.
+- [ ] Onglet Succès : résumé, filtres, tri, succès cachés, icônes en cache.
+- [ ] Onglet Captures et visionneuse : Steam, Xbox Game Bar, dossiers perso, en lecture seule.
+

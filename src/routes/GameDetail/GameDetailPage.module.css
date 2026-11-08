@@ -489,3 +489,105 @@
   color: var(--color-text-2);
   overflow-wrap: anywhere;
 }
+
+.chartWeeks {
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--space-2);
+}
+
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
+/* Compact header (tabs other than Aperçu): 96 px band. */
+.compact {
+  position: relative;
+  flex: none;
+  height: 96px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.compact > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+}
+
+/* Gradient only to keep the text readable on the image. */
+.compactShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgb(20 16 14 / 92%) 0%,
+    rgb(20 16 14 / 70%) 50%,
+    rgb(20 16 14 / 35%) 100%
+  );
+}
+
+.compactContent {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  width: 100%;
+  padding: 0 var(--space-6);
+}
+
+.compactTitle {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  line-height: 1.1;
+  min-width: 0;
+}
+
+.compactTitle img {
+  max-height: 56px;
+  max-width: 220px;
+}
+
+.compactMeta {
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  color: var(--color-text-2);
+  white-space: nowrap;
+}
+
+.playCompact {
+  margin-left: auto;
+  height: var(--h-control-lg);
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-lg);
+}
+
+.playCompact:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* "Où tu t'es arrêté", top of the Aperçu tab. */
+.resumeCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-xl);
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-card);
+}
+
+.launchSummary {
+  font-size: var(--text-md);
+  color: var(--color-text-2);
+}

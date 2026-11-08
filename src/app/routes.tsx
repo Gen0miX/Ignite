@@ -19,7 +19,7 @@ export const routes: RouteObject[] = [
     children: [
       { index: true, element: <HomePage /> },
       { path: 'library', element: <LibraryPage /> },
-      { path: 'game/:id', element: <GameDetailPage /> },
+      { path: 'game/:id/:tab?', element: <GameDetailPage /> },
       { path: 'stats', element: <StatsPage /> },
       { path: 'settings', element: <Navigate to="/settings/sources" replace /> },
       { path: 'settings/sources', element: <SettingsSourcesPage /> },

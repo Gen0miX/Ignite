@@ -131,14 +131,20 @@ function SessionForm({
 
 export function SessionLog({
   game,
-  sessions,
+  sessions: all,
   steamCounted,
+  limit,
 }: {
   game: GameDetail;
   sessions: PlaySession[];
   steamCounted: boolean;
+  /** Shows only the latest sessions, with a button for the whole log. */
+  limit?: number;
 }) {
   const [editing, setEditing] = useState<Draft | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const folded = limit !== undefined && !expanded && all.length > limit;
+  const sessions = folded ? all.slice(0, limit) : all;
   const remove = useDeleteSession();
   const gameId = game.summary.id;
 
@@ -170,7 +176,7 @@ export function SessionLog({
         <SessionForm gameId={gameId} draft={editing} onDone={() => setEditing(null)} />
       )}
 
-      {sessions.length === 0 ? (
+      {all.length === 0 ? (
         <p className={styles.muted}>{t.logEmpty}</p>
       ) : (
         <div className={styles.tableWrap}>
@@ -257,6 +263,16 @@ export function SessionLog({
             </tbody>
           </table>
         </div>
+      )}
+      {limit !== undefined && all.length > limit && (
+        <button
+          type="button"
+          className={styles.linkButton}
+          aria-expanded={expanded}
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? t.logLess : t.logAll(all.length)}
+        </button>
       )}
     </section>
   );

@@ -1,5 +1,5 @@
 import type { PlaySession } from '../api/client';
-import { cardProgress, dailyMinutes, formatClock, sessionStats } from './sessions';
+import { cardProgress, dailyMinutes, formatClock, sessionStats, weeklyMinutes } from './sessions';
 
 const session = (
   id: string,
@@ -93,5 +93,26 @@ describe('cardProgress', () => {
       ratio: 0.6,
     });
     expect(cardProgress(null, null)).toBeNull();
+  });
+});
+
+describe('weeklyMinutes', () => {
+  it('sums sessions per Monday-to-Sunday week, current week last', () => {
+    const now = new Date(2026, 10, 8, 12, 0); // Sunday 8 Nov 2026
+    const at = (d: number, h = 18) => new Date(2026, 10, d, h, 0).toISOString();
+    const bars = weeklyMinutes(
+      [
+        session('a', at(2), 60), // Monday of the current week
+        session('b', at(8, 23), 30), // Sunday, same week
+        session('c', at(1), 45), // previous Sunday
+        session('e', null, 600, 'estimate'),
+      ],
+      12,
+      now,
+    );
+    expect(bars).toHaveLength(12);
+    expect(bars[11]).toEqual({ monday: '2026-11-02', minutes: 90, isCurrent: true });
+    expect(bars[10]).toMatchObject({ monday: '2026-10-26', minutes: 45, isCurrent: false });
+    expect(bars[0]!.monday).toBe('2026-08-17');
   });
 });
