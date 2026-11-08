@@ -5,6 +5,7 @@ import { useDeleteSession, useSaveSession } from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
 import { fr } from '../../i18n/fr';
 import { formatPlaytimeLong, toLocalInput } from '../../lib/format';
+import { sessionStats } from '../../lib/sessions';
 import styles from './GameDetailPage.module.css';
 import { FlameRating } from '../../components/FlameRating/FlameRating';
 
@@ -145,6 +146,7 @@ export function SessionLog({
   const [expanded, setExpanded] = useState(false);
   const folded = limit !== undefined && !expanded && all.length > limit;
   const sessions = folded ? all.slice(0, limit) : all;
+  const stats = sessionStats(all);
   const remove = useDeleteSession();
   const gameId = game.summary.id;
 
@@ -171,6 +173,17 @@ export function SessionLog({
           </button>
         </div>
       </div>
+      {stats.count > 0 && (
+        <p className={styles.muted}>
+          {t.sessionsDetail(stats.count, formatPlaytimeLong(stats.averageMinutes))}
+          {stats.averageRating != null && (
+            <>
+              {' · '}
+              <FlameRating value={stats.averageRating} /> {t.ratingAverage}
+            </>
+          )}
+        </p>
+      )}
       {steamCounted && <p className={styles.muted}>{t.steamCounterNote}</p>}
       {editing && !editing.id && (
         <SessionForm gameId={gameId} draft={editing} onDone={() => setEditing(null)} />

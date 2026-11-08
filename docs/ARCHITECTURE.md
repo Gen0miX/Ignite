@@ -241,7 +241,7 @@ La **barre de recherche** reprend les mêmes champs : `source:gog heures:>20 tag
 
 - **Steam** : les images locales de `Steam\appcache\librarycache\<appid>\` (`library_600x900.jpg`, `library_hero.jpg`, `logo.png`, `header.jpg`, parfois dans un sous-dossier haché) viennent en premier. Sinon, le CDN Steam (`https://cdn.cloudflare.steamstatic.com/steam/apps/<appid>/library_600x900.jpg`, à vérifier).
 - **Jeux non-Steam** : SteamGridDB (jaquettes 600×900, héros, logos), cherché par titre.
-- **Genres et modes de jeu** (J4) : boutique Steam (`appdetails`, sans clé) pour les jeux Steam, base GOG Galaxy pour les jeux GOG, noms ramenés à une liste française commune. IGDB reste prévu pour les autres jeux (exécutables, Epic) et les descriptions. Durées pour finir : HowLongToBeat (pas d'API officielle, facultatif, derrière un réglage).
+- **Genres et modes de jeu** (J4) : boutique Steam (`appdetails`, sans clé) pour les jeux Steam, base GOG Galaxy pour les jeux GOG, noms ramenés à une liste française commune. IGDB reste prévu pour les autres jeux (exécutables, Epic) et les descriptions. Durées pour finir : IGDB `game_time_to_beats` (table `game_time_to_beat`, migration 0008, cache 30 jours) et correction manuelle, qui prime champ par champ ; HowLongToBeat a été écarté (voir `INTEGRATIONS.md`). `games.hltb_main_minutes` garde la meilleure durée « histoire » pour les filtres (`duree:`), les collections et l'accueil.
 - **Cache** : toutes les images sont copiées dans `app-data/artwork/<game_id>/` et servies au frontend via le protocole `asset:` de Tauri. On ne fait pas de hotlinking.
 
 ## 8. Commandes Tauri (première liste)

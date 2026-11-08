@@ -1,7 +1,7 @@
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { Play, Star } from 'lucide-react';
 import { artworkSrc, isTauri, type GameDetail, type GameStatus } from '../../api/client';
-import { useGame, useLaunchGame, useSessions, useUpdateGame } from '../../api/hooks';
+import { useGame, useLaunchGame, useSessions, useTimeToBeat, useUpdateGame } from '../../api/hooks';
 import { PageMain } from '../../app/AppShell';
 import buttons from '../../components/Button/Button.module.css';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
@@ -10,7 +10,6 @@ import { SegmentedControl } from '../../components/SegmentedControl/SegmentedCon
 import { GameTitle } from '../../components/GameTitle/GameTitle';
 import { SourceBadge } from '../../components/SourceBadge/SourceBadge';
 import { SkeletonImage } from '../../components/Skeleton/SkeletonImage';
-import { FlameRating } from '../../components/FlameRating/FlameRating';
 import { fr } from '../../i18n/fr';
 import {
   folderName,
@@ -30,6 +29,7 @@ import { LaunchSection } from './LaunchSection';
 import { MediaSection } from './MediaSection';
 import { NewsSection } from './NewsSection';
 import { SessionLog } from './SessionLog';
+import { TimeToBeatCard } from './TimeToBeatCard';
 import { WeeklyChart } from './WeeklyChart';
 import styles from './GameDetailPage.module.css';
 
@@ -180,18 +180,7 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
                   : undefined
               }
             />
-            <Figure
-              label={t.sessions}
-              value={String(stats.count)}
-              detail={t.sessionsDetail(stats.count, formatPlaytimeLong(stats.averageMinutes))}
-              extra={
-                stats.averageRating != null && (
-                  <>
-                    <FlameRating value={stats.averageRating} /> {t.ratingAverage}
-                  </>
-                )
-              }
-            />
+            <ToFinish gameId={s.id} playedMinutes={s.playtimeMinutes} />
             {ach ? (
               <Figure
                 label={t.achievements}
@@ -252,6 +241,7 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
             <MediaSection gameId={s.id} />
           </div>
           <div className={styles.sideColumn}>
+            <TimeToBeatCard gameId={s.id} playedMinutes={s.playtimeMinutes} />
             <GoalsSection gameId={s.id} />
             <LaunchSummary game={game} />
           </div>
@@ -295,6 +285,28 @@ function LaunchSummary({ game }: { game: GameDetail }) {
         {t.launchDetails}
       </Link>
     </section>
+  );
+}
+
+/** "Pour le finir": main story time (IGDB or correction) and what is left. */
+function ToFinish({ gameId, playedMinutes }: { gameId: string; playedMinutes: number }) {
+  const ttb = useTimeToBeat(gameId);
+  const main = ttb.data?.best?.mainMinutes ?? null;
+  if (main == null) {
+    return (
+      <Figure label={t.toFinish} value="—" detail={ttb.isPending ? undefined : t.toFinishUnknown} />
+    );
+  }
+  return (
+    <Figure
+      label={t.toFinish}
+      value={`≈ ${formatPlaytimeShort(main)}`}
+      detail={
+        playedMinutes < main
+          ? t.toFinishLeft(`≈ ${formatPlaytimeShort(main - playedMinutes)}`)
+          : t.toFinishPassed
+      }
+    />
   );
 }
 

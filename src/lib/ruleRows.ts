@@ -24,6 +24,7 @@ export const FIELDS: FieldDef[] = [
   { field: 'playtime_minutes', kind: 'number', scale: 60 },
   { field: 'avg_session_minutes', kind: 'number' },
   { field: 'achievement_percent', kind: 'number' },
+  { field: 'hltb_main_minutes', kind: 'number', scale: 60 },
   { field: 'last_played', kind: 'days' },
   { field: 'added_at', kind: 'days' },
 ];

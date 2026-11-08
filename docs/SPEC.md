@@ -102,7 +102,7 @@ Parcours en 4 étapes : Sources → Jeux détectés → Jaquettes & infos → Te
 - **Journal des sessions :** date, horaire, durée, origine. Chaque session est modifiable et on peut ajouter une session manuelle.
 - **Objectifs perso :** liste à cocher qu'on peut compléter.
 - **Lancement :** fichier, arguments, processus suivi, commandes avant et après, overlay.
-- **Métadonnées :** IGDB, SteamGridDB, durée HowLongToBeat.
+- **Métadonnées :** IGDB (dont les durées de vie), SteamGridDB.
 - **Pour un jeu Steam, en plus :** les succès les plus proches, les amis qui y jouent, et les actus filtrées (les pubs pour d'autres jeux sont masquées).
 
 ### 3.5 Statistiques — `Multi-Stats.dc.html`

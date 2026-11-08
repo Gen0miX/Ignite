@@ -11,7 +11,9 @@ import {
   type SecretKind,
   type SessionInput,
   type SourceKind,
+  type TimeToBeatView,
 } from './client';
+import type { ManualTimeToBeat } from './bindings';
 
 export const keys = {
   library: (q: LibraryQuery) => ['library', q] as const,
@@ -85,6 +87,42 @@ export function useGameNews(id: string) {
 
 export function useOpenLink() {
   return useMutation({ mutationFn: (url: string) => unwrap(commands.openLink(url)) });
+}
+
+/** Time to beat of a game (IGDB, cached 30 days, plus the user's correction). */
+export function useTimeToBeat(gameId: string) {
+  return useQuery({
+    queryKey: ['ttb', gameId],
+    queryFn: () => unwrap(commands.timeToBeatGet(gameId)),
+    enabled: isTauri(),
+    staleTime: 60 * 60_000,
+  });
+}
+
+export function useTimeToBeatMutations(gameId: string) {
+  const client = useQueryClient();
+  const done = (view: TimeToBeatView) => {
+    client.setQueryData(['ttb', gameId], view);
+    // The best "main story" value feeds the library, home and collections.
+    for (const queryKey of [['game', gameId], ['library'], ['home']]) {
+      void client.invalidateQueries({ queryKey });
+    }
+  };
+  return {
+    refresh: useMutation({
+      mutationFn: () => unwrap(commands.timeToBeatRefresh(gameId)),
+      onSuccess: done,
+    }),
+    pick: useMutation({
+      mutationFn: (igdbId: number) => unwrap(commands.timeToBeatPick(gameId, igdbId)),
+      onSuccess: done,
+    }),
+    setManual: useMutation({
+      mutationFn: (values: ManualTimeToBeat | null) =>
+        unwrap(commands.timeToBeatSetManual(gameId, values)),
+      onSuccess: done,
+    }),
+  };
 }
 
 export function useOpenFolder() {
