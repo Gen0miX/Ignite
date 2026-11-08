@@ -7,7 +7,8 @@ rust-version = "1.89"
 
 [lib]
 name = "ludotheque_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+# Desktop only: staticlib/cdylib are for iOS/Android and cost ~1 GB per build.
+crate-type = ["rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2.7.4", features = [] }
@@ -41,6 +42,10 @@ tauri-plugin-clipboard-manager = "2"
 
 [profile.dev]
 incremental = true
+
+# Debug info only for our own crate: dependencies make up most of target/debug.
+[profile.dev.package."*"]
+debug = false
 
 [profile.release]
 codegen-units = 1
