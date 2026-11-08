@@ -83,18 +83,19 @@ fn exe_target(exe: &str, args: Vec<String>) -> LaunchTarget {
     LaunchTarget::Exe { path, args, cwd }
 }
 
-/// What to start for a source. `galaxy_client`: GalaxyClient.exe if found;
+/// What to start for a source. `client`: the launcher app if found
+/// (GalaxyClient.exe for GOG, Battle.net.exe for Battle.net);
 /// `extra_args`: arguments of the launch profile (executables only).
 pub fn resolve_target(
     source: &GameSource,
-    galaxy_client: Option<&Path>,
+    client: Option<&Path>,
     extra_args: Option<&str>,
 ) -> AppResult<LaunchTarget> {
     let args = || extra_args.map(split_args).unwrap_or_default();
     match source.kind {
         SourceKind::Gog => {
             let id = source.external_id.as_deref().unwrap_or_default();
-            match (galaxy_client, &source.install_path) {
+            match (client, &source.install_path) {
                 // Through Galaxy: cloud saves, overlay and its own play tasks.
                 (Some(client), Some(dir)) if !id.is_empty() => {
                     let cwd = client.parent().map(Path::to_path_buf).unwrap_or_default();
@@ -121,6 +122,33 @@ pub fn resolve_target(
             .map(|exe| exe_target(exe, args()))
             .or_else(|| source.launch_uri.clone().map(LaunchTarget::Uri))
             .ok_or_else(|| AppError::Invalid("no executable for this game".into())),
+        // `battlenet://<id>` only opens the game's page in the app; asking
+        // Battle.net.exe to launch it starts the game itself.
+        SourceKind::Battlenet => {
+            let id = source
+                .launch_uri
+                .as_deref()
+                .and_then(|u| u.strip_prefix("battlenet://"))
+                .map(|c| c.trim_end_matches('/'))
+                .filter(|c| !c.is_empty())
+                .or(source.external_id.as_deref());
+            match (client, id) {
+                (Some(client), Some(id)) => {
+                    let id = crate::sources::others::battlenet_code(id).unwrap_or(id);
+                    Ok(exe_target(
+                        &client.display().to_string(),
+                        vec![format!("--exec=launch {id}")],
+                    ))
+                }
+                _ => source
+                    .launch_uri
+                    .clone()
+                    .map(LaunchTarget::Uri)
+                    .ok_or_else(|| {
+                        AppError::Invalid("Battle.net game has no launch target".into())
+                    }),
+            }
+        }
         _ => source
             .launch_uri
             .clone()
@@ -169,10 +197,10 @@ pub fn execute(target: &LaunchTarget) -> AppResult<()> {
 
 /// Picks the target and starts it.
 pub fn launch(source: &GameSource, extra_args: Option<&str>) -> AppResult<()> {
-    let client = if source.kind == SourceKind::Gog {
-        crate::sources::gog::locate_client()
-    } else {
-        None
+    let client = match source.kind {
+        SourceKind::Gog => crate::sources::gog::locate_client(),
+        SourceKind::Battlenet => crate::sources::others::battlenet_client(),
+        _ => None,
     };
     execute(&resolve_target(source, client.as_deref(), extra_args)?)
 }
@@ -198,6 +226,25 @@ mod tests {
             source_last_played: None,
             last_synced_at: None,
         }
+    }
+
+    #[test]
+    fn battlenet_asks_the_app_to_launch_the_game() {
+        let mut wow = src("wowf", true, Some("battlenet://wowf"));
+        wow.kind = SourceKind::Battlenet;
+        let client = Path::new(r"C:\Program Files (x86)\Battle.net\Battle.net.exe");
+        match resolve_target(&wow, Some(client), None).unwrap() {
+            LaunchTarget::Exe { path, args, .. } => {
+                assert_eq!(path, client);
+                assert_eq!(args, ["--exec=launch WoWF"]);
+            }
+            other => panic!("expected Battle.net.exe, got {other:?}"),
+        }
+        // Without the app found, the URI still opens Battle.net.
+        assert!(matches!(
+            resolve_target(&wow, None, None).unwrap(),
+            LaunchTarget::Uri(u) if u == "battlenet://wowf"
+        ));
     }
 
     #[test]

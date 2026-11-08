@@ -91,17 +91,26 @@ pub fn riot_client() -> Option<String> {
 
 // ---------- Battle.net ----------
 
-/// Battle.net product codes for `battlenet://<code>`, from the `--uid=`
-/// of the uninstall string (prefix before `_` locale suffix).
-fn battlenet_code(uid: &str) -> Option<&'static str> {
-    let base = uid.split('_').next().unwrap_or(uid).to_lowercase();
-    Some(match base.as_str() {
+/// Battle.net game family ids (`battlenet://<id>`, `--exec="launch <id>"`),
+/// from a product code or the `--uid=` of an uninstall string (whole code
+/// first, then without its `_frfr` locale suffix). Case does not matter, so a
+/// family id maps to itself.
+pub fn battlenet_code(uid: &str) -> Option<&'static str> {
+    let whole = uid.to_lowercase();
+    let base = whole.split('_').next().unwrap_or(&whole).to_string();
+    family(&whole).or_else(|| family(&base))
+}
+
+fn family(code: &str) -> Option<&'static str> {
+    Some(match code {
         "wow" => "WoW",
-        "wow_classic" | "wowclassic" => "WoWC",
+        // Family id seen in the Battle.net logs ("Selecting game family by id: WoWF").
+        "wowf" => "WoWF",
+        "wow_classic" | "wowclassic" | "wowc" => "WoWC",
         "diablo3" | "d3" => "D3",
-        "diablo4" | "fenris" => "Fen",
-        "prometheus" | "overwatch" => "Pro",
-        "hs_beta" | "hearthstone" => "WTCG",
+        "diablo4" | "fenris" | "fen" => "Fen",
+        "prometheus" | "overwatch" | "pro" => "Pro",
+        "hs_beta" | "hearthstone" | "wtcg" => "WTCG",
         "heroes" | "hero" => "Hero",
         "s2" | "starcraft2" => "S2",
         "s1" | "starcraft" => "S1",
@@ -254,6 +263,35 @@ pub fn parse_product_db(bytes: &[u8]) -> Vec<BnetInstall> {
             })
         })
         .collect()
+}
+
+/// Folder of the Battle.net app (product `bna` in `product.db`).
+pub fn product_db_client_dir(bytes: &[u8]) -> Option<String> {
+    pb_fields(bytes)?
+        .iter()
+        .filter_map(|(f, v)| match v {
+            PbValue::Bytes(b) if *f == 1 => pb_fields(b),
+            _ => None,
+        })
+        .find(|p| pb_str(p, 2).is_some_and(|c| c.eq_ignore_ascii_case("bna")))
+        .and_then(|p| pb_fields(pb_bytes(&p, 3)?))
+        .and_then(|s| pb_str(&s, 1))
+        .map(|p| p.replace('/', "\\"))
+}
+
+/// `Battle.net.exe`, to ask it to start a game (`--exec="launch <id>"`).
+pub fn battlenet_client() -> Option<std::path::PathBuf> {
+    let from_db = product_db_path()
+        .and_then(|p| std::fs::read(p).ok())
+        .and_then(|b| product_db_client_dir(&b))
+        .map(std::path::PathBuf::from);
+    let default = std::env::var_os("ProgramFiles(x86)")
+        .map(|p| std::path::PathBuf::from(p).join("Battle.net"));
+    from_db
+        .into_iter()
+        .chain(default)
+        .map(|d| d.join("Battle.net.exe"))
+        .find(|p| p.is_file())
 }
 
 pub fn product_db_path() -> Option<std::path::PathBuf> {
@@ -791,7 +829,7 @@ mod tests {
         let games = battlenet_all(&installs, &[d4]);
         let wow = games.iter().find(|g| g.external_id == "wowf").unwrap();
         assert_eq!(wow.title, "World of Warcraft Forever");
-        assert_eq!(wow.launch_uri.as_deref(), Some("battlenet://wowf"));
+        assert_eq!(wow.launch_uri.as_deref(), Some("battlenet://WoWF"));
         assert_eq!(
             wow.install_path.as_deref(),
             Some(r"C:\Program Files (x86)\World of Warcraft\_forever_")
@@ -800,6 +838,10 @@ mod tests {
         // is the same install: no duplicate either way.
         assert_eq!(games.len(), 1);
 
+        assert_eq!(
+            product_db_client_dir(&db).as_deref(),
+            Some(r"C:\Program Files (x86)\Battle.net")
+        );
         assert!(parse_product_db(b"\xff\xff garbage").is_empty());
     }
 
@@ -808,6 +850,9 @@ mod tests {
         assert_eq!(battlenet_code("fenris"), Some("Fen"));
         assert_eq!(battlenet_code("wow_frfr"), Some("WoW"));
         assert_eq!(battlenet_code("unknown"), None);
+        assert_eq!(battlenet_code("wowf"), Some("WoWF"));
+        assert_eq!(battlenet_code("WoWF"), Some("WoWF"));
+        assert_eq!(battlenet_code("wow_classic"), Some("WoWC"));
         assert_eq!(
             uid_of(r#"x.exe --lang=frFR --uid=prometheus --displayname="Overwatch""#).as_deref(),
             Some("prometheus")
