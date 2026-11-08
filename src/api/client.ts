@@ -56,6 +56,12 @@ export type GameNews = b.GameNews;
 export type Trailer = b.Trailer_Serialize;
 export type Screenshot = b.Screenshot;
 export type NewsItem = b.NewsItem;
+export type Capture = b.Capture_Serialize;
+export type CaptureItem = b.CaptureItem_Serialize;
+export type CaptureSession = b.CaptureSession;
+export type CaptureSource = b.CaptureSource;
+export type CaptureFolder = b.CaptureFolder_Serialize;
+export type CapturesView = b.CapturesView_Serialize;
 
 export class BackendError extends Error {
   readonly kind: string;

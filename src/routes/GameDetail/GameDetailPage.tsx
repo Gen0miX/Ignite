@@ -1,7 +1,14 @@
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { Play, Star } from 'lucide-react';
 import { artworkSrc, isTauri, type GameDetail, type GameStatus } from '../../api/client';
-import { useGame, useLaunchGame, useSessions, useTimeToBeat, useUpdateGame } from '../../api/hooks';
+import {
+  useCaptures,
+  useGame,
+  useLaunchGame,
+  useSessions,
+  useTimeToBeat,
+  useUpdateGame,
+} from '../../api/hooks';
 import { PageMain } from '../../app/AppShell';
 import buttons from '../../components/Button/Button.module.css';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
@@ -22,6 +29,7 @@ import { sessionStats } from '../../lib/sessions';
 import { useState, type ReactNode } from 'react';
 import { ImageIcon } from 'lucide-react';
 import { AchievementsSection } from './AchievementsSection';
+import { CapturesTab } from './CapturesTab';
 import { ArtworkPicker } from '../../components/ArtworkPicker/ArtworkPicker';
 import { GameTabs, SHEET_TABS, type SheetTab, type TabItem } from './GameTabs';
 import { GoalsSection } from './GoalsSection';
@@ -85,6 +93,7 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
   const platformAchievements = hasPlatformAchievements(game);
   const ach = s.achievements && s.achievements.total > 0 ? s.achievements : null;
   const goals = s.goals && s.goals.total > 0 ? s.goals : null;
+  const captures = useCaptures(s.id).data?.items.length;
   const tabs: TabItem[] = [
     { id: 'apercu', label: t.tabs.overview },
     ...(platformAchievements
@@ -98,6 +107,7 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
       : goals
         ? [{ id: 'succes' as const, label: t.tabs.goals, count: `${goals.done}/${goals.total}` }]
         : []),
+    { id: 'captures', label: t.tabs.captures, count: captures ? String(captures) : undefined },
     { id: 'actus', label: t.tabs.news },
     { id: 'lancement', label: t.tabs.launch },
   ];
@@ -263,6 +273,7 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
         ) : (
           <GoalsSection gameId={s.id} />
         ))}
+      {current === 'captures' && <CapturesTab game={game} />}
       {current === 'actus' && <NewsSection gameId={s.id} />}
       {current === 'lancement' && <LaunchSection game={game} />}
       {picking && <ArtworkPicker gameId={s.id} title={s.title} onClose={() => setPicking(false)} />}

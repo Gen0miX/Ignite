@@ -26,6 +26,8 @@ export const keys = {
   sessions: (gameId: string) => ['sessions', gameId] as const,
   goals: (gameId: string) => ['goals', gameId] as const,
   achievements: (gameId: string) => ['achievements', gameId] as const,
+  captures: (gameId: string) => ['captures', gameId] as const,
+  captureFolders: ['capture-folders'] as const,
 };
 
 /** Everything derived from the library must refresh after a change. */
@@ -373,6 +375,14 @@ export function useLibraryEvents() {
         else unlisteners.push(fn);
       });
     }
+    // New captures or thumbnails: the tab and the open recap show them.
+    void listen('captures-changed', () => {
+      void client.invalidateQueries({ queryKey: ['captures'] });
+      void client.invalidateQueries({ queryKey: ['session-recap'] });
+    }).then((fn) => {
+      if (cancelled) fn();
+      else unlisteners.push(fn);
+    });
     // Achievement icons now in the image cache: show them.
     void listen<string>('achievements-icons-ready', ({ payload }) => {
       void client.invalidateQueries({ queryKey: keys.achievements(payload) });
@@ -515,4 +525,73 @@ export function useAddToCollection() {
       void client.invalidateQueries({ queryKey: ['library'] });
     },
   });
+}
+
+export function useCaptures(gameId: string) {
+  return useQuery({
+    queryKey: keys.captures(gameId),
+    queryFn: () => unwrap(commands.capturesList(gameId)),
+    enabled: isTauri() && !!gameId,
+  });
+}
+
+/** Rescans the capture folders in the background (`captures-changed` follows). */
+export function useCapturesScan(gameId: string, enabled: boolean) {
+  useEffect(() => {
+    if (isTauri() && enabled && gameId) void commands.capturesScan();
+  }, [gameId, enabled]);
+}
+
+export function useCaptureFolders() {
+  return useQuery({
+    queryKey: keys.captureFolders,
+    queryFn: () => unwrap(commands.captureFoldersList()),
+    enabled: isTauri(),
+  });
+}
+
+export function useCaptureActions(gameId: string) {
+  const client = useQueryClient();
+  const refreshGame = () => {
+    for (const queryKey of [['library'], ['game'], ['home']]) {
+      void client.invalidateQueries({ queryKey });
+    }
+  };
+  const refreshFolders = () => {
+    void client.invalidateQueries({ queryKey: keys.captureFolders });
+    void client.invalidateQueries({ queryKey: ['captures'] });
+  };
+  return {
+    useAsHero: useMutation({
+      mutationFn: (id: string) => unwrap(commands.captureUseAsHero(id)),
+      onSuccess: refreshGame,
+    }),
+    useStoreImage: useMutation({
+      mutationFn: (url: string) => unwrap(commands.artworkUseStoreImage(gameId, url)),
+      onSuccess: (detail) => {
+        client.setQueryData(keys.game(gameId), detail);
+        refreshGame();
+      },
+    }),
+    copy: useMutation({ mutationFn: (id: string) => unwrap(commands.captureCopy(id)) }),
+    reveal: useMutation({ mutationFn: (id: string) => unwrap(commands.captureReveal(id)) }),
+    open: useMutation({ mutationFn: (id: string) => unwrap(commands.captureOpen(id)) }),
+    openFolder: useMutation({
+      mutationFn: (id: string) => unwrap(commands.captureOpenFolder(id)),
+    }),
+    caption: useMutation({
+      mutationFn: ({ id, caption }: { id: string; caption: string | null }) =>
+        unwrap(commands.captureSetCaption(id, caption)),
+      onSuccess: () => void client.invalidateQueries({ queryKey: keys.captures(gameId) }),
+    }),
+    addFolder: useMutation({
+      mutationFn: ({ path, forGame }: { path: string; forGame: string | null }) =>
+        unwrap(commands.captureFolderAdd(path, forGame)),
+      onSuccess: refreshFolders,
+    }),
+    removeFolder: useMutation({
+      mutationFn: (path: string) => unwrap(commands.captureFolderRemove(path)),
+      onSuccess: refreshFolders,
+    }),
+  };
 }

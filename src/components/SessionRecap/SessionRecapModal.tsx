@@ -9,7 +9,7 @@ import {
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Flame, Trophy, X } from 'lucide-react';
+import { Flame, ImageIcon, Trophy, X } from 'lucide-react';
 import { artworkSrc, commands, unwrap, type GameStatus, type SessionRecap } from '../../api/client';
 import { fr } from '../../i18n/fr';
 import { formatLastPlayed, formatPlaytimeLong, formatPlaytimeShort } from '../../lib/format';
@@ -169,11 +169,11 @@ function RecapContent({
   });
 
   const saveAndClose = () => save.mutate(undefined, { onSuccess: onDone });
-  const saveAndOpen = () =>
+  const saveAndOpen = (tab = '') =>
     save.mutate(undefined, {
       onSuccess: () => {
         onDone();
-        navigate(`/game/${g.id}`);
+        navigate(`/game/${g.id}${tab ? `/${tab}` : ''}`);
       },
     });
   const close = () => (dirty ? setConfirm('close') : onDone());
@@ -266,7 +266,8 @@ function RecapContent({
             />
           </div>
           <Achievements recap={recap} />
-          <Goals recap={recap} onSeeAll={saveAndOpen} />
+          <Captures recap={recap} onOpen={() => saveAndOpen('captures')} />
+          <Goals recap={recap} onSeeAll={() => saveAndOpen()} />
         </div>
 
         <div className={styles.column}>
@@ -330,7 +331,7 @@ function RecapContent({
             type="button"
             className={`${buttons.secondary} ${styles.footerButton}`}
             disabled={save.isPending}
-            onClick={saveAndOpen}
+            onClick={() => saveAndOpen()}
           >
             {t.openSheet}
           </button>
@@ -492,6 +493,41 @@ function Achievements({ recap }: { recap: SessionRecap }) {
         </ul>
       )}
     </section>
+  );
+}
+
+/** Captures taken during the session: their number and 3 thumbnails. */
+function Captures({ recap, onOpen }: { recap: SessionRecap; onOpen: () => void }) {
+  const shots = recap.captures;
+  if (shots.length === 0) return null;
+  return (
+    <section className={styles.section} aria-labelledby="recap-captures">
+      <div className={styles.sectionHead}>
+        <h3 id="recap-captures" className="section-label">
+          {t.captures(shots.length)}
+        </h3>
+        <button type="button" className={styles.link} onClick={onOpen}>
+          {t.capturesOpen}
+        </button>
+      </div>
+      <ul className={styles.shots}>
+        {shots.slice(0, 3).map((c) => (
+          <li key={c.id} className={`${styles.shot} img-host`}>
+            <CaptureThumb path={c.thumbPath ?? (c.kind === 'image' ? c.path : null)} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function CaptureThumb({ path }: { path: string | null }) {
+  const [failed, setFailed] = useState(false);
+  const src = artworkSrc(path);
+  return src && !failed ? (
+    <SkeletonImage src={src} onError={() => setFailed(true)} />
+  ) : (
+    <ImageIcon size={20} aria-hidden="true" />
   );
 }
 

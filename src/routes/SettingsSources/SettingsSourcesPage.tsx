@@ -37,6 +37,7 @@ import { formatLastPlayed } from '../../lib/format';
 import { usePrefs, type RecapMode } from '../../lib/prefs';
 import { scrollToSection } from '../../lib/scrollToSection';
 import styles from './SettingsSourcesPage.module.css';
+import { CaptureFoldersCard } from './CaptureFoldersCard';
 import { EmulatorsCard } from './EmulatorsCard';
 
 const t = fr.settings;
@@ -742,6 +743,7 @@ export function SettingsSourcesPage() {
           keyField={<SecretKeyField kind="retroachievements_api_key" labelId="ra-label" />}
         />
       )}
+      {isTauri() && <CaptureFoldersCard />}
       {isTauri() && <TrackingCard />}
       {isTauri() && <AppCard />}
       {isTauri() && <HiddenGamesCard />}

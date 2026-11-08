@@ -63,6 +63,8 @@ vi.mock('../api/client', async (importOriginal) => {
       gameGet: () => ok(detail),
       sessionsList: () => ok([]),
       goalsList: () => ok([]),
+      capturesList: () => ok({ items: [], folders: [], scanning: false }),
+      capturesScan: () => Promise.resolve(null),
       gameNews: () => ok({ items: [], hidden: [] }),
       gameStoreMedia: () =>
         ok({
