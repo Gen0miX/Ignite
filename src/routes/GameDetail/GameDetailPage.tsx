@@ -2,6 +2,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { Play, Star } from 'lucide-react';
 import { artworkSrc, isTauri, type GameDetail, type GameStatus } from '../../api/client';
 import {
+  useAchievements,
   useCaptures,
   useGame,
   useLaunchGame,
@@ -91,6 +92,8 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
   const [picking, setPicking] = useState(false);
 
   const platformAchievements = hasPlatformAchievements(game);
+  // Loaded with the sheet, so the icons download while you look at Aperçu.
+  useAchievements(s.id, platformAchievements);
   const ach = s.achievements && s.achievements.total > 0 ? s.achievements : null;
   const goals = s.goals && s.goals.total > 0 ? s.goals : null;
   const captures = useCaptures(s.id).data?.items.length;

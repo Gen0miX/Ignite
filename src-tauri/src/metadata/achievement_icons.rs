@@ -42,25 +42,65 @@ pub fn cached(dir: &Path, url: &str) -> Option<PathBuf> {
         .find(|p| p.is_file())
 }
 
-/// Downloads the icons not cached yet; returns how many were added. A failed
+/// Downloads running at once: icons are tiny, the time goes in round trips.
+/// Kept low to stay gentle with the CDNs.
+pub const PARALLEL: usize = 6;
+
+/// Downloads the icons not cached yet, `PARALLEL` at a time, calling
+/// `on_icon` after each one stored; returns how many were added. A failed
 /// icon is skipped (the UI shows a trophy instead).
+pub fn fetch_missing_with(dir: &Path, urls: &[String], on_icon: &(dyn Fn() + Sync)) -> usize {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let todo: Vec<&String> = urls
+        .iter()
+        .filter(|u| allowed(u) && cached(dir, u).is_none())
+        .collect();
+    let next = AtomicUsize::new(0);
+    let added = AtomicUsize::new(0);
+    std::thread::scope(|scope| {
+        for _ in 0..PARALLEL.min(todo.len()) {
+            scope.spawn(|| {
+                while let Some(url) = todo.get(next.fetch_add(1, Ordering::Relaxed)) {
+                    match download_named(dir, &file_stem(url), url) {
+                        Ok(_) => {
+                            added.fetch_add(1, Ordering::Relaxed);
+                            on_icon();
+                        }
+                        Err(e) => {
+                            tracing::debug!(%url, error = %e, "achievement icon not downloaded")
+                        }
+                    }
+                }
+            });
+        }
+    });
+    added.into_inner()
+}
+
 pub fn fetch_missing(dir: &Path, urls: &[String]) -> usize {
-    let mut added = 0;
-    for url in urls {
-        if !allowed(url) || cached(dir, url).is_some() {
-            continue;
-        }
-        match download_named(dir, &file_stem(url), url) {
-            Ok(_) => added += 1,
-            Err(e) => tracing::debug!(%url, error = %e, "achievement icon not downloaded"),
-        }
-    }
-    added
+    fetch_missing_with(dir, urls, &|| {})
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn skips_cached_and_unknown_hosts_without_network() {
+        let tmp = tempfile::tempdir().unwrap();
+        let url = "https://cdn.akamai.steamstatic.com/steamcommunity/a.jpg";
+        std::fs::write(tmp.path().join(format!("{}.jpg", file_stem(url))), b"x").unwrap();
+        let calls = std::sync::atomic::AtomicUsize::new(0);
+        let added = fetch_missing_with(
+            tmp.path(),
+            &[url.to_string(), "https://evil.example/a.jpg".to_string()],
+            &|| {
+                calls.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            },
+        );
+        assert_eq!(added, 0);
+        assert_eq!(calls.into_inner(), 0);
+    }
 
     #[test]
     fn only_known_cdns_and_stable_names() {

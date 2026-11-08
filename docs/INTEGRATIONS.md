@@ -79,7 +79,7 @@ Battle.net, EA app, Ubisoft Connect et Riot ne lisent que les **jeux installés*
 ## Icônes et succès cachés
 
 - **Succès cachés** : `GetSchemaForGame` renvoie `hidden` (0/1) pour chaque succès Steam ; il est gardé dans `achievements.hidden` (migration 0009). GOG et RetroAchievements n'en ont pas.
-- **Icônes** : jamais affichées en lien direct. Elles sont copiées dans `artwork/achievements/` (nom = empreinte FNV-1a de l'URL), en arrière-plan à l'ouverture de l'onglet Succès et après la resynchronisation de fin de session, puis l'événement `achievements-icons-ready` recharge la liste. Hôtes acceptés : `steamcdn-a.akamaihd.net`, `*.steamstatic.com`, `images.gog.com`, `*.gog-statics.com`, `media.retroachievements.org`. Un succès verrouillé montre un cadenas : seules les icônes des succès débloqués sont téléchargées, et `icongray` n'est pas utilisé.
+- **Icônes** : jamais affichées en lien direct. Elles sont copiées dans `artwork/achievements/` (nom = empreinte FNV-1a de l'URL), en arrière-plan dès l'ouverture de la fiche du jeu et après la resynchronisation de fin de session, 6 téléchargements à la fois (connexions réutilisées par l'agent HTTP partagé). L'événement `achievements-icons-ready` recharge la liste au plus toutes les 400 ms pendant le téléchargement, puis à la fin. Une icône dont le téléchargement échoue n'est pas retentée avant le redémarrage. Hôtes acceptés : `steamcdn-a.akamaihd.net`, `*.steamstatic.com`, `images.gog.com`, `*.gog-statics.com`, `media.retroachievements.org`. Un succès verrouillé montre un cadenas : seules les icônes des succès débloqués sont téléchargées, et `icongray` n'est pas utilisé.
 
 ## Captures (onglet Captures)
 

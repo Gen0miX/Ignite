@@ -202,7 +202,16 @@ fn fetch_icons_later(app: AppHandle, game_id: String, urls: Vec<String>) {
     }
     std::thread::spawn(move || {
         let dir = achievement_icons::dir(&app.state::<AppPaths>().data_dir);
-        achievement_icons::fetch_missing(&dir, &urls);
+        // Icons show as they arrive: the list reloads at most every 400 ms.
+        let last = std::sync::Mutex::new(std::time::Instant::now());
+        let progress = || {
+            let mut last = last.lock().unwrap_or_else(|e| e.into_inner());
+            if last.elapsed() >= std::time::Duration::from_millis(400) {
+                *last = std::time::Instant::now();
+                let _ = app.emit(ICONS_READY_EVENT, &game_id);
+            }
+        };
+        achievement_icons::fetch_missing_with(&dir, &urls, &progress);
         record_failures(&dir, &urls);
         if let Some(set) = FETCHING.lock().unwrap_or_else(|e| e.into_inner()).as_mut() {
             set.remove(&game_id);
