@@ -72,6 +72,7 @@ const status: GoldbergStatus = {
   definitionsReady: false,
   savesPath: null,
   savesReady: false,
+  overlay: false,
   issues: ['notInstalled', 'needsAppid', 'noSaves'],
 };
 
@@ -81,7 +82,10 @@ const setup = vi.fn(() => ok({ ...status, installed: true, appid: 42 }));
 const findSaves = vi.fn(() =>
   ok({ paths: ['C:\\Users\\Public\\Documents\\Steam\\42\\achievements.json'], unlocked: ['A'] }),
 );
-const testToast = vi.fn<() => Promise<InvokeResult<null>>>(() => ok(null));
+const testToast = vi.fn<(gameId: string) => Promise<InvokeResult<null>>>(() => ok(null));
+const setOverlay = vi.fn((_gameId: string, enabled: boolean) =>
+  ok({ ...status, installed: true, appid: 42, definitionsReady: true, overlay: enabled }),
+);
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: () => Promise.resolve(() => {}) }));
 vi.mock('../api/client', async (importOriginal) => {
@@ -120,6 +124,7 @@ vi.mock('../api/client', async (importOriginal) => {
       goldbergSetup: setup,
       goldbergFindSaves: findSaves,
       goldbergTestToast: testToast,
+      goldbergSetOverlay: setOverlay,
       libraryCounts: () =>
         ok({
           all: 1,
@@ -198,7 +203,7 @@ describe('Goldberg setup', () => {
     const user = userEvent.setup();
     renderAt('/game/g1/succes');
     await user.click(await screen.findByRole('button', { name: /Tester la notification/ }));
-    expect(testToast).toHaveBeenCalledWith('Ignite', 'Ceci est un test de notification.');
+    expect(testToast).toHaveBeenCalledWith('g1');
   });
 
   it('reports when the test notification fails', async () => {
@@ -208,5 +213,25 @@ describe('Goldberg setup', () => {
     renderAt('/game/g1/succes');
     await user.click(await screen.findByRole('button', { name: /Tester la notification/ }));
     expect(await screen.findByText(/La notification n’a pas pu être affichée/)).toBeVisible();
+  });
+
+  it('turns the in-game overlay on', async () => {
+    currentStatus = { ...status, installed: true, appid: 42, definitionsReady: true };
+    const user = userEvent.setup();
+    renderAt('/game/g1/succes');
+    const toggle = await screen.findByRole('switch', { name: 'Overlay en jeu' });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await user.click(toggle);
+    expect(setOverlay).toHaveBeenCalledWith('g1', true);
+    expect(await screen.findByRole('switch', { name: 'Overlay en jeu' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+  });
+
+  it('hides the overlay switch until Goldberg is installed', async () => {
+    renderAt('/game/g1/succes');
+    expect(await screen.findByText('Succès du jeu (Goldberg)')).toBeVisible();
+    expect(screen.queryByRole('switch', { name: 'Overlay en jeu' })).not.toBeInTheDocument();
   });
 });

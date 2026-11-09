@@ -4,7 +4,8 @@
 //! Installing replaces the game's `steam_api(64).dll` with Goldberg's, backs
 //! the original up and writes the `steam_settings` folder (appid, achievement
 //! definitions generated from the Steam Web API). Progress is then read from
-//! `%APPDATA%\GSE saves\<appid>\achievements.json` and announced by a toast.
+//! `%APPDATA%\GSE saves\<appid>\achievements.json` and announced by an
+//! Ignite popup (or Goldberg's in-game overlay when turned on).
 //!
 //! Nothing here applies to launchers, Steam games or emulators: only a
 //! `local` source with a real `.exe`.
@@ -25,10 +26,11 @@ use crate::db::Db;
 use crate::error::{AppError, AppResult};
 use crate::http;
 use crate::models::SourceKind;
+use crate::popup::{self, Popup, PopupKind};
 use crate::sources::steam::achievements as steam;
 use crate::sources::unix_to_rfc3339;
 
-/// Setting: announce new achievements with a Windows notification.
+/// Setting: announce new achievements with an Ignite popup.
 pub const NOTIFY_KEY: &str = "achievements.toasts";
 pub const ACHIEVEMENT_UNLOCKED_EVENT: &str = "achievement-unlocked";
 
@@ -64,24 +66,20 @@ fn saves_file(appid: u32) -> PathBuf {
 /// Classic Goldberg location, kept for games migrated from the original
 /// emulator.
 fn classic_saves_file(appid: u32) -> Option<PathBuf> {
-    std::env::var_os("APPDATA")
-        .map(PathBuf::from)
-        .map(|root| {
-            root.join("Goldberg SteamEmu Saves")
-                .join(appid.to_string())
-                .join("achievements.json")
-        })
+    std::env::var_os("APPDATA").map(PathBuf::from).map(|root| {
+        root.join("Goldberg SteamEmu Saves")
+            .join(appid.to_string())
+            .join("achievements.json")
+    })
 }
 
 /// `%PUBLIC%\Documents\Steam`: shared saves some Goldberg builds use.
 fn public_steam_root() -> Option<PathBuf> {
-    let public = std::env::var_os("PUBLIC")
-        .map(PathBuf::from)
-        .or_else(|| {
-            std::env::var_os("SystemDrive")
-                .map(PathBuf::from)
-                .map(|d| d.join("Users").join("Public"))
-        })?;
+    let public = std::env::var_os("PUBLIC").map(PathBuf::from).or_else(|| {
+        std::env::var_os("SystemDrive")
+            .map(PathBuf::from)
+            .map(|d| d.join("Users").join("Public"))
+    })?;
     Some(public.join("Documents").join("Steam"))
 }
 
@@ -237,6 +235,8 @@ pub struct GoldbergStatus {
     pub definitions_ready: bool,
     pub saves_path: Option<String>,
     pub saves_ready: bool,
+    /// Goldberg's in-game overlay is turned on (`configs.overlay.ini`).
+    pub overlay: bool,
     pub issues: Vec<GoldbergIssue>,
 }
 
@@ -432,6 +432,8 @@ pub fn status(
         definitions_ready: definitions,
         saves_path: saves_path.as_ref().map(|p| p.display().to_string()),
         saves_ready,
+        overlay: std::fs::read_to_string(settings.join(OVERLAY_FILE))
+            .is_ok_and(|ini| overlay_on(&ini)),
         issues,
     }
 }
@@ -967,71 +969,79 @@ fn toasts_enabled(conn: &Connection) -> bool {
         .unwrap_or(true)
 }
 
-/// Whether the running executable is a dev build (`target\debug` or
-/// `target\release`): those are not installed, so Windows has no
-/// AppUserModelID for them and the notification plugin drops toasts.
-#[cfg(target_os = "windows")]
-fn is_dev_build() -> bool {
-    let Ok(exe) = std::env::current_exe() else {
-        return false;
-    };
-    let Some(profile) = exe.parent().and_then(|p| p.file_name()) else {
-        return false;
-    };
-    let in_target = exe
-        .parent()
-        .and_then(|p| p.parent())
-        .and_then(|p| p.file_name())
-        .is_some_and(|n| n == "target");
-    in_target && profile.to_str().is_some_and(|n| n == "debug" || n == "release")
-}
+/// More unlocks than this at once are summed up in a single popup.
+const MAX_SEPARATE_POPUPS: usize = 3;
 
-/// Shows a Windows notification. The error is returned instead of swallowed.
-fn toast(app: &AppHandle, title: &str, body: &str) -> AppResult<()> {
-    #[cfg(target_os = "windows")]
-    {
-        // Dev builds have no AUMID, so `tauri-plugin-notification` silently
-        // drops the toast. Use the PowerShell AUMID, which works for
-        // unpackaged executables (the toast is attributed to PowerShell).
-        if is_dev_build() {
-            return notify_rust::Notification::new()
-                .app_id(tauri_winrt_notification::Toast::POWERSHELL_APP_ID)
-                .summary(title)
-                .body(body)
-                .show()
-                .map(|_| ())
-                .map_err(|e| AppError::Invalid(format!("toast: {e}")));
-        }
+/// Popups for a batch of unlocks: one each, or a summary for a burst (e.g.
+/// existing saves found).
+fn unlock_popups(game: &str, unlocked: &[Definition]) -> Vec<Popup> {
+    if unlocked.len() > MAX_SEPARATE_POPUPS {
+        let names: Vec<&str> = unlocked.iter().map(|d| d.name.as_str()).collect();
+        return vec![Popup {
+            kind: PopupKind::Achievements,
+            title: game.to_string(),
+            description: Some(names.join(" · ")),
+            game: Some(game.to_string()),
+            image: unlocked.iter().find_map(|d| d.icon.clone()),
+            count: u32::try_from(unlocked.len()).ok(),
+        }];
     }
-    use tauri_plugin_notification::NotificationExt;
-    app.notification()
-        .builder()
-        .title(title)
-        .body(body)
-        .show()
-        .map_err(|e| AppError::Invalid(format!("toast: {e}")))
+    unlocked
+        .iter()
+        .map(|d| Popup {
+            kind: PopupKind::Achievement,
+            title: d.name.clone(),
+            description: d.description.clone(),
+            game: Some(game.to_string()),
+            image: d.icon.clone(),
+            count: None,
+        })
+        .collect()
 }
 
-/// Shows a notification through the same path as achievement toasts, so the
-/// user can check that Windows notifications work.
-pub fn test_toast(app: &AppHandle, title: &str, body: &str) -> AppResult<()> {
-    toast(app, title, body)
+/// Shows a sample popup with one of the game's achievements, so the user
+/// can see what an unlock looks like.
+pub fn test_popup(
+    app: &AppHandle,
+    conn: &Connection,
+    source: &crate::db::repo::game_sources::GameSource,
+) -> AppResult<()> {
+    let game = games::get(conn, &source.game_id)
+        .map(|g| g.title)
+        .unwrap_or_default();
+    let definitions = read_definitions(source);
+    let sample = definitions
+        .iter()
+        .find(|d| d.icon.is_some() && !d.hidden)
+        .or_else(|| definitions.first());
+    popup::show(
+        app,
+        Popup {
+            kind: PopupKind::Test,
+            title: sample.map(|d| d.name.clone()).unwrap_or_default(),
+            description: sample.and_then(|d| d.description.clone()),
+            game: Some(game),
+            image: sample.and_then(|d| d.icon.clone()),
+            count: None,
+        },
+    )
 }
 
-/// Announces unlocked achievements: emits the UI event and, when toasts are
-/// enabled, shows a Windows notification per achievement. Shared by the
-/// watcher and the manual "find existing saves" search.
+/// Announces unlocked achievements: emits the UI event and, when enabled,
+/// shows Ignite popups. `in_game` (the watcher) skips the popups when the
+/// game's Goldberg overlay is on: it already shows them inside the game.
 pub fn announce_unlocks(
     app: &AppHandle,
     conn: &Connection,
     source: &crate::db::repo::game_sources::GameSource,
     unlocked: &[String],
+    in_game: bool,
 ) {
     let definitions = read_definitions(source);
     let title = games::get(conn, &source.game_id)
         .map(|g| g.title)
         .unwrap_or_default();
-    let notify = toasts_enabled(conn);
+    let mut shown: Vec<Definition> = Vec::new();
     for api_name in unlocked {
         let definition = definitions.iter().find(|d| d.api_name == *api_name);
         let display = definition
@@ -1046,12 +1056,152 @@ pub fn announce_unlocks(
                 "description": definition.and_then(|d| d.description.clone()),
             }),
         );
-        if notify {
-            if let Err(e) = toast(app, &display, &title) {
-                tracing::warn!(error = %e, api_name, "goldberg: toast failed");
+        shown.push(definition.cloned().unwrap_or_else(|| Definition {
+            api_name: api_name.clone(),
+            name: display,
+            description: None,
+            icon: None,
+            hidden: false,
+        }));
+    }
+    if !toasts_enabled(conn) || (in_game && overlay_enabled_for(source)) {
+        return;
+    }
+    for p in unlock_popups(&title, &shown) {
+        if let Err(e) = popup::show(app, p) {
+            tracing::warn!(error = %e, "goldberg: popup failed");
+        }
+    }
+}
+
+const OVERLAY_FILE: &str = "configs.overlay.ini";
+const OVERLAY_KEY: &str = "enable_experimental_overlay";
+
+/// Goldberg's in-game overlay with Ignite's colors (« Braise »). Keys from
+/// gbe_fork's `configs.overlay.EXAMPLE.ini`; colors are 0–1 floats.
+const OVERLAY_TEMPLATE: &str = "\
+# Written by Ignite: Goldberg's in-game overlay, with Ignite's colors.
+# Shift+Tab opens it. Experimental: turn it off in Ignite if the game crashes.
+[overlay::general]
+enable_experimental_overlay=1
+disable_achievement_progress=1
+
+[overlay::appearance]
+Font_Size=18.0
+Font_Achievement_Title_Bold=1
+Icon_Size=64.0
+# #241d19 (cards)
+Notification_R=0.141
+Notification_G=0.114
+Notification_B=0.098
+Notification_A=0.97
+Notification_Rounding=12.0
+Notification_Margin_x=12.0
+Notification_Margin_y=12.0
+Notification_Duration_Achievement=6.0
+# #14100e (app background)
+Background_R=0.078
+Background_G=0.063
+Background_B=0.055
+Background_A=0.85
+# #2a211c (active item)
+Element_R=0.165
+Element_G=0.129
+Element_B=0.110
+Element_A=1.0
+# #ff7a45 (accent)
+ElementHovered_R=1.0
+ElementHovered_G=0.478
+ElementHovered_B=0.271
+ElementHovered_A=1.0
+PosAchievement=bot_right
+";
+
+fn ini_key(line: &str) -> Option<&str> {
+    let line = line.trim_start();
+    if line.starts_with('#') || line.starts_with(';') {
+        return None;
+    }
+    line.split_once('=').map(|(k, _)| k.trim())
+}
+
+/// Whether an overlay config turns the overlay on.
+fn overlay_on(ini: &str) -> bool {
+    ini.lines()
+        .rev()
+        .find(|l| ini_key(l) == Some(OVERLAY_KEY))
+        .and_then(|l| l.split_once('='))
+        .is_some_and(|(_, v)| v.trim() == "1")
+}
+
+/// New content of `configs.overlay.ini`: the Ignite template for a new file,
+/// otherwise the user's file with only the enable line changed.
+fn overlay_ini(existing: Option<&str>, enabled: bool) -> String {
+    let value = format!("{OVERLAY_KEY}={}", u8::from(enabled));
+    let Some(existing) = existing else {
+        return OVERLAY_TEMPLATE.replace(&format!("{OVERLAY_KEY}=1"), &value);
+    };
+    let mut found = false;
+    let mut lines: Vec<String> = existing
+        .lines()
+        .map(|l| {
+            if ini_key(l) == Some(OVERLAY_KEY) {
+                found = true;
+                value.clone()
+            } else {
+                l.to_string()
+            }
+        })
+        .collect();
+    if !found {
+        match lines
+            .iter()
+            .position(|l| l.trim().eq_ignore_ascii_case("[overlay::general]"))
+        {
+            Some(i) => lines.insert(i + 1, value),
+            None => {
+                lines.insert(0, value);
+                lines.insert(0, "[overlay::general]".into());
             }
         }
     }
+    let mut out = lines.join("\n");
+    out.push('\n');
+    out
+}
+
+fn overlay_path(source: &crate::db::repo::game_sources::GameSource) -> Option<PathBuf> {
+    let dir = game_dir(source)?;
+    Some(settings_dir(find_dll(&dir).as_deref(), &dir).join(OVERLAY_FILE))
+}
+
+fn overlay_enabled_for(source: &crate::db::repo::game_sources::GameSource) -> bool {
+    overlay_path(source)
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .is_some_and(|ini| overlay_on(&ini))
+}
+
+/// Turns Goldberg's in-game overlay on or off (`steam_settings\configs.overlay.ini`).
+pub fn set_overlay(
+    conn: &Connection,
+    source: &crate::db::repo::game_sources::GameSource,
+    enabled: bool,
+) -> AppResult<GoldbergStatus> {
+    if !is_eligible_source(source) {
+        return Err(AppError::Invalid(
+            "only a local game with an executable is supported".into(),
+        ));
+    }
+    let path =
+        overlay_path(source).ok_or_else(|| AppError::Invalid("game folder not found".into()))?;
+    let existing = std::fs::read_to_string(&path).ok();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| AppError::Invalid(format!("cannot create steam_settings: {e}")))?;
+    }
+    std::fs::write(&path, overlay_ini(existing.as_deref(), enabled))
+        .map_err(|e| AppError::Invalid(format!("cannot write {OVERLAY_FILE}: {e}")))?;
+    Ok(status(conn, source))
 }
 
 /// Achievement watches, seeded on first sight so existing unlocks are silent.
@@ -1108,7 +1258,7 @@ fn tick(app: &AppHandle) {
         if new.is_empty() {
             continue;
         }
-        announce_unlocks(app, &conn, source, &new);
+        announce_unlocks(app, &conn, source, &new, true);
     }
 }
 
@@ -1268,10 +1418,16 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let one = tmp.path().join("one.json");
         let two = tmp.path().join("two.json");
-        std::fs::write(&one, r#"{"A":{"earned":true,"earned_time":30},"B":{"earned":false}}"#)
-            .unwrap();
-        std::fs::write(&two, r#"{"A":{"earned":true,"earned_time":10},"C":{"earned":true}}"#)
-            .unwrap();
+        std::fs::write(
+            &one,
+            r#"{"A":{"earned":true,"earned_time":30},"B":{"earned":false}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            &two,
+            r#"{"A":{"earned":true,"earned_time":10},"C":{"earned":true}}"#,
+        )
+        .unwrap();
         let merged = merge_earned(&[one, two]);
         assert_eq!(merged.get("A"), Some(&10));
         assert_eq!(merged.get("C"), Some(&0));
@@ -1302,9 +1458,91 @@ Count=2
     #[test]
     fn walk_finds_ini_files() {
         let tmp = tempfile::tempdir().unwrap();
-        let target = tmp.path().join("Emu").join("541570").join("achievements.ini");
+        let target = tmp
+            .path()
+            .join("Emu")
+            .join("541570")
+            .join("achievements.ini");
         std::fs::create_dir_all(target.parent().unwrap()).unwrap();
         std::fs::write(&target, "[SteamAchievements]\r\nCount=0\r\n").unwrap();
         assert_eq!(walk_for_appid(tmp.path(), 541570), vec![target]);
+    }
+
+    #[test]
+    fn overlay_template_is_written_on_or_off() {
+        let on = overlay_ini(None, true);
+        assert!(overlay_on(&on));
+        assert!(on.contains("Notification_R=0.141"));
+        let off = overlay_ini(None, false);
+        assert!(!overlay_on(&off));
+        assert!(off.contains("enable_experimental_overlay=0"));
+    }
+
+    #[test]
+    fn overlay_toggle_keeps_the_user_file() {
+        let user = "[overlay::general]\n# comment enable_experimental_overlay=1\nenable_experimental_overlay = 0\nhook_delay_sec=5\n";
+        let on = overlay_ini(Some(user), true);
+        assert!(overlay_on(&on));
+        assert!(on.contains("hook_delay_sec=5"));
+        assert!(on.contains("# comment enable_experimental_overlay=1"));
+        assert!(!overlay_on(&overlay_ini(Some(&on), false)));
+        // Commented-out line only: not on.
+        assert!(!overlay_on("#enable_experimental_overlay=1\n"));
+    }
+
+    #[test]
+    fn overlay_line_added_when_missing() {
+        let out = overlay_ini(Some("[overlay::appearance]\nFont_Size=20.0\n"), true);
+        assert!(out.starts_with("[overlay::general]\nenable_experimental_overlay=1\n"));
+        let out = overlay_ini(Some("[overlay::general]\nhook_delay_sec=0\n"), true);
+        assert_eq!(
+            out,
+            "[overlay::general]\nenable_experimental_overlay=1\nhook_delay_sec=0\n"
+        );
+    }
+
+    #[test]
+    fn set_overlay_writes_beside_the_dll() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::write(tmp.path().join("game.exe"), b"MZ").unwrap();
+        std::fs::write(tmp.path().join("steam_api64.dll"), b"x").unwrap();
+        let db = crate::db::Db::open_in_memory().unwrap();
+        let conn = db.conn();
+        let source = exe(tmp.path());
+        let status = set_overlay(&conn, &source, true).unwrap();
+        assert!(status.overlay);
+        assert!(overlay_enabled_for(&source));
+        let status = set_overlay(&conn, &source, false).unwrap();
+        assert!(!status.overlay);
+    }
+
+    fn def(name: &str) -> Definition {
+        Definition {
+            api_name: name.into(),
+            name: name.into(),
+            description: Some(format!("{name} desc")),
+            icon: Some(format!("C:/img/{name}.jpg")),
+            hidden: false,
+        }
+    }
+
+    #[test]
+    fn a_few_unlocks_get_one_popup_each() {
+        let popups = unlock_popups("Jeu", &[def("A"), def("B")]);
+        assert_eq!(popups.len(), 2);
+        assert_eq!(popups[0].kind, PopupKind::Achievement);
+        assert_eq!(popups[0].title, "A");
+        assert_eq!(popups[0].image.as_deref(), Some("C:/img/A.jpg"));
+        assert_eq!(popups[1].game.as_deref(), Some("Jeu"));
+    }
+
+    #[test]
+    fn a_burst_is_summed_up() {
+        let defs: Vec<Definition> = ["A", "B", "C", "D"].into_iter().map(def).collect();
+        let popups = unlock_popups("Jeu", &defs);
+        assert_eq!(popups.len(), 1);
+        assert_eq!(popups[0].kind, PopupKind::Achievements);
+        assert_eq!(popups[0].count, Some(4));
+        assert_eq!(popups[0].description.as_deref(), Some("A · B · C · D"));
     }
 }

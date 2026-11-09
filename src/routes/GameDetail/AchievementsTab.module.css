@@ -442,3 +442,19 @@
   color: var(--color-accent-ink);
   font-size: var(--text-sm);
 }
+
+.overlayRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-field);
+  border: 1px solid var(--color-line);
+}
+
+.overlayLabel {
+  font-size: var(--text-md);
+  font-weight: 600;
+}

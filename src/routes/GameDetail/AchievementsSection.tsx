@@ -27,11 +27,13 @@ import {
   useGoldbergOpenSaves,
   useGoldbergSetup,
   useGoldbergStatus,
+  useGoldbergSetOverlay,
   useGoldbergTestToast,
   useRefreshAchievements,
 } from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
+import { Switch } from '../../components/Switch/Switch';
 import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
 import { SkeletonImage } from '../../components/Skeleton/SkeletonImage';
 import { fr } from '../../i18n/fr';
@@ -491,7 +493,8 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
   const clear = useGoldbergClearAppid(gameId);
   const openSaves = useGoldbergOpenSaves(gameId);
   const findSaves = useGoldbergFindSaves(gameId);
-  const testToast = useGoldbergTestToast();
+  const testToast = useGoldbergTestToast(gameId);
+  const overlay = useGoldbergSetOverlay(gameId);
   const [typed, setTyped] = useState<string | null>(null);
   const s = status.data ?? initial;
   const appid = typed ?? (s?.appid ? String(s.appid) : '');
@@ -614,12 +617,8 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
             <button
               type="button"
               className={buttons.secondary}
-              onClick={() =>
-                testToast.mutate({
-                  title: t.goldberg.testToastTitle,
-                  body: t.goldberg.testToastBody,
-                })
-              }
+              onClick={() => testToast.mutate()}
+              disabled={testToast.isPending}
               title={t.goldberg.testToastHint}
             >
               <Bell size={14} aria-hidden="true" />
@@ -648,6 +647,20 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
           </>
         )}
       </form>
+      {s.installed && (
+        <div className={styles.overlayRow}>
+          <div>
+            <p className={styles.overlayLabel}>{t.goldberg.overlay}</p>
+            <p className={sheet.muted}>{t.goldberg.overlayHint}</p>
+          </div>
+          <Switch
+            label={t.goldberg.overlay}
+            checked={s.overlay}
+            disabled={overlay.isPending}
+            onChange={(enabled) => overlay.mutate(enabled)}
+          />
+        </div>
+      )}
       {findSaves.data && (
         <p
           className={findSaves.data.unlocked.length > 0 ? styles.findFound : sheet.muted}
@@ -672,7 +685,7 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
           {t.goldberg.testToastError}
         </p>
       )}
-      {(setup.isError || clear.isError || findSaves.isError) && (
+      {(setup.isError || clear.isError || findSaves.isError || overlay.isError) && (
         <p role="alert" className={sheet.error}>
           {t.goldberg.error}
         </p>

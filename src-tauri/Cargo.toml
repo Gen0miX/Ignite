@@ -35,7 +35,6 @@ specta = { version = "=2.0.0-rc.26", features = ["derive"] }
 tauri-specta = { version = "=2.0.0-rc.26", features = ["derive", "typescript"] }
 specta-typescript = "=0.0.13"
 tauri-plugin-autostart = "2.7.0"
-tauri-plugin-notification = "2"
 tauri-plugin-single-instance = "2"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 tauri-plugin-clipboard-manager = "2"
@@ -60,10 +59,6 @@ strip = true
 windows-native-keyring-store = { version = "1.1.0", default-features = false }
 winreg = "0.56.0"
 windows-sys = { version = "0.61.2", features = ["Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Input_XboxController", "Win32_System_SystemInformation", "Win32_Foundation", "Win32_Storage_FileSystem"] }
-# Dev builds have no AppUserModelID, so the notification plugin drops toasts;
-# notify-rust shows them through the PowerShell AUMID instead (see goldberg::toast).
-notify-rust = "4.18.2"
-tauri-winrt-notification = "0.8.1"
 
 [dev-dependencies]
 tempfile = "3.27.0"

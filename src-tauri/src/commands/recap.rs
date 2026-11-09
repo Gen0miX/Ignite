@@ -357,18 +357,38 @@ pub fn window_reveal(app: AppHandle) {
     crate::tray::show_main(&app);
 }
 
-/// Windows notification "Session terminée · jeu · 2 h 14" (texts from the UI),
-/// used when the modal cannot open now (couch mode, another game running).
+/// Ignite popup "Session terminée · jeu · 2 h 14" (`duration` formatted by
+/// the UI), used when the modal cannot open now (couch mode, another game
+/// running). Async: building the popup window from a sync command deadlocks
+/// on Windows.
 #[tauri::command]
 #[specta::specta]
-pub fn notify(app: AppHandle, title: String, body: String) -> CommandResult<()> {
-    use tauri_plugin_notification::NotificationExt;
-    app.notification()
-        .builder()
-        .title(title)
-        .body(body)
-        .show()
-        .map_err(|e| AppError::Invalid(format!("notification: {e}")).into())
+pub async fn notify(app: AppHandle, game_id: String, duration: String) -> CommandResult<()> {
+    let (title, image) = {
+        let db = app.state::<Db>();
+        let conn = db.conn();
+        let title = games::get(&conn, &game_id)
+            .map(|g| g.title)
+            .unwrap_or_default();
+        let mut art = artwork::for_game(&conn, &game_id).unwrap_or_default();
+        let image = art
+            .remove("icon")
+            .or_else(|| art.remove("cover"))
+            .filter(|p| std::path::Path::new(p).is_file());
+        (title, image)
+    };
+    crate::popup::show(
+        &app,
+        crate::popup::Popup {
+            kind: crate::popup::PopupKind::Session,
+            title: title.clone(),
+            description: Some(duration),
+            game: Some(title),
+            image,
+            count: None,
+        },
+    )
+    .map_err(Into::into)
 }
 
 /// Called by the tracker once an automatic session is written: the modal can

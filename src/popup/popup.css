@@ -1,0 +1,14 @@
+/* Popup window: transparent page, card in the bottom-right corner. */
+html,
+body {
+  background: transparent;
+}
+
+#root {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 12px;
+  user-select: none;
+  cursor: default;
+}

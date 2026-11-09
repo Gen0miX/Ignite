@@ -21,6 +21,10 @@ export default defineConfig({
     target: 'chrome120',
     minify: !process.env.TAURI_ENV_DEBUG,
     sourcemap: !!process.env.TAURI_ENV_DEBUG,
+    rollupOptions: {
+      // Second page: the notification popup window (src-tauri/src/popup.rs).
+      input: { main: 'index.html', notification: 'notification.html' },
+    },
   },
   test: {
     environment: 'jsdom',

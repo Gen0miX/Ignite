@@ -70,8 +70,8 @@ vi.mock('../api/client', async (importOriginal) => {
         backend.revealed += 1;
         return Promise.resolve(null);
       },
-      notify: (title: string, body: string) => {
-        backend.notified.push(`${title} · ${body}`);
+      notify: (gameId: string, duration: string) => {
+        backend.notified.push(`${gameId} · ${duration}`);
         return ok(null);
       },
       sessionRecapSave: (_id: string, input: unknown) => {
@@ -145,7 +145,7 @@ describe('session recap', () => {
     renderApp();
     await sessionEnds();
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(backend.notified).toEqual(['Session terminée · Satisfactory · 2 h 14']);
+    expect(backend.notified).toEqual(['g1 · 2 h 14']);
     await act(async () => {
       window.dispatchEvent(new Event('focus'));
     });

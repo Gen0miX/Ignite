@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "popup",
+  "description": "Ignite notification popups (no focus, click-through)",
+  "windows": ["popup-*"],
+  "permissions": ["core:default"]
+}

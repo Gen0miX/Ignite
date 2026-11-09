@@ -53,6 +53,14 @@ export const fr = {
     clear: 'Annuler',
     dragCount: (n: number) => `${n} ${n > 1 ? 'jeux' : 'jeu'}`,
   },
+  popup: {
+    achievement: 'Succès débloqué',
+    achievements: (n: number) => `${n} succès débloqués`,
+    session: 'Session terminée',
+    test: 'Aperçu · succès débloqué',
+    testTitle: 'Premier succès',
+    testBody: 'Voici à quoi ressemblera un succès débloqué.',
+  },
   toast: {
     close: 'Fermer la notification',
     launching: (title: string) => `Lancement de ${title}…`,
@@ -565,8 +573,6 @@ export const fr = {
     loading: 'Chargement du récap…',
     loadError: 'Le récap de cette session n’est pas disponible.',
     shortcuts: 'Échap pour fermer · Ctrl+Entrée pour enregistrer',
-    notifyTitle: 'Session terminée',
-    notifyBody: (title: string, duration: string) => `${title} · ${duration}`,
   },
   tracking: {
     inGame: 'En jeu',
@@ -806,11 +812,11 @@ export const fr = {
         `${n} succès déjà débloqué${n > 1 ? 's' : ''} trouvé${n > 1 ? 's' : ''} dans ${files} fichier${files > 1 ? 's' : ''}.`,
       foundNone: 'Aucun succès déjà débloqué trouvé.',
       testToast: 'Tester la notification',
-      testToastHint: 'Affiche une notification Windows de test.',
-      testToastTitle: 'Ignite',
-      testToastBody: 'Ceci est un test de notification.',
-      testToastError:
-        'La notification n’a pas pu être affichée. Vérifie que Windows autorise les notifications pour Ignite.',
+      testToastHint: 'Affiche un aperçu de la notification avec un succès du jeu.',
+      testToastError: 'La notification n’a pas pu être affichée.',
+      overlay: 'Overlay en jeu',
+      overlayHint:
+        'Affiche les succès directement dans le jeu, même en plein écran exclusif (overlay expérimental de Goldberg, Maj+Tab pour l’ouvrir). Ignite ne montre alors plus sa propre notification pendant la partie. Désactive-le si le jeu plante.',
       clearAppid: 'Oublier l’AppID',
       ready: 'Goldberg est installé et configuré pour ce jeu.',
       installedShort: 'Installé, à configurer',
@@ -985,7 +991,8 @@ export const fr = {
       idleHint:
         'Sans clavier, souris ni manette pendant ce temps, la période d’inactivité est retirée de la session.',
       toasts: 'Notifications de succès',
-      toastsHint: 'Affiche une notification Windows quand un succès Goldberg est débloqué.',
+      toastsHint:
+        'Affiche une notification Ignite dans le coin de l’écran quand un succès Goldberg est débloqué.',
       none: 'aucune',
       minutes: (n: number) => `${n} min`,
       duplicates: 'Jeux sur plusieurs plateformes',

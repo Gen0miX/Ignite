@@ -7,6 +7,7 @@ pub mod legacy;
 pub mod library;
 pub mod metadata;
 pub mod models;
+pub mod popup;
 pub mod secrets;
 pub mod sources;
 pub mod tracker;
@@ -45,7 +46,6 @@ pub fn run() {
         }));
     }
     app.plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,

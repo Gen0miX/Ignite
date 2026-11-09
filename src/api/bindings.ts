@@ -80,8 +80,26 @@ export const commands = {
 	 *  Documents), then announces each one so the user gets a notification.
 	 */
 	goldbergFindSaves: (gameId: string) => typedError<GoldbergFind, CommandError>(__TAURI_INVOKE("goldberg_find_saves", { gameId })),
-	/**  Shows a test notification through the same path as achievement toasts. */
-	goldbergTestToast: (title: string, body: string) => typedError<null, CommandError>(__TAURI_INVOKE("goldberg_test_toast", { title, body })),
+	/**
+	 *  Shows a sample achievement popup with one of the game's achievements.
+	 *  Async: building the popup window from a sync command deadlocks on Windows.
+	 */
+	goldbergTestToast: (gameId: string) => typedError<null, CommandError>(__TAURI_INVOKE("goldberg_test_toast", { gameId })),
+	/**  Turns Goldberg's in-game overlay on or off for this game. */
+	goldbergSetOverlay: (gameId: string, enabled: boolean) => typedError<GoldbergStatus_Serialize, CommandError>(__TAURI_INVOKE("goldberg_set_overlay", { gameId, enabled })),
+	/**  Next popup to show, if any. */
+	popupNext: () => __TAURI_INVOKE<Popup_Serialize | null>("popup_next"),
+	/**
+	 *  Called by the popup window once it has nothing left to show. Returns
+	 *  `true` when popups arrived meanwhile (keep going); otherwise the window
+	 *  is closed.
+	 */
+	popupIdle: () => __TAURI_INVOKE<boolean>("popup_idle"),
+	/**
+	 *  The popup has painted its first frame: show the window without
+	 *  activating it.
+	 */
+	popupReady: () => __TAURI_INVOKE<void>("popup_ready"),
 	homeOverview: () => typedError<HomeOverview_Serialize, CommandError>(__TAURI_INVOKE("home_overview")),
 	homeTonight: (choice: Tonight) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("home_tonight", { choice })),
 	/**  Steam news of the games played in the last 30 days. */
@@ -121,10 +139,12 @@ export const commands = {
 	/**  Brings Ignite's window to the front (out of the notification area). */
 	windowReveal: () => __TAURI_INVOKE<void>("window_reveal"),
 	/**
-	 *  Windows notification "Session terminée · jeu · 2 h 14" (texts from the UI),
-	 *  used when the modal cannot open now (couch mode, another game running).
+	 *  Ignite popup "Session terminée · jeu · 2 h 14" (`duration` formatted by
+	 *  the UI), used when the modal cannot open now (couch mode, another game
+	 *  running). Async: building the popup window from a sync command deadlocks
+	 *  on Windows.
 	 */
-	notify: (title: string, body: string) => typedError<null, CommandError>(__TAURI_INVOKE("notify", { title, body })),
+	notify: (gameId: string, duration: string) => typedError<null, CommandError>(__TAURI_INVOKE("notify", { gameId, duration })),
 	/**  Time to beat of a game (IGDB fetched when missing or older than 30 days). */
 	timeToBeatGet: (gameId: string) => typedError<TimeToBeatView_Serialize, CommandError>(__TAURI_INVOKE("time_to_beat_get", { gameId })),
 	/**  "Actualiser": new IGDB lookup, candidates forgotten. */
@@ -817,6 +837,8 @@ export type GoldbergStatus_Deserialize = {
 	definitionsReady: boolean,
 	savesPath?: string | null,
 	savesReady: boolean,
+	/**  Goldberg's in-game overlay is turned on (`configs.overlay.ini`). */
+	overlay: boolean,
 	issues: GoldbergIssue[],
 };
 
@@ -835,6 +857,8 @@ export type GoldbergStatus_Serialize = {
 	definitionsReady: boolean,
 	savesPath: string | null,
 	savesReady: boolean,
+	/**  Goldberg's in-game overlay is turned on (`configs.overlay.ini`). */
+	overlay: boolean,
 	issues: GoldbergIssue[],
 };
 
@@ -1129,6 +1153,50 @@ export type PlaySession_Serialize = {
 	 *  leaves it alone, `set_rating` writes it).
 	 */
 	rating: number | null,
+};
+
+/**
+ *  What the popup shows. Texts that depend on the kind (« Succès débloqué »…)
+ *  come from the frontend's i18n.
+ */
+export type Popup = Popup_Serialize | Popup_Deserialize;
+
+export type PopupKind = 
+/**  One achievement unlocked. */
+"achievement" | 
+/**  Several achievements at once (`count`), e.g. found in existing saves. */
+"achievements" | 
+/**  A play session ended (`description` holds the duration text). */
+"session" | 
+/**  Sample shown by the "test the notification" button. */
+"test";
+
+/**
+ *  What the popup shows. Texts that depend on the kind (« Succès débloqué »…)
+ *  come from the frontend's i18n.
+ */
+export type Popup_Deserialize = {
+	kind: PopupKind,
+	title: string,
+	description?: string | null,
+	game?: string | null,
+	/**  Local file path or `https` URL. */
+	image?: string | null,
+	count?: number | null,
+};
+
+/**
+ *  What the popup shows. Texts that depend on the kind (« Succès débloqué »…)
+ *  come from the frontend's i18n.
+ */
+export type Popup_Serialize = {
+	kind: PopupKind,
+	title: string,
+	description: string | null,
+	game: string | null,
+	/**  Local file path or `https` URL. */
+	image: string | null,
+	count: number | null,
 };
 
 export type Progress = {

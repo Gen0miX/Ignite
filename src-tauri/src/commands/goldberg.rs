@@ -123,7 +123,7 @@ pub async fn goldberg_find_saves(app: AppHandle, game_id: String) -> CommandResu
             .appid
             .ok_or_else(|| AppError::Invalid("no appid configured".into()))?;
         let found = goldberg::find_saves(appid);
-        goldberg::announce_unlocks(&app, &conn, &source, &found.unlocked);
+        goldberg::announce_unlocks(&app, &conn, &source, &found.unlocked, false);
         Ok::<_, super::CommandError>(found)
     })
     .await
@@ -132,9 +132,27 @@ pub async fn goldberg_find_saves(app: AppHandle, game_id: String) -> CommandResu
     })?
 }
 
-/// Shows a test notification through the same path as achievement toasts.
+/// Shows a sample achievement popup with one of the game's achievements.
+/// Async: building the popup window from a sync command deadlocks on Windows.
 #[tauri::command]
 #[specta::specta]
-pub fn goldberg_test_toast(app: AppHandle, title: String, body: String) -> CommandResult<()> {
-    Ok(goldberg::test_toast(&app, &title, &body)?)
+pub async fn goldberg_test_toast(app: AppHandle, game_id: String) -> CommandResult<()> {
+    let db = app.state::<Db>();
+    let source = local_source(&db, &game_id)?;
+    let conn = db.conn();
+    Ok(goldberg::test_popup(&app, &conn, &source)?)
+}
+
+/// Turns Goldberg's in-game overlay on or off for this game.
+#[tauri::command]
+#[specta::specta]
+pub fn goldberg_set_overlay(
+    app: AppHandle,
+    game_id: String,
+    enabled: bool,
+) -> CommandResult<GoldbergStatus> {
+    let db = app.state::<Db>();
+    let source = local_source(&db, &game_id)?;
+    let status = goldberg::set_overlay(&db.conn(), &source, enabled)?;
+    Ok(status)
 }

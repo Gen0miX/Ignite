@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useQueryClient } from '@tanstack/react-query';
 import { commands, isTauri, unwrap } from '../../api/client';
-import { fr } from '../../i18n/fr';
 import { formatPlaytimeLong } from '../../lib/format';
 import { usePrefs } from '../../lib/prefs';
 import { recapDecision, useRecapQueue } from './recapQueue';
@@ -48,10 +47,7 @@ export function useRecapEvents(isCouch: () => boolean) {
           queue.open(payload.sessionId);
         } else if (decision === 'notify') {
           queue.defer(payload.sessionId);
-          void commands.notify(
-            fr.recap.notifyTitle,
-            fr.recap.notifyBody(recap.game.title, formatPlaytimeLong(recap.activeSeconds / 60)),
-          );
+          void commands.notify(payload.gameId, formatPlaytimeLong(recap.activeSeconds / 60));
         }
       }),
     );

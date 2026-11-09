@@ -533,11 +533,19 @@ export function useGoldbergFindSaves(gameId: string) {
   });
 }
 
-/** Sends a test notification through the achievement-toast path. */
-export function useGoldbergTestToast() {
+/** Shows a sample achievement popup with one of the game's achievements. */
+export function useGoldbergTestToast(gameId: string) {
   return useMutation({
-    mutationFn: ({ title, body }: { title: string; body: string }) =>
-      unwrap(commands.goldbergTestToast(title, body)),
+    mutationFn: () => unwrap(commands.goldbergTestToast(gameId)),
+  });
+}
+
+/** Turns Goldberg's in-game overlay on or off. */
+export function useGoldbergSetOverlay(gameId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (enabled: boolean) => unwrap(commands.goldbergSetOverlay(gameId, enabled)),
+    onSuccess: (status) => client.setQueryData(['goldberg', gameId], status),
   });
 }
 
