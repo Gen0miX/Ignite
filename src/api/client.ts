@@ -29,6 +29,7 @@ export type Goal = b.Goal_Serialize;
 export type AchievementsView = b.AchievementsView_Serialize;
 export type AchievementItem = b.AchievementItem_Serialize;
 export type GoldbergStatus = b.GoldbergStatus_Serialize;
+export type GoldbergFind = b.GoldbergFind;
 export type GoldbergIssue = b.GoldbergIssue;
 export type Architecture = b.Architecture;
 export type ActiveGame = b.ActiveGame;

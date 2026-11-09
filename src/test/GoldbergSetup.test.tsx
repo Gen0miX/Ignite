@@ -70,7 +70,12 @@ const status: GoldbergStatus = {
   issues: ['notInstalled', 'needsAppid', 'noSaves'],
 };
 
+let currentStatus: GoldbergStatus = status;
+
 const setup = vi.fn(() => ok({ ...status, installed: true, appid: 42 }));
+const findSaves = vi.fn(() =>
+  ok({ paths: ['C:\\Users\\Public\\Documents\\Steam\\42\\achievements.json'], unlocked: ['A'] }),
+);
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: () => Promise.resolve(() => {}) }));
 vi.mock('../api/client', async (importOriginal) => {
@@ -103,10 +108,11 @@ vi.mock('../api/client', async (importOriginal) => {
           items: [],
           syncedAt: null,
           error: null,
-          goldberg: status,
+          goldberg: currentStatus,
         }),
-      goldbergStatus: () => ok(status),
+      goldbergStatus: () => ok(currentStatus),
       goldbergSetup: setup,
+      goldbergFindSaves: findSaves,
       libraryCounts: () =>
         ok({
           all: 1,
@@ -137,6 +143,10 @@ function renderAt(path: string) {
 }
 
 describe('Goldberg setup', () => {
+  beforeEach(() => {
+    currentStatus = status;
+  });
+
   it('shows the Succès tab and the setup card for a local game', async () => {
     renderAt('/game/g1/succes');
     const nav = await screen.findByRole('navigation', { name: 'Sections de la fiche' });
@@ -153,5 +163,26 @@ describe('Goldberg setup', () => {
     await user.type(await screen.findByLabelText('AppID Steam'), '42');
     await user.click(screen.getByRole('button', { name: /Installer et configurer/ }));
     expect(setup).toHaveBeenCalledWith('g1', 42, false);
+  });
+
+  it('shows a pending state while installing', async () => {
+    setup.mockImplementationOnce(() => new Promise<never>(() => {}));
+    const user = userEvent.setup();
+    renderAt('/game/g1/succes');
+    await user.type(await screen.findByLabelText('AppID Steam'), '42');
+    await user.click(screen.getByRole('button', { name: /Installer et configurer/ }));
+    expect(await screen.findByRole('button', { name: /Installation…/ })).toBeVisible();
+  });
+
+  it('finds and reports already-unlocked achievements', async () => {
+    currentStatus = { ...status, installed: true, appid: 42, definitionsReady: true };
+    const user = userEvent.setup();
+    renderAt('/game/g1/succes');
+    await user.click(await screen.findByRole('button', { name: /Chercher des succès existants/ }));
+    expect(findSaves).toHaveBeenCalledWith('g1');
+    expect(await screen.findByText('1 succès déjà débloqué trouvé dans 1 fichier.')).toBeVisible();
+    expect(
+      screen.getByText('C:\\Users\\Public\\Documents\\Steam\\42\\achievements.json'),
+    ).toBeVisible();
   });
 });

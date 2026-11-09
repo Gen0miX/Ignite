@@ -796,8 +796,15 @@ export const fr = {
       appidPlaceholder: 'Ex. : 1245620',
       install: 'Installer et configurer',
       reinstall: 'Réinstaller le DLL',
+      installing: 'Installation…',
       refresh: 'Vérifier',
       openSaves: 'Ouvrir les sauvegardes',
+      findSaves: 'Chercher des succès existants',
+      findSavesHint:
+        'Cherche les succès déjà débloqués dans les dossiers de sauvegarde Goldberg (y compris Documents publics).',
+      found: (n: number, files: number) =>
+        `${n} succès déjà débloqué${n > 1 ? 's' : ''} trouvé${n > 1 ? 's' : ''} dans ${files} fichier${files > 1 ? 's' : ''}.`,
+      foundNone: 'Aucun succès déjà débloqué trouvé.',
       clearAppid: 'Oublier l’AppID',
       ready: 'Goldberg est installé et configuré pour ce jeu.',
       installedShort: 'Installé, à configurer',

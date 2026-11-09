@@ -9,7 +9,7 @@ use crate::db::repo::game_sources::{self, GameSource};
 use crate::db::Db;
 use crate::error::AppError;
 use crate::secrets::{SecretKind, Secrets};
-use crate::sources::goldberg::{self, GoldbergStatus};
+use crate::sources::goldberg::{self, GoldbergFind, GoldbergStatus};
 
 fn local_source(db: &Db, game_id: &str) -> CommandResult<GameSource> {
     game_sources::list_for_game(&db.conn(), game_id)?
@@ -106,4 +106,25 @@ pub fn goldberg_open_saves(app: AppHandle, game_id: String) -> CommandResult<Str
     tauri_plugin_opener::open_path(&path, None::<&str>)
         .map_err(|e| AppError::Invalid(format!("cannot open saves folder: {e}")))?;
     Ok(path)
+}
+
+/// Looks for achievements already unlocked for the configured appid in the
+/// usual Goldberg save locations (GSE saves, classic Goldberg and Public
+/// Documents).
+#[tauri::command]
+#[specta::specta]
+pub async fn goldberg_find_saves(app: AppHandle, game_id: String) -> CommandResult<GoldbergFind> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let db = app.state::<Db>();
+        let source = local_source(&db, &game_id)?;
+        let status = goldberg::status(&db.conn(), &source);
+        let appid = status
+            .appid
+            .ok_or_else(|| AppError::Invalid("no appid configured".into()))?;
+        Ok::<_, super::CommandError>(goldberg::find_saves(appid))
+    })
+    .await
+    .map_err(|e| {
+        super::CommandError::from(AppError::Invalid(format!("goldberg task failed: {e}")))
+    })?
 }

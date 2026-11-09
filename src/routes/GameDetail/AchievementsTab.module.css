@@ -8,6 +8,30 @@
   margin-left: auto;
 }
 
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.findFound {
+  color: var(--color-accent-ink);
+  font-size: var(--text-sm);
+}
+
+.findPaths {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
 /* Summary: 4 cards on a row. */
 .summary {
   display: grid;

@@ -74,6 +74,12 @@ export const commands = {
 	goldbergClearAppid: (gameId: string) => typedError<GoldbergStatus_Serialize, CommandError>(__TAURI_INVOKE("goldberg_clear_appid", { gameId })),
 	/**  Creates the saves folder even before a first achievement is earned. */
 	goldbergOpenSaves: (gameId: string) => typedError<string, CommandError>(__TAURI_INVOKE("goldberg_open_saves", { gameId })),
+	/**
+	 *  Looks for achievements already unlocked for the configured appid in the
+	 *  usual Goldberg save locations (GSE saves, classic Goldberg and Public
+	 *  Documents).
+	 */
+	goldbergFindSaves: (gameId: string) => typedError<GoldbergFind, CommandError>(__TAURI_INVOKE("goldberg_find_saves", { gameId })),
 	homeOverview: () => typedError<HomeOverview_Serialize, CommandError>(__TAURI_INVOKE("home_overview")),
 	homeTonight: (choice: Tonight) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("home_tonight", { choice })),
 	/**  Steam news of the games played in the last 30 days. */
@@ -765,6 +771,14 @@ export type Goal_Serialize = {
 	position: number,
 	/**  RFC 3339 when checked. */
 	doneAt: string | null,
+};
+
+/**  Result of looking for achievements already unlocked on this machine. */
+export type GoldbergFind = {
+	/**  Achievement saves files found (absolute paths). */
+	paths: string[],
+	/**  Achievement api names already unlocked (deduplicated, sorted). */
+	unlocked: string[],
 };
 
 /**  What the UI has to fix for achievements to work. */

@@ -61,6 +61,114 @@ fn saves_file(appid: u32) -> PathBuf {
         .join("achievements.json")
 }
 
+/// Classic Goldberg location, kept for games migrated from the original
+/// emulator.
+fn classic_saves_file(appid: u32) -> Option<PathBuf> {
+    std::env::var_os("APPDATA")
+        .map(PathBuf::from)
+        .map(|root| {
+            root.join("Goldberg SteamEmu Saves")
+                .join(appid.to_string())
+                .join("achievements.json")
+        })
+}
+
+/// `%PUBLIC%\Documents\Steam`: shared saves some Goldberg builds use.
+fn public_steam_root() -> Option<PathBuf> {
+    let public = std::env::var_os("PUBLIC")
+        .map(PathBuf::from)
+        .or_else(|| {
+            std::env::var_os("SystemDrive")
+                .map(PathBuf::from)
+                .map(|d| d.join("Users").join("Public"))
+        })?;
+    Some(public.join("Documents").join("Steam"))
+}
+
+/// Cap on the Public Documents walk: a huge tree must not block for long.
+const MAX_FIND_DEPTH: usize = 6;
+const MAX_FIND_ENTRIES: usize = 4000;
+
+/// Depth-limited walk of `root` looking for `<appid>\achievements.json`.
+fn walk_for_appid(root: &Path, appid: u32) -> Vec<PathBuf> {
+    let target = appid.to_string();
+    let mut found = Vec::new();
+    let mut visited = 0usize;
+    let mut stack: Vec<(PathBuf, usize)> = vec![(root.to_path_buf(), 0)];
+    while let Some((dir, depth)) = stack.pop() {
+        if visited >= MAX_FIND_ENTRIES {
+            break;
+        }
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries {
+            visited += 1;
+            if visited >= MAX_FIND_ENTRIES {
+                break;
+            }
+            let Ok(entry) = entry else { continue };
+            let path = entry.path();
+            let Ok(file_type) = entry.file_type() else {
+                continue;
+            };
+            if file_type.is_dir() {
+                if depth < MAX_FIND_DEPTH {
+                    stack.push((path, depth + 1));
+                }
+            } else if path.file_name().is_some_and(|n| n == "achievements.json")
+                && path
+                    .parent()
+                    .and_then(|p| p.file_name())
+                    .is_some_and(|n| n == target.as_str())
+            {
+                found.push(path);
+            }
+        }
+    }
+    found.sort();
+    found.dedup();
+    found
+}
+
+/// Every existing `achievements.json` for `appid` in the usual locations.
+pub fn find_save_files(appid: u32) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    files.push(saves_file(appid));
+    if let Some(path) = classic_saves_file(appid) {
+        files.push(path);
+    }
+    if let Some(root) = public_steam_root() {
+        files.extend(walk_for_appid(&root, appid));
+    }
+    files.sort();
+    files.dedup();
+    files.retain(|p| p.is_file());
+    files
+}
+
+/// Result of looking for achievements already unlocked on this machine.
+#[derive(Debug, Clone, PartialEq, Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct GoldbergFind {
+    /// Achievement saves files found (absolute paths).
+    pub paths: Vec<String>,
+    /// Achievement api names already unlocked (deduplicated, sorted).
+    pub unlocked: Vec<String>,
+}
+
+/// Looks for achievements already unlocked for `appid` in the usual Goldberg
+/// save locations, including `%PUBLIC%\Documents\Steam`.
+pub fn find_saves(appid: u32) -> GoldbergFind {
+    let paths: Vec<String> = find_save_files(appid)
+        .into_iter()
+        .map(|p| p.display().to_string())
+        .collect();
+    let mut unlocked: Vec<String> = read_earned_for(appid).into_keys().collect();
+    unlocked.sort();
+    GoldbergFind { paths, unlocked }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum Architecture {
@@ -694,30 +802,41 @@ pub fn read_earned(source: &crate::db::repo::game_sources::GameSource) -> HashMa
     let Some(appid) = resolved_appid(source) else {
         return HashMap::new();
     };
-    let Ok(text) = std::fs::read_to_string(saves_file(appid)) else {
-        return HashMap::new();
-    };
-    let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
-        return HashMap::new();
-    };
-    value
-        .as_object()
-        .map(|map| {
-            map.iter()
-                .filter_map(|(name, data)| {
-                    let earned = data.get("earned").and_then(serde_json::Value::as_bool)?;
-                    if !earned {
-                        return None;
-                    }
-                    let at = data
-                        .get("earned_time")
-                        .and_then(serde_json::Value::as_i64)
-                        .unwrap_or(0);
-                    Some((name.clone(), at))
-                })
-                .collect()
-        })
-        .unwrap_or_default()
+    read_earned_for(appid)
+}
+
+/// `api_name → earned_time` merged from every saves file found for `appid`
+/// (the current GSE folder, the classic one and Public Documents).
+pub fn read_earned_for(appid: u32) -> HashMap<String, i64> {
+    merge_earned(&find_save_files(appid))
+}
+
+/// Merges several `achievements.json` files; the earliest time wins.
+fn merge_earned(files: &[PathBuf]) -> HashMap<String, i64> {
+    let mut merged: HashMap<String, i64> = HashMap::new();
+    for file in files {
+        let Ok(text) = std::fs::read_to_string(file) else {
+            continue;
+        };
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
+            continue;
+        };
+        let Some(map) = value.as_object() else { continue };
+        for (name, data) in map {
+            if data.get("earned").and_then(serde_json::Value::as_bool) != Some(true) {
+                continue;
+            }
+            let at = data
+                .get("earned_time")
+                .and_then(serde_json::Value::as_i64)
+                .unwrap_or(0);
+            merged
+                .entry(name.clone())
+                .and_modify(|t| *t = (*t).min(at))
+                .or_insert(at);
+        }
+    }
+    merged
 }
 
 /// Cache rows for the achievements tab.
@@ -968,5 +1087,44 @@ mod tests {
         let s = status(&Db::open_in_memory().unwrap().conn(), &source);
         assert_eq!(s.appid, Some(42));
         assert!(s.issues.contains(&GoldbergIssue::NoDll));
+    }
+
+    #[test]
+    fn walk_finds_only_the_matching_appid_folder() {
+        let tmp = tempfile::tempdir().unwrap();
+        let target = tmp.path().join("123").join("achievements.json");
+        std::fs::create_dir_all(target.parent().unwrap()).unwrap();
+        std::fs::write(&target, r#"{"A":{"earned":true,"earned_time":10}}"#).unwrap();
+        // Same file name, wrong parent folder: ignored.
+        let other = tmp.path().join("456").join("achievements.json");
+        std::fs::create_dir_all(other.parent().unwrap()).unwrap();
+        std::fs::write(&other, r#"{"B":{"earned":true,"earned_time":20}}"#).unwrap();
+
+        assert_eq!(walk_for_appid(tmp.path(), 123), vec![target]);
+    }
+
+    #[test]
+    fn walk_respects_the_depth_limit() {
+        let tmp = tempfile::tempdir().unwrap();
+        let deep = tmp.path().join("a/b/c/d/e/f/g/123/achievements.json");
+        std::fs::create_dir_all(deep.parent().unwrap()).unwrap();
+        std::fs::write(&deep, "{}").unwrap();
+        // The <appid> folder sits too deep for the bounded walk.
+        assert!(walk_for_appid(tmp.path(), 123).is_empty());
+    }
+
+    #[test]
+    fn merge_earned_keeps_the_earliest_time() {
+        let tmp = tempfile::tempdir().unwrap();
+        let one = tmp.path().join("one.json");
+        let two = tmp.path().join("two.json");
+        std::fs::write(&one, r#"{"A":{"earned":true,"earned_time":30},"B":{"earned":false}}"#)
+            .unwrap();
+        std::fs::write(&two, r#"{"A":{"earned":true,"earned_time":10},"C":{"earned":true}}"#)
+            .unwrap();
+        let merged = merge_earned(&[one, two]);
+        assert_eq!(merged.get("A"), Some(&10));
+        assert_eq!(merged.get("C"), Some(&0));
+        assert!(!merged.contains_key("B"));
     }
 }

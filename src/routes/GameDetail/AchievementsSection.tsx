@@ -22,6 +22,7 @@ import {
 import {
   useAchievements,
   useGoldbergClearAppid,
+  useGoldbergFindSaves,
   useGoldbergOpenSaves,
   useGoldbergSetup,
   useGoldbergStatus,
@@ -487,6 +488,7 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
   const setup = useGoldbergSetup(gameId);
   const clear = useGoldbergClearAppid(gameId);
   const openSaves = useGoldbergOpenSaves(gameId);
+  const findSaves = useGoldbergFindSaves(gameId);
   const [typed, setTyped] = useState<string | null>(null);
   const s = status.data ?? initial;
   const appid = typed ?? (s?.appid ? String(s.appid) : '');
@@ -495,6 +497,7 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
   const ready = s.installed && s.appid != null && s.definitionsReady;
   const valid = /^\d+$/.test(appid.trim()) && Number(appid) > 0;
   const issues = s.issues.filter((i) => !(ready && (i === 'noSaves' || i === 'needsAppid')));
+  const busy = setup.isPending;
 
   return (
     <section className={`${sheet.card} ${styles.setup}`} aria-labelledby="goldberg-title">
@@ -563,22 +566,54 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
           title={t.goldberg.appidHint}
         />
         <button type="submit" className={buttons.secondary} disabled={!valid || setup.isPending}>
-          <Download size={14} aria-hidden="true" />
-          {s.installed ? t.goldberg.reinstall : t.goldberg.install}
+          {setup.isPending ? (
+            <>
+              <RefreshCw size={14} aria-hidden="true" className={styles.spin} />
+              {t.goldberg.installing}
+            </>
+          ) : (
+            <>
+              <Download size={14} aria-hidden="true" />
+              {s.installed ? t.goldberg.reinstall : t.goldberg.install}
+            </>
+          )}
         </button>
         <button
           type="button"
           className={buttons.secondary}
           onClick={() => void status.refetch()}
-          disabled={status.isFetching}
+          disabled={status.isFetching || busy}
           title={t.goldberg.refresh}
         >
-          <RefreshCw size={14} aria-hidden="true" />
+          <RefreshCw
+            size={14}
+            aria-hidden="true"
+            className={status.isFetching ? styles.spin : ''}
+          />
           <span className="visually-hidden">{t.goldberg.refresh}</span>
         </button>
         {s.appid != null && (
           <>
-            <button type="button" className={buttons.secondary} onClick={() => openSaves.mutate()}>
+            <button
+              type="button"
+              className={buttons.secondary}
+              onClick={() => findSaves.mutate()}
+              disabled={busy || findSaves.isPending}
+              title={t.goldberg.findSavesHint}
+            >
+              <Search
+                size={14}
+                aria-hidden="true"
+                className={findSaves.isPending ? styles.spin : ''}
+              />
+              {t.goldberg.findSaves}
+            </button>
+            <button
+              type="button"
+              className={buttons.secondary}
+              onClick={() => openSaves.mutate()}
+              disabled={busy}
+            >
               <FolderOpen size={14} aria-hidden="true" />
               {t.goldberg.openSaves}
             </button>
@@ -589,13 +624,33 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
                 clear.mutate();
                 setTyped('');
               }}
+              disabled={busy}
             >
               {t.goldberg.clearAppid}
             </button>
           </>
         )}
       </form>
-      {(setup.isError || clear.isError) && (
+      {findSaves.data && (
+        <p
+          className={findSaves.data.unlocked.length > 0 ? styles.findFound : sheet.muted}
+          role="status"
+        >
+          {findSaves.data.unlocked.length > 0
+            ? t.goldberg.found(findSaves.data.unlocked.length, findSaves.data.paths.length)
+            : t.goldberg.foundNone}
+        </p>
+      )}
+      {findSaves.data && findSaves.data.paths.length > 0 && (
+        <ul className={styles.findPaths}>
+          {findSaves.data.paths.map((path) => (
+            <li key={path} className="mono">
+              {path}
+            </li>
+          ))}
+        </ul>
+      )}
+      {(setup.isError || clear.isError || findSaves.isError) && (
         <p role="alert" className={sheet.error}>
           {t.goldberg.error}
         </p>

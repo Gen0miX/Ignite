@@ -521,6 +521,18 @@ export function useGoldbergOpenSaves(gameId: string) {
   return useMutation({ mutationFn: () => unwrap(commands.goldbergOpenSaves(gameId)) });
 }
 
+/** Scans the usual Goldberg save folders for achievements already unlocked. */
+export function useGoldbergFindSaves(gameId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => unwrap(commands.goldbergFindSaves(gameId)),
+    onSuccess: () => {
+      // Newly found unlocks show in the list right away.
+      void client.invalidateQueries({ queryKey: keys.achievements(gameId) });
+    },
+  });
+}
+
 export function useRefreshAchievements(gameId: string) {
   const client = useQueryClient();
   const invalidate = useInvalidateLibrary();

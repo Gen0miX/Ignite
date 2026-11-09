@@ -98,6 +98,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         goldberg::goldberg_setup,
         goldberg::goldberg_clear_appid,
         goldberg::goldberg_open_saves,
+        goldberg::goldberg_find_saves,
         home::home_overview,
         home::home_tonight,
         home::home_news,
