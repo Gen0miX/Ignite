@@ -80,11 +80,6 @@ export const commands = {
 	 *  Documents), then announces each one so the user gets a notification.
 	 */
 	goldbergFindSaves: (gameId: string) => typedError<GoldbergFind, CommandError>(__TAURI_INVOKE("goldberg_find_saves", { gameId })),
-	/**
-	 *  Shows a sample achievement popup with one of the game's achievements.
-	 *  Async: building the popup window from a sync command deadlocks on Windows.
-	 */
-	goldbergTestToast: (gameId: string) => typedError<null, CommandError>(__TAURI_INVOKE("goldberg_test_toast", { gameId })),
 	/**  Turns Goldberg's in-game overlay on or off for this game. */
 	goldbergSetOverlay: (gameId: string, enabled: boolean) => typedError<GoldbergStatus_Serialize, CommandError>(__TAURI_INVOKE("goldberg_set_overlay", { gameId, enabled })),
 	/**  Next popup to show, if any. */
@@ -1167,9 +1162,7 @@ export type PopupKind =
 /**  Several achievements at once (`count`), e.g. found in existing saves. */
 "achievements" | 
 /**  A play session ended (`description` holds the duration text). */
-"session" | 
-/**  Sample shown by the "test the notification" button. */
-"test";
+"session";
 
 /**
  *  What the popup shows. Texts that depend on the kind (« Succès débloqué »…)
@@ -1183,6 +1176,8 @@ export type Popup_Deserialize = {
 	/**  Local file path or `https` URL. */
 	image?: string | null,
 	count?: number | null,
+	/**  Share of Steam players who unlocked it (rarity badge). */
+	percent?: number | null,
 };
 
 /**
@@ -1197,6 +1192,8 @@ export type Popup_Serialize = {
 	/**  Local file path or `https` URL. */
 	image: string | null,
 	count: number | null,
+	/**  Share of Steam players who unlocked it (rarity badge). */
+	percent: number | null,
 };
 
 export type Progress = {

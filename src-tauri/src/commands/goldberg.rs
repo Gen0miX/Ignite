@@ -117,30 +117,19 @@ pub async fn goldberg_find_saves(app: AppHandle, game_id: String) -> CommandResu
     tauri::async_runtime::spawn_blocking(move || {
         let db = app.state::<Db>();
         let source = local_source(&db, &game_id)?;
-        let conn = db.conn();
-        let status = goldberg::status(&conn, &source);
+        let status = goldberg::status(&db.conn(), &source);
         let appid = status
             .appid
             .ok_or_else(|| AppError::Invalid("no appid configured".into()))?;
         let found = goldberg::find_saves(appid);
-        goldberg::announce_unlocks(&app, &conn, &source, &found.unlocked, false);
+        // Without the database lock: popups open a window.
+        goldberg::announce_unlocks(&app, &source, &found.unlocked, false);
         Ok::<_, super::CommandError>(found)
     })
     .await
     .map_err(|e| {
         super::CommandError::from(AppError::Invalid(format!("goldberg task failed: {e}")))
     })?
-}
-
-/// Shows a sample achievement popup with one of the game's achievements.
-/// Async: building the popup window from a sync command deadlocks on Windows.
-#[tauri::command]
-#[specta::specta]
-pub async fn goldberg_test_toast(app: AppHandle, game_id: String) -> CommandResult<()> {
-    let db = app.state::<Db>();
-    let source = local_source(&db, &game_id)?;
-    let conn = db.conn();
-    Ok(goldberg::test_popup(&app, &conn, &source)?)
 }
 
 /// Turns Goldberg's in-game overlay on or off for this game.

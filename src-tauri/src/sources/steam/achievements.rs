@@ -247,16 +247,24 @@ pub fn fetch(key: &str, steam_id: u64, appid: u64) -> AppResult<Option<Vec<Steam
         Ok(body) => parse_schema(&body)?,
         Err(_) => Vec::new(),
     };
-    let global = match get(
-        &format!("{API}/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/"),
-        &[("gameid", appid.to_string())],
-        None,
-    )? {
-        Ok(body) => parse_global(&body).unwrap_or_default(),
-        Err(_) => HashMap::new(),
-    };
+    let global = fetch_global(appid)?;
 
     Ok(Some(merge(unlocked, schema, global)))
+}
+
+/// Share of Steam players who unlocked each achievement (`api_name -> %`).
+/// Public: no key needed. Empty when the app has no public stats.
+pub fn fetch_global(appid: u64) -> AppResult<HashMap<String, f64>> {
+    Ok(
+        match get(
+            &format!("{API}/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/"),
+            &[("gameid", appid.to_string())],
+            None,
+        )? {
+            Ok(body) => parse_global(&body).unwrap_or_default(),
+            Err(_) => HashMap::new(),
+        },
+    )
 }
 
 pub fn merge(

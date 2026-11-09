@@ -260,7 +260,7 @@ fn load(app: &AppHandle, game_id: &str, refresh: bool) -> CommandResult<Achievem
         .iter()
         .find(|s| s.kind == SourceKind::Local && s.exe_path.is_some())
     {
-        return load_goldberg(app, source);
+        return load_goldberg(app, source, refresh);
     }
     let Some(source) = sources.iter().find(|s| s.kind == SourceKind::Steam) else {
         // Other platforms (GOG) fill the cache during the sync.
@@ -351,6 +351,7 @@ fn cached_view(
 fn load_goldberg(
     app: &AppHandle,
     source: &crate::db::repo::game_sources::GameSource,
+    refresh: bool,
 ) -> CommandResult<AchievementsView> {
     use crate::sources::goldberg;
     let db = app.state::<Db>();
@@ -366,6 +367,8 @@ fn load_goldberg(
         return Ok(v);
     }
     goldberg::refresh_cache(&mut db.conn(), source)?;
+    // Steam's unlock percentages: once per run, again on "Actualiser".
+    goldberg::refresh_rarity(&db, source, refresh);
     let rows = achievements::list_for_source(&db.conn(), &source.id)?;
     let mut v = view(rows, None, None);
     v.goldberg = Some(status);

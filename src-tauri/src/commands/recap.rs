@@ -386,6 +386,7 @@ pub async fn notify(app: AppHandle, game_id: String, duration: String) -> Comman
             game: Some(title),
             image,
             count: None,
+            percent: None,
         },
     )
     .map_err(Into::into)

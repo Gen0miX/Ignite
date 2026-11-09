@@ -57,9 +57,11 @@ export const fr = {
     achievement: 'Succès débloqué',
     achievements: (n: number) => `${n} succès débloqués`,
     session: 'Session terminée',
-    test: 'Aperçu · succès débloqué',
-    testTitle: 'Premier succès',
-    testBody: 'Voici à quoi ressemblera un succès débloqué.',
+    players: (p: string) => `${p} des joueurs`,
+    rarity: {
+      ultra: (p: string) => `Ultra-rare · ${p}`,
+      rare: (p: string) => `Rare · ${p}`,
+    },
   },
   toast: {
     close: 'Fermer la notification',
@@ -811,14 +813,12 @@ export const fr = {
       found: (n: number, files: number) =>
         `${n} succès déjà débloqué${n > 1 ? 's' : ''} trouvé${n > 1 ? 's' : ''} dans ${files} fichier${files > 1 ? 's' : ''}.`,
       foundNone: 'Aucun succès déjà débloqué trouvé.',
-      testToast: 'Tester la notification',
-      testToastHint: 'Affiche un aperçu de la notification avec un succès du jeu.',
-      testToastError: 'La notification n’a pas pu être affichée.',
       overlay: 'Overlay en jeu',
       overlayHint:
         'Affiche les succès directement dans le jeu, même en plein écran exclusif (overlay expérimental de Goldberg, Maj+Tab pour l’ouvrir). Ignite ne montre alors plus sa propre notification pendant la partie. Désactive-le si le jeu plante.',
       clearAppid: 'Oublier l’AppID',
-      ready: 'Goldberg est installé et configuré pour ce jeu.',
+      details: 'Détails techniques',
+      noBackup: 'Aucune copie du DLL d’origine n’a été trouvée à côté du jeu.',
       installedShort: 'Installé, à configurer',
       readyShort: 'Installé et configuré',
       notInstalled: 'Goldberg n’est pas encore installé.',

@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
-  Bell,
   Download,
   Eye,
   FolderOpen,
@@ -28,7 +27,6 @@ import {
   useGoldbergSetup,
   useGoldbergStatus,
   useGoldbergSetOverlay,
-  useGoldbergTestToast,
   useRefreshAchievements,
 } from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
@@ -493,7 +491,6 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
   const clear = useGoldbergClearAppid(gameId);
   const openSaves = useGoldbergOpenSaves(gameId);
   const findSaves = useGoldbergFindSaves(gameId);
-  const testToast = useGoldbergTestToast(gameId);
   const overlay = useGoldbergSetOverlay(gameId);
   const [typed, setTyped] = useState<string | null>(null);
   const s = status.data ?? initial;
@@ -505,6 +502,8 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
   const issues = s.issues.filter((i) => !(ready && (i === 'noSaves' || i === 'needsAppid')));
   const busy = setup.isPending;
 
+  const small = `${buttons.secondary} ${styles.small}`;
+
   return (
     <section className={`${sheet.card} ${styles.setup}`} aria-labelledby="goldberg-title">
       <div className={sheet.sectionHeader}>
@@ -513,9 +512,9 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
         </h3>
         <span className={ready ? styles.ready : styles.notReady}>
           {ready ? (
-            <CheckCircle2 size={16} aria-hidden="true" />
+            <CheckCircle2 size={14} aria-hidden="true" />
           ) : (
-            <XCircle size={16} aria-hidden="true" />
+            <XCircle size={14} aria-hidden="true" />
           )}
           {ready
             ? t.goldberg.readyShort
@@ -524,18 +523,7 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
               : t.goldberg.notInstalled}
         </span>
       </div>
-      <p className={sheet.muted}>{t.goldberg.intro}</p>
-
-      <dl className={styles.setupDetails}>
-        <dt>{t.goldberg.dll}</dt>
-        <dd className="mono">{s.dllPath ?? '—'}</dd>
-        <dt>{t.goldberg.settings}</dt>
-        <dd className="mono">{s.settingsDir ?? '—'}</dd>
-        <dt>{t.goldberg.saves}</dt>
-        <dd className="mono">{s.savesPath ?? '—'}</dd>
-        <dt>{t.goldberg.arch}</dt>
-        <dd>{s.architecture ?? '—'}</dd>
-      </dl>
+      {!ready && <p className={sheet.muted}>{t.goldberg.intro}</p>}
 
       {issues.length > 0 && (
         <ul className={styles.issues}>
@@ -547,31 +535,33 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
           ))}
         </ul>
       )}
-      {ready && <p className={styles.readyText}>{t.goldberg.ready}</p>}
-      {s.appid != null && !s.savesReady && <p className={sheet.muted}>{t.goldberg.savesMissing}</p>}
-      {!s.originalBackedUp && s.installed && <p className={sheet.muted}>{t.goldberg.backup}</p>}
-      {issues.includes('needsSteamKey') && <p className={sheet.muted}>{t.goldberg.noKey}</p>}
+      {s.appid != null && !s.savesReady && <p className={styles.note}>{t.goldberg.savesMissing}</p>}
+      {issues.includes('needsSteamKey') && <p className={styles.note}>{t.goldberg.noKey}</p>}
 
       <form
-        className={`${sheet.inlineForm} ${styles.setupForm}`}
+        className={styles.setupForm}
         onSubmit={(e) => {
           e.preventDefault();
           if (valid) setup.mutate({ appid: Number(appid), force: s.installed });
         }}
       >
-        <label className="visually-hidden" htmlFor="goldberg-appid">
+        <label className={styles.appidLabel} htmlFor="goldberg-appid">
           {t.goldberg.appid}
         </label>
         <input
           id="goldberg-appid"
-          className={sheet.input}
+          className={`${sheet.input} ${styles.appidInput}`}
           inputMode="numeric"
           placeholder={t.goldberg.appidPlaceholder}
           value={appid}
           onChange={(e) => setTyped(e.target.value)}
           title={t.goldberg.appidHint}
         />
-        <button type="submit" className={buttons.secondary} disabled={!valid || setup.isPending}>
+        <button
+          type="submit"
+          className={s.installed ? small : `${buttons.primary} ${styles.small}`}
+          disabled={!valid || setup.isPending}
+        >
           {setup.isPending ? (
             <>
               <RefreshCw size={14} aria-hidden="true" className={styles.spin} />
@@ -586,7 +576,7 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
         </button>
         <button
           type="button"
-          className={buttons.secondary}
+          className={`${small} ${styles.iconOnly}`}
           onClick={() => void status.refetch()}
           disabled={status.isFetching || busy}
           title={t.goldberg.refresh}
@@ -598,69 +588,47 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
           />
           <span className="visually-hidden">{t.goldberg.refresh}</span>
         </button>
-        {s.appid != null && (
-          <>
-            <button
-              type="button"
-              className={buttons.secondary}
-              onClick={() => findSaves.mutate()}
-              disabled={busy || findSaves.isPending}
-              title={t.goldberg.findSavesHint}
-            >
-              <Search
-                size={14}
-                aria-hidden="true"
-                className={findSaves.isPending ? styles.spin : ''}
-              />
-              {t.goldberg.findSaves}
-            </button>
-            <button
-              type="button"
-              className={buttons.secondary}
-              onClick={() => testToast.mutate()}
-              disabled={testToast.isPending}
-              title={t.goldberg.testToastHint}
-            >
-              <Bell size={14} aria-hidden="true" />
-              {t.goldberg.testToast}
-            </button>
-            <button
-              type="button"
-              className={buttons.secondary}
-              onClick={() => openSaves.mutate()}
-              disabled={busy}
-            >
-              <FolderOpen size={14} aria-hidden="true" />
-              {t.goldberg.openSaves}
-            </button>
-            <button
-              type="button"
-              className={buttons.secondary}
-              onClick={() => {
-                clear.mutate();
-                setTyped('');
-              }}
-              disabled={busy}
-            >
-              {t.goldberg.clearAppid}
-            </button>
-          </>
-        )}
       </form>
-      {s.installed && (
-        <div className={styles.overlayRow}>
-          <div>
-            <p className={styles.overlayLabel}>{t.goldberg.overlay}</p>
-            <p className={sheet.muted}>{t.goldberg.overlayHint}</p>
-          </div>
-          <Switch
-            label={t.goldberg.overlay}
-            checked={s.overlay}
-            disabled={overlay.isPending}
-            onChange={(enabled) => overlay.mutate(enabled)}
-          />
+
+      {s.appid != null && (
+        <div className={styles.toolbar}>
+          <button
+            type="button"
+            className={small}
+            onClick={() => findSaves.mutate()}
+            disabled={busy || findSaves.isPending}
+            title={t.goldberg.findSavesHint}
+          >
+            <Search
+              size={14}
+              aria-hidden="true"
+              className={findSaves.isPending ? styles.spin : ''}
+            />
+            {t.goldberg.findSaves}
+          </button>
+          <button
+            type="button"
+            className={small}
+            onClick={() => openSaves.mutate()}
+            disabled={busy}
+          >
+            <FolderOpen size={14} aria-hidden="true" />
+            {t.goldberg.openSaves}
+          </button>
+          <button
+            type="button"
+            className={`${small} ${styles.quiet}`}
+            onClick={() => {
+              clear.mutate();
+              setTyped('');
+            }}
+            disabled={busy}
+          >
+            {t.goldberg.clearAppid}
+          </button>
         </div>
       )}
+
       {findSaves.data && (
         <p
           className={findSaves.data.unlocked.length > 0 ? styles.findFound : sheet.muted}
@@ -680,11 +648,41 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
           ))}
         </ul>
       )}
-      {testToast.isError && (
-        <p role="alert" className={sheet.error}>
-          {t.goldberg.testToastError}
-        </p>
+
+      {s.installed && (
+        <div className={styles.overlayRow}>
+          <div>
+            <p className={styles.overlayLabel}>{t.goldberg.overlay}</p>
+            <p className={styles.note}>{t.goldberg.overlayHint}</p>
+          </div>
+          <Switch
+            label={t.goldberg.overlay}
+            checked={s.overlay}
+            disabled={overlay.isPending}
+            onChange={(enabled) => overlay.mutate(enabled)}
+          />
+        </div>
       )}
+
+      <details className={styles.techDetails}>
+        <summary>{t.goldberg.details}</summary>
+        <dl className={styles.setupDetails}>
+          <dt>{t.goldberg.dll}</dt>
+          <dd className="mono">{s.dllPath ?? '—'}</dd>
+          <dt>{t.goldberg.settings}</dt>
+          <dd className="mono">{s.settingsDir ?? '—'}</dd>
+          <dt>{t.goldberg.saves}</dt>
+          <dd className="mono">{s.savesPath ?? '—'}</dd>
+          <dt>{t.goldberg.arch}</dt>
+          <dd>{s.architecture ?? '—'}</dd>
+        </dl>
+        {s.installed && (
+          <p className={styles.note}>
+            {s.originalBackedUp ? t.goldberg.backup : t.goldberg.noBackup}
+          </p>
+        )}
+      </details>
+
       {(setup.isError || clear.isError || findSaves.isError || overlay.isError) && (
         <p role="alert" className={sheet.error}>
           {t.goldberg.error}

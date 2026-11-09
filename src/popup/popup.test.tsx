@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import type { Popup } from '../api/bindings';
-import { PopupCard, imageSrc } from './PopupCard';
+import { PopupCard, imageSrc, rarityLabel } from './PopupCard';
 import { popupDuration, runQueue } from './queue';
 
 const achievement: Popup = {
@@ -10,6 +10,7 @@ const achievement: Popup = {
   game: 'Elden Ring',
   image: 'https://cdn.steamstatic.com/a.jpg',
   count: null,
+  percent: null,
 };
 
 describe('PopupCard', () => {
@@ -45,6 +46,24 @@ describe('PopupCard', () => {
     );
     expect(screen.getByText('Session terminée')).toBeVisible();
     expect(container.querySelector('img')).toBeNull();
+  });
+});
+
+describe('rarity badge', () => {
+  it('names rare and ultra-rare achievements', () => {
+    expect(rarityLabel(2.14)).toBe('Ultra-rare · 2,1 %');
+    expect(rarityLabel(12)).toBe('Rare · 12 %');
+    expect(rarityLabel(48.5)).toBe('48,5 % des joueurs');
+  });
+
+  it('shows the share of players on the card', () => {
+    render(<PopupCard popup={{ ...achievement, percent: 3.2 }} duration={6000} leaving={false} />);
+    expect(screen.getByText('Ultra-rare · 3,2 %')).toBeVisible();
+  });
+
+  it('shows no badge without a percentage', () => {
+    render(<PopupCard popup={achievement} duration={6000} leaving={false} />);
+    expect(screen.queryByText(/des joueurs|rare ·/i)).toBeNull();
   });
 });
 

@@ -533,13 +533,6 @@ export function useGoldbergFindSaves(gameId: string) {
   });
 }
 
-/** Shows a sample achievement popup with one of the game's achievements. */
-export function useGoldbergTestToast(gameId: string) {
-  return useMutation({
-    mutationFn: () => unwrap(commands.goldbergTestToast(gameId)),
-  });
-}
-
 /** Turns Goldberg's in-game overlay on or off. */
 export function useGoldbergSetOverlay(gameId: string) {
   const client = useQueryClient();

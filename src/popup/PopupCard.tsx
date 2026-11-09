@@ -5,9 +5,19 @@ import type { Popup } from '../api/bindings';
 import { isTauri } from '../api/client';
 import { IgniteMark } from '../components/AppLogo/AppLogo';
 import { fr } from '../i18n/fr';
+import { rarity } from '../lib/achievements';
 import styles from './PopupCard.module.css';
 
 const t = fr.popup;
+
+const percentFmt = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
+
+/** Rarity badge text: « Ultra-rare · 2,1 % », « Rare · 12 % », « 48 % des joueurs ». */
+export function rarityLabel(percent: number): string {
+  const p = `${percentFmt.format(percent)} %`;
+  const r = rarity(percent);
+  return r === 'common' ? t.players(p) : t.rarity[r](p);
+}
 
 /** `asset:` URL for a local file, the URL itself for a remote image. */
 export function imageSrc(image: string | null | undefined): string | undefined {
@@ -22,8 +32,6 @@ function label(popup: Popup): string {
       return t.achievements(popup.count ?? 0);
     case 'session':
       return t.session;
-    case 'test':
-      return t.test;
     default:
       return t.achievement;
   }
@@ -41,9 +49,8 @@ export function PopupCard({ popup, duration, leaving }: PopupCardProps) {
   const [broken, setBroken] = useState(false);
   const src = broken ? undefined : imageSrc(popup.image);
   const session = popup.kind === 'session';
-  const title = popup.title || (popup.kind === 'test' ? t.testTitle : '');
-  const description =
-    popup.description ?? (popup.kind === 'test' && !popup.title ? t.testBody : null);
+  const title = popup.title;
+  const description = popup.description;
   // The game line is redundant when the title already is the game.
   const game = popup.game && popup.game !== title ? popup.game : null;
   const FallbackIcon = session ? Timer : Trophy;
@@ -68,7 +75,16 @@ export function PopupCard({ popup, duration, leaving }: PopupCardProps) {
         </p>
         <p className={styles.title}>{title}</p>
         {description && <p className={styles.description}>{description}</p>}
-        {game && <p className={styles.game}>{game}</p>}
+        {(game || popup.percent != null) && (
+          <p className={styles.meta}>
+            {game && <span className={styles.game}>{game}</span>}
+            {popup.percent != null && (
+              <span className={`${styles.rarity} ${styles[rarity(popup.percent)]}`}>
+                {rarityLabel(popup.percent)}
+              </span>
+            )}
+          </p>
+        )}
       </div>
       <span className={styles.mark} aria-hidden="true">
         <IgniteMark size={20} />

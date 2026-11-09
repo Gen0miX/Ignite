@@ -933,8 +933,12 @@ fn read_ini_earned(text: &str) -> HashMap<String, i64> {
 
 /// Cache rows for the achievements tab.
 pub fn cached_rows(source: &crate::db::repo::game_sources::GameSource) -> Vec<AchievementRow> {
-    let earned = read_earned(source);
-    read_definitions(source)
+    rows_from(read_definitions(source), &read_earned(source))
+}
+
+/// Cache rows from definitions and `api_name → earned_time`.
+fn rows_from(definitions: Vec<Definition>, earned: &HashMap<String, i64>) -> Vec<AchievementRow> {
+    definitions
         .into_iter()
         .map(|d| AchievementRow {
             unlocked_at: earned
@@ -957,9 +961,64 @@ pub fn refresh_cache(
     conn: &mut Connection,
     source: &crate::db::repo::game_sources::GameSource,
 ) -> AppResult<()> {
-    let rows = cached_rows(source);
+    store_cache(conn, &source.id, cached_rows(source))
+}
+
+/// Writes rows computed beforehand (no file access under the lock). The
+/// files carry no rarity: global percentages already cached are kept.
+fn store_cache(
+    conn: &mut Connection,
+    source_id: &str,
+    mut rows: Vec<AchievementRow>,
+) -> AppResult<()> {
+    let previous: HashMap<String, f64> = achievements::list_for_source(conn, source_id)?
+        .into_iter()
+        .filter_map(|r| r.global_percent.map(|p| (r.api_name, p)))
+        .collect();
+    for row in &mut rows {
+        if row.global_percent.is_none() {
+            row.global_percent = previous.get(&row.api_name).copied();
+        }
+    }
     let list = (!rows.is_empty()).then_some(rows);
-    achievements::replace_for_source(conn, &source.id, list.as_deref())
+    achievements::replace_for_source(conn, source_id, list.as_deref())
+}
+
+/// Appids whose Steam percentages were already fetched during this run.
+static RARITY_FETCHED: std::sync::LazyLock<Mutex<HashSet<u32>>> =
+    std::sync::LazyLock::new(|| Mutex::new(HashSet::new()));
+
+/// Fills the cache with Steam's global unlock percentages for this game's
+/// appid (public endpoint, no key). Once per run unless `force`; a failure
+/// leaves the cache untouched and is retried next time. Call it without
+/// holding the database lock: it goes to the network.
+pub fn refresh_rarity(db: &Db, source: &crate::db::repo::game_sources::GameSource, force: bool) {
+    let Some(appid) = resolved_appid(source) else {
+        return;
+    };
+    {
+        let mut fetched = RARITY_FETCHED.lock().unwrap_or_else(|e| e.into_inner());
+        if !fetched.insert(appid) && !force {
+            return;
+        }
+    }
+    let percents = match steam::fetch_global(u64::from(appid)) {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::warn!(error = %e, appid, "goldberg: global percentages unavailable");
+            RARITY_FETCHED
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .remove(&appid);
+            return;
+        }
+    };
+    if percents.is_empty() {
+        return;
+    }
+    if let Err(e) = achievements::set_global_percents(&mut db.conn(), &source.id, &percents) {
+        tracing::warn!(error = %e, appid, "goldberg: cannot store global percentages");
+    }
 }
 
 fn toasts_enabled(conn: &Connection) -> bool {
@@ -974,7 +1033,11 @@ const MAX_SEPARATE_POPUPS: usize = 3;
 
 /// Popups for a batch of unlocks: one each, or a summary for a burst (e.g.
 /// existing saves found).
-fn unlock_popups(game: &str, unlocked: &[Definition]) -> Vec<Popup> {
+fn unlock_popups(
+    game: &str,
+    unlocked: &[Definition],
+    percents: &HashMap<String, f64>,
+) -> Vec<Popup> {
     if unlocked.len() > MAX_SEPARATE_POPUPS {
         let names: Vec<&str> = unlocked.iter().map(|d| d.name.as_str()).collect();
         return vec![Popup {
@@ -984,6 +1047,7 @@ fn unlock_popups(game: &str, unlocked: &[Definition]) -> Vec<Popup> {
             game: Some(game.to_string()),
             image: unlocked.iter().find_map(|d| d.icon.clone()),
             count: u32::try_from(unlocked.len()).ok(),
+            percent: None,
         }];
     }
     unlocked
@@ -995,52 +1059,46 @@ fn unlock_popups(game: &str, unlocked: &[Definition]) -> Vec<Popup> {
             game: Some(game.to_string()),
             image: d.icon.clone(),
             count: None,
+            percent: percents.get(&d.api_name).copied(),
         })
         .collect()
-}
-
-/// Shows a sample popup with one of the game's achievements, so the user
-/// can see what an unlock looks like.
-pub fn test_popup(
-    app: &AppHandle,
-    conn: &Connection,
-    source: &crate::db::repo::game_sources::GameSource,
-) -> AppResult<()> {
-    let game = games::get(conn, &source.game_id)
-        .map(|g| g.title)
-        .unwrap_or_default();
-    let definitions = read_definitions(source);
-    let sample = definitions
-        .iter()
-        .find(|d| d.icon.is_some() && !d.hidden)
-        .or_else(|| definitions.first());
-    popup::show(
-        app,
-        Popup {
-            kind: PopupKind::Test,
-            title: sample.map(|d| d.name.clone()).unwrap_or_default(),
-            description: sample.and_then(|d| d.description.clone()),
-            game: Some(game),
-            image: sample.and_then(|d| d.icon.clone()),
-            count: None,
-        },
-    )
 }
 
 /// Announces unlocked achievements: emits the UI event and, when enabled,
 /// shows Ignite popups. `in_game` (the watcher) skips the popups when the
 /// game's Goldberg overlay is on: it already shows them inside the game.
+///
+/// The database is only locked for short writes: popups open a window, which
+/// waits for the main thread, and the main thread may be waiting for the
+/// database (sync commands) — holding the lock there would deadlock.
 pub fn announce_unlocks(
     app: &AppHandle,
-    conn: &Connection,
     source: &crate::db::repo::game_sources::GameSource,
     unlocked: &[String],
     in_game: bool,
 ) {
+    // Files first, without the lock.
     let definitions = read_definitions(source);
-    let title = games::get(conn, &source.game_id)
-        .map(|g| g.title)
-        .unwrap_or_default();
+    let rows = cached_rows(source);
+    let (title, notify, percents) = {
+        let db = app.state::<Db>();
+        let mut conn = db.conn();
+        // Cards, stats and the session recap read the cache: keep it current
+        // even when no window is open.
+        if let Err(e) = store_cache(&mut conn, &source.id, rows) {
+            tracing::warn!(error = %e, "goldberg: cannot update the achievements cache");
+        }
+        let title = games::get(&conn, &source.game_id)
+            .map(|g| g.title)
+            .unwrap_or_default();
+        let percents: HashMap<String, f64> = achievements::list_for_source(&conn, &source.id)
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|r| r.global_percent.map(|p| (r.api_name, p)))
+            .collect();
+        (title, toasts_enabled(&conn), percents)
+    };
+    let _ = app.emit(crate::commands::sources::LIBRARY_CHANGED_EVENT, ());
     let mut shown: Vec<Definition> = Vec::new();
     for api_name in unlocked {
         let definition = definitions.iter().find(|d| d.api_name == *api_name);
@@ -1064,10 +1122,10 @@ pub fn announce_unlocks(
             hidden: false,
         }));
     }
-    if !toasts_enabled(conn) || (in_game && overlay_enabled_for(source)) {
+    if !notify || (in_game && overlay_enabled_for(source)) {
         return;
     }
-    for p in unlock_popups(&title, &shown) {
+    for p in unlock_popups(&title, &shown, &percents) {
         if let Err(e) = popup::show(app, p) {
             tracing::warn!(error = %e, "goldberg: popup failed");
         }
@@ -1235,30 +1293,48 @@ impl Watcher {
 }
 
 fn tick(app: &AppHandle) {
-    let db = app.state::<Db>();
-    let conn = db.conn();
-    let sources = match game_sources::list_by_kind(&conn, SourceKind::Local) {
-        Ok(s) => s,
-        Err(e) => {
-            tracing::warn!(error = %e, "goldberg watcher: cannot list sources");
-            return;
+    let sources = {
+        let db = app.state::<Db>();
+        let conn = db.conn();
+        match game_sources::list_by_kind(&conn, SourceKind::Local) {
+            Ok(s) => s,
+            Err(e) => {
+                tracing::warn!(error = %e, "goldberg watcher: cannot list sources");
+                return;
+            }
         }
     };
-    let mut watcher = WATCHER.lock().unwrap_or_else(|e| e.into_inner());
-    let live: HashSet<String> = sources.iter().map(|s| s.id.clone()).collect();
-    watcher.seen.retain(|id, _| live.contains(id));
-    for source in sources
-        .iter()
-        .filter(|s| is_eligible_source(s) && resolved_appid(s).is_some())
+    let mut seeded = Vec::new();
+    let mut unlocks = Vec::new();
     {
-        let earned = read_earned(source);
-        let Some(new) = watcher.new_unlocks(&source.id, &earned) else {
-            continue;
-        };
-        if new.is_empty() {
-            continue;
+        let mut watcher = WATCHER.lock().unwrap_or_else(|e| e.into_inner());
+        let live: HashSet<String> = sources.iter().map(|s| s.id.clone()).collect();
+        watcher.seen.retain(|id, _| live.contains(id));
+        for source in sources
+            .iter()
+            .filter(|s| is_eligible_source(s) && resolved_appid(s).is_some())
+        {
+            let earned = read_earned(source);
+            match watcher.new_unlocks(&source.id, &earned) {
+                None => seeded.push(source),
+                Some(new) if !new.is_empty() => unlocks.push((source, new)),
+                Some(_) => {}
+            }
         }
-        announce_unlocks(app, &conn, source, &new, true);
+    }
+    // First sight: unlocks earned while Ignite was closed reach the cache
+    // silently.
+    for source in seeded {
+        let rows = cached_rows(source);
+        let db = app.state::<Db>();
+        if let Err(e) = store_cache(&mut db.conn(), &source.id, rows) {
+            tracing::warn!(error = %e, "goldberg watcher: cannot seed the cache");
+        }
+        // Rarity for the library and stats, without opening the game.
+        refresh_rarity(&db, source, false);
+    }
+    for (source, new) in unlocks {
+        announce_unlocks(app, source, &new, true);
     }
 }
 
@@ -1528,21 +1604,87 @@ Count=2
 
     #[test]
     fn a_few_unlocks_get_one_popup_each() {
-        let popups = unlock_popups("Jeu", &[def("A"), def("B")]);
+        let percents = HashMap::from([("A".to_string(), 3.5)]);
+        let popups = unlock_popups("Jeu", &[def("A"), def("B")], &percents);
         assert_eq!(popups.len(), 2);
         assert_eq!(popups[0].kind, PopupKind::Achievement);
         assert_eq!(popups[0].title, "A");
         assert_eq!(popups[0].image.as_deref(), Some("C:/img/A.jpg"));
         assert_eq!(popups[1].game.as_deref(), Some("Jeu"));
+        assert_eq!(popups[0].percent, Some(3.5));
+        assert_eq!(popups[1].percent, None);
     }
 
     #[test]
     fn a_burst_is_summed_up() {
         let defs: Vec<Definition> = ["A", "B", "C", "D"].into_iter().map(def).collect();
-        let popups = unlock_popups("Jeu", &defs);
+        let popups = unlock_popups("Jeu", &defs, &HashMap::new());
         assert_eq!(popups.len(), 1);
         assert_eq!(popups[0].kind, PopupKind::Achievements);
         assert_eq!(popups[0].count, Some(4));
         assert_eq!(popups[0].description.as_deref(), Some("A · B · C · D"));
+    }
+
+    #[test]
+    fn an_unlock_reaches_the_cache() {
+        use crate::db::repo::game_sources::SourceData;
+        let db = crate::db::Db::open_in_memory().unwrap();
+        let mut conn = db.conn();
+        let g = games::insert(&conn, "Jeu local").unwrap();
+        let s =
+            game_sources::upsert(&conn, &g.id, SourceKind::Local, &SourceData::default()).unwrap();
+
+        // Save file as Goldberg writes it after an unlock in game.
+        let saves = r#"{"A":{"earned":true,"earned_time":1700000000},"B":{"earned":false,"earned_time":0}}"#;
+        let earned = read_json_earned(saves);
+        let mut w = Watcher::default();
+        assert_eq!(w.new_unlocks(&s.id, &HashMap::new()), None);
+        assert_eq!(w.new_unlocks(&s.id, &earned), Some(vec!["A".to_string()]));
+
+        let rows = rows_from(vec![def("A"), def("B")], &earned);
+        store_cache(&mut conn, &s.id, rows).unwrap();
+        let cached = achievements::list_for_source(&conn, &s.id).unwrap();
+        assert_eq!(cached.len(), 2);
+        assert!(cached[0].unlocked_at.is_some());
+        assert!(cached[1].unlocked_at.is_none());
+        assert_eq!(
+            achievements::progress_by_game(&conn).unwrap()[&g.id],
+            (1, 2)
+        );
+    }
+
+    #[test]
+    fn global_percentages_survive_a_cache_rebuild() {
+        use crate::db::repo::game_sources::SourceData;
+        let db = crate::db::Db::open_in_memory().unwrap();
+        let mut conn = db.conn();
+        let g = games::insert(&conn, "Jeu local").unwrap();
+        let s =
+            game_sources::upsert(&conn, &g.id, SourceKind::Local, &SourceData::default()).unwrap();
+        store_cache(
+            &mut conn,
+            &s.id,
+            rows_from(vec![def("A"), def("B")], &HashMap::new()),
+        )
+        .unwrap();
+
+        let percents = HashMap::from([("A".to_string(), 2.5), ("Z".to_string(), 50.0)]);
+        assert_eq!(
+            achievements::set_global_percents(&mut conn, &s.id, &percents).unwrap(),
+            1
+        );
+
+        // Goldberg's files have no rarity: an unlock rebuilds the cache.
+        let earned = HashMap::from([("A".to_string(), 1_700_000_000_i64)]);
+        store_cache(
+            &mut conn,
+            &s.id,
+            rows_from(vec![def("A"), def("B")], &earned),
+        )
+        .unwrap();
+        let cached = achievements::list_for_source(&conn, &s.id).unwrap();
+        assert_eq!(cached[0].global_percent, Some(2.5));
+        assert!(cached[0].unlocked_at.is_some());
+        assert_eq!(cached[1].global_percent, None);
     }
 }

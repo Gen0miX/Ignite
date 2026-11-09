@@ -384,12 +384,80 @@
 }
 
 .setupForm {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
+  gap: var(--space-2);
 }
 
-.setupForm input {
-  min-width: 12ch;
+.appidLabel {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.setupForm .appidInput {
+  width: 14ch;
+  height: var(--h-control-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* Compact buttons for this card (36 px targets). */
+.small {
+  height: var(--h-control-sm);
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  gap: 6px;
+}
+
+.iconOnly {
+  width: var(--h-control-sm);
+  padding: 0;
+}
+
+.quiet {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-muted);
+}
+
+.quiet:hover {
+  color: var(--color-text);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.note {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.techDetails {
+  font-size: var(--text-sm);
+}
+
+.techDetails summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--h-control-sm);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.techDetails summary:hover {
+  color: var(--color-text);
+}
+
+.techDetails[open] summary {
+  margin-bottom: var(--space-2);
+}
+
+.techDetails .note {
+  margin-top: var(--space-2);
 }
 
 .setupDetails {
@@ -448,13 +516,13 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3);
   border-radius: var(--radius-lg);
   background: var(--color-field);
   border: 1px solid var(--color-line);
 }
 
 .overlayLabel {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: 600;
 }

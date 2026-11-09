@@ -37,8 +37,6 @@ pub enum PopupKind {
     Achievements,
     /// A play session ended (`description` holds the duration text).
     Session,
-    /// Sample shown by the "test the notification" button.
-    Test,
 }
 
 /// What the popup shows. Texts that depend on the kind (« Succès débloqué »…)
@@ -53,6 +51,8 @@ pub struct Popup {
     /// Local file path or `https` URL.
     pub image: Option<String>,
     pub count: Option<u32>,
+    /// Share of Steam players who unlocked it (rarity badge).
+    pub percent: Option<f64>,
 }
 
 #[derive(Default)]

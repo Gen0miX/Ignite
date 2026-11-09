@@ -23,6 +23,17 @@ fn init_logging() {
     let _ = tracing_subscriber::fmt().with_env_filter(filter).try_init();
 }
 
+/// Debug builds only: `IGNITE_DATA_DIR` runs on another data folder (its own
+/// database and tracker lock), e.g. for end-to-end checks next to a running
+/// Ignite without touching the real library.
+fn dev_data_dir() -> Option<std::path::PathBuf> {
+    if cfg!(debug_assertions) {
+        std::env::var_os("IGNITE_DATA_DIR").map(std::path::PathBuf::from)
+    } else {
+        None
+    }
+}
+
 pub fn run() {
     init_logging();
     let builder = commands::specta_builder();
@@ -55,9 +66,9 @@ pub fn run() {
         .setup(move |app| {
             builder.mount_events(app);
 
-            let data_dir = match kept_legacy_dir {
-                Some(dir) => dir,
-                None => app.path().app_data_dir()?,
+            let data_dir = match (dev_data_dir(), kept_legacy_dir) {
+                (Some(dir), _) | (None, Some(dir)) => dir,
+                (None, None) => app.path().app_data_dir()?,
             };
             let db_path = legacy::db_path(&data_dir);
             let database = db::Db::open(&db_path)?;

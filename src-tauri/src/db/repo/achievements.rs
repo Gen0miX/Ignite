@@ -67,6 +67,26 @@ pub fn replace_for_source_tx(
     Ok(())
 }
 
+/// Sets the global unlock percentages of a source's cached achievements
+/// (`api_name -> %`); names missing from `percents` keep their value.
+pub fn set_global_percents(
+    conn: &mut Connection,
+    source_id: &str,
+    percents: &std::collections::HashMap<String, f64>,
+) -> AppResult<usize> {
+    let tx = conn.transaction()?;
+    let mut changed = 0;
+    for (name, percent) in percents {
+        changed += tx.execute(
+            "UPDATE achievements SET global_percent = ?3 \
+             WHERE game_source_id = ?1 AND api_name = ?2",
+            params![source_id, name, percent],
+        )?;
+    }
+    tx.commit()?;
+    Ok(changed)
+}
+
 pub fn list_for_source(conn: &Connection, source_id: &str) -> AppResult<Vec<AchievementRow>> {
     let mut stmt = conn.prepare(
         "SELECT api_name, name, description, icon_url, unlocked_at, global_percent, hidden \
