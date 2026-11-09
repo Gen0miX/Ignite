@@ -448,6 +448,17 @@ function TrackingCard() {
         </select>
         <span className={styles.muted}>{tt.idleHint}</span>
       </div>
+      <div className={styles.cardHeader}>
+        <div className={styles.cardTitle}>
+          <span className={styles.label}>{tt.toasts}</span>
+          <span className={styles.muted}>{tt.toastsHint}</span>
+        </div>
+        <Switch
+          label={tt.toasts}
+          checked={data.achievementToasts}
+          onChange={(achievementToasts) => save.mutate({ ...data, achievementToasts })}
+        />
+      </div>
       {save.isError && (
         <p role="alert" className={styles.errorText}>
           {tt.saveError}

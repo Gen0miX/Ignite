@@ -31,6 +31,8 @@ pub enum AchievementsState {
     Unsupported,
     /// Emulated game not found on RetroAchievements (set its id by hand).
     NotMatched,
+    /// Local game: Goldberg is not installed/configured yet.
+    NeedsSetup,
 }
 
 #[derive(Debug, Clone, Serialize, specta::Type)]
@@ -59,6 +61,8 @@ pub struct AchievementsView {
     pub synced_at: Option<String>,
     /// Last fetch error (cached data, if any, is still returned).
     pub error: Option<String>,
+    /// Goldberg setup of a local game (absent for other sources).
+    pub goldberg: Option<crate::sources::goldberg::GoldbergStatus>,
 }
 
 fn view(
@@ -91,6 +95,7 @@ fn view(
         items,
         synced_at,
         error,
+        goldberg: None,
     }
 }
 
@@ -102,6 +107,7 @@ fn empty(state: AchievementsState) -> AchievementsView {
         items: vec![],
         synced_at: None,
         error: None,
+        goldberg: None,
     }
 }
 
@@ -174,6 +180,14 @@ fn with_local_icons(
         let Some(url) = item.icon.take() else {
             continue;
         };
+        // Local file (Goldberg definitions): served through `asset:` once the
+        // game folder is in scope.
+        if !url.starts_with("http") {
+            if std::path::Path::new(&url).is_file() {
+                item.icon = Some(url);
+            }
+            continue;
+        }
         if item.unlocked_at.is_none() {
             continue;
         }
@@ -241,6 +255,12 @@ fn load(app: &AppHandle, game_id: &str, refresh: bool) -> CommandResult<Achievem
     let sources = game_sources::list_for_game(&db.conn(), game_id)?;
     if let Some(src) = sources.iter().find(|s| s.kind == SourceKind::Emulator) {
         return load_ra(app, src, refresh);
+    }
+    if let Some(source) = sources
+        .iter()
+        .find(|s| s.kind == SourceKind::Local && s.exe_path.is_some())
+    {
+        return load_goldberg(app, source);
     }
     let Some(source) = sources.iter().find(|s| s.kind == SourceKind::Steam) else {
         // Other platforms (GOG) fill the cache during the sync.
@@ -324,6 +344,32 @@ fn cached_view(
         }
     }
     Ok(None)
+}
+
+/// Local game managed through Goldberg: definitions come from the game's
+/// `steam_settings`, progress from Goldberg's saves.
+fn load_goldberg(
+    app: &AppHandle,
+    source: &crate::db::repo::game_sources::GameSource,
+) -> CommandResult<AchievementsView> {
+    use crate::sources::goldberg;
+    let db = app.state::<Db>();
+    let mut status = goldberg::status(&db.conn(), source);
+    if let Some(dir) = &status.game_dir {
+        // Icons written by Goldberg live in the game folder.
+        let _ = app.asset_protocol_scope().allow_directory(dir, true);
+    }
+    if !status.ready() {
+        status.issues.sort();
+        let mut v = empty(AchievementsState::NeedsSetup);
+        v.goldberg = Some(status);
+        return Ok(v);
+    }
+    goldberg::refresh_cache(&mut db.conn(), source)?;
+    let rows = achievements::list_for_source(&db.conn(), &source.id)?;
+    let mut v = view(rows, None, None);
+    v.goldberg = Some(status);
+    Ok(v)
 }
 
 /// RetroAchievements for an emulated game, cached like Steam's.

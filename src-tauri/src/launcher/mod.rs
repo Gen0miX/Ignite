@@ -225,6 +225,7 @@ mod tests {
             source_playtime_minutes: None,
             source_last_played: None,
             last_synced_at: None,
+            goldberg_appid: None,
         }
     }
 

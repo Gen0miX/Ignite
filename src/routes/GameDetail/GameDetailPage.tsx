@@ -75,9 +75,15 @@ export function GameDetailPage() {
   return <Sheet game={game.data} tabParam={tab} />;
 }
 
-/** Achievements come from Steam, GOG or RetroAchievements. */
+/** Achievements come from Steam, GOG, RetroAchievements or Goldberg (local). */
 const hasPlatformAchievements = (game: GameDetail) =>
-  game.summary.sources.some((k) => k === 'steam' || k === 'gog' || k === 'emulator');
+  game.sources.some(
+    (src) =>
+      src.kind === 'steam' ||
+      src.kind === 'gog' ||
+      src.kind === 'emulator' ||
+      (src.kind === 'local' && !!src.exePath),
+  );
 
 function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefined }) {
   const s = game.summary;
@@ -269,9 +275,12 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
                 ? 'RetroAchievements'
                 : s.sources.includes('steam')
                   ? fr.sources.steam
-                  : fr.sources.gog
+                  : s.sources.includes('gog')
+                    ? fr.sources.gog
+                    : 'Goldberg'
             }
             isEmulated={s.sources.includes('emulator')}
+            isLocal={game.sources.some((src) => src.kind === 'local' && !!src.exePath)}
           />
         ) : (
           <GoalsSection gameId={s.id} />

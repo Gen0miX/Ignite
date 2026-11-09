@@ -75,6 +75,7 @@ pub fn run() {
             app.manage(commands::sources::SyncState::default());
             app.manage(tracker::TrackerState::default());
             tracker::spawn(app.handle().clone());
+            crate::sources::goldberg::spawn_watcher(app.handle().clone());
             if let Err(e) = tray::setup(app.handle()) {
                 tracing::warn!(error = %e, "tray icon unavailable");
             }

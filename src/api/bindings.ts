@@ -64,6 +64,16 @@ export const commands = {
 	raUsernameSet: (username: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("ra_username_set", { username })),
 	/**  Sets (or clears) the RetroAchievements game id of an emulated game. */
 	gameSetRaId: (gameId: string, raId: number | null) => typedError<null, CommandError>(__TAURI_INVOKE("game_set_ra_id", { gameId, raId })),
+	goldbergStatus: (gameId: string) => typedError<GoldbergStatus_Serialize, CommandError>(__TAURI_INVOKE("goldberg_status", { gameId })),
+	/**
+	 *  Installs (or repairs) Goldberg, writes the appid and regenerates the
+	 *  achievement definitions. `force` reinstalls the DLL.
+	 */
+	goldbergSetup: (gameId: string, appid: number, force: boolean) => typedError<GoldbergStatus_Serialize, CommandError>(__TAURI_INVOKE("goldberg_setup", { gameId, appid, force })),
+	/**  Removes the configured appid (the game stays installed). */
+	goldbergClearAppid: (gameId: string) => typedError<GoldbergStatus_Serialize, CommandError>(__TAURI_INVOKE("goldberg_clear_appid", { gameId })),
+	/**  Creates the saves folder even before a first achievement is earned. */
+	goldbergOpenSaves: (gameId: string) => typedError<string, CommandError>(__TAURI_INVOKE("goldberg_open_saves", { gameId })),
 	homeOverview: () => typedError<HomeOverview_Serialize, CommandError>(__TAURI_INVOKE("home_overview")),
 	homeTonight: (choice: Tonight) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("home_tonight", { choice })),
 	/**  Steam news of the games played in the last 30 days. */
@@ -203,7 +213,9 @@ export type AchievementsState =
 /**  No source of this game provides achievements: use personal goals. */
 "unsupported" | 
 /**  Emulated game not found on RetroAchievements (set its id by hand). */
-"notMatched";
+"notMatched" | 
+/**  Local game: Goldberg is not installed/configured yet. */
+"needsSetup";
 
 export type AchievementsView = AchievementsView_Serialize | AchievementsView_Deserialize;
 
@@ -215,6 +227,8 @@ export type AchievementsView_Deserialize = {
 	syncedAt?: string | null,
 	/**  Last fetch error (cached data, if any, is still returned). */
 	error?: string | null,
+	/**  Goldberg setup of a local game (absent for other sources). */
+	goldberg?: GoldbergStatus_Deserialize | null,
 };
 
 export type AchievementsView_Serialize = {
@@ -225,6 +239,8 @@ export type AchievementsView_Serialize = {
 	syncedAt: string | null,
 	/**  Last fetch error (cached data, if any, is still returned). */
 	error: string | null,
+	/**  Goldberg setup of a local game (absent for other sources). */
+	goldberg: GoldbergStatus_Serialize | null,
 };
 
 /**  A game being played right now (for the "En jeu" badge and live timer). */
@@ -271,6 +287,8 @@ export type AppSettings = {
 	/**  Start with Windows, minimized in the notification area. */
 	autostart: boolean,
 };
+
+export type Architecture = "x64" | "x86";
 
 export type ArtworkOption = ArtworkOption_Serialize | ArtworkOption_Deserialize;
 
@@ -747,6 +765,61 @@ export type Goal_Serialize = {
 	position: number,
 	/**  RFC 3339 when checked. */
 	doneAt: string | null,
+};
+
+/**  What the UI has to fix for achievements to work. */
+export type GoldbergIssue = 
+/**  Not a local game with an executable. */
+"noExecutable" | 
+/**  No `steam_api(64).dll` found (needs a Steamworks game). */
+"noDll" | 
+/**  The DLL is still Valve's. */
+"notInstalled" | 
+/**  No Steam appid configured. */
+"needsAppid" | 
+/**  A Steam Web API key is needed to build the definitions. */
+"needsSteamKey" | 
+/**  `steam_settings\achievements.json` is missing. */
+"noDefinitions" | 
+/**  No achievement earned yet: Goldberg only creates the saves file then. */
+"noSaves";
+
+export type GoldbergStatus = GoldbergStatus_Serialize | GoldbergStatus_Deserialize;
+
+export type GoldbergStatus_Deserialize = {
+	gameId: string,
+	sourceId: string,
+	gameTitle: string,
+	exePath?: string | null,
+	gameDir?: string | null,
+	dllPath?: string | null,
+	architecture?: Architecture | null,
+	installed: boolean,
+	originalBackedUp: boolean,
+	appid?: number | null,
+	settingsDir?: string | null,
+	definitionsReady: boolean,
+	savesPath?: string | null,
+	savesReady: boolean,
+	issues: GoldbergIssue[],
+};
+
+export type GoldbergStatus_Serialize = {
+	gameId: string,
+	sourceId: string,
+	gameTitle: string,
+	exePath: string | null,
+	gameDir: string | null,
+	dllPath: string | null,
+	architecture: Architecture | null,
+	installed: boolean,
+	originalBackedUp: boolean,
+	appid: number | null,
+	settingsDir: string | null,
+	definitionsReady: boolean,
+	savesPath: string | null,
+	savesReady: boolean,
+	issues: GoldbergIssue[],
 };
 
 export type HomeGame = HomeGame_Serialize | HomeGame_Deserialize;
@@ -1299,6 +1372,8 @@ export type SourceInfo_Deserialize = {
 	externalId?: string | null,
 	installed: boolean,
 	installPath?: string | null,
+	/**  Executable of a source when it has one (local games). */
+	exePath?: string | null,
 	sizeBytes?: number | null,
 	launchUri?: string | null,
 	playtimeMinutes?: number | null,
@@ -1311,6 +1386,8 @@ export type SourceInfo_Serialize = {
 	externalId: string | null,
 	installed: boolean,
 	installPath: string | null,
+	/**  Executable of a source when it has one (local games). */
+	exePath: string | null,
 	sizeBytes: number | null,
 	launchUri: string | null,
 	playtimeMinutes: number | null,
@@ -1594,6 +1671,8 @@ export type TrackingSettings = {
 	minSessionMinutes: number,
 	/**  No input for this long pauses the timer. */
 	idleMinutes: number,
+	/**  Windows toast when a Goldberg achievement is unlocked. */
+	achievementToasts: boolean,
 };
 
 export type Trailer = Trailer_Serialize | Trailer_Deserialize;

@@ -39,6 +39,9 @@ tauri-plugin-notification = "2"
 tauri-plugin-single-instance = "2"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 tauri-plugin-clipboard-manager = "2"
+# Pure-Rust 7z: Goldberg releases are `.7z` archives, extracted in memory
+# (Windows Defender sometimes quarantines the downloaded file).
+sevenz-rust2 = "0.25.0"
 
 [profile.dev]
 incremental = true

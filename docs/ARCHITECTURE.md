@@ -86,6 +86,7 @@ CREATE TABLE game_sources (
   source_playtime_minutes INTEGER,     -- temps fourni par la source (Steam, GOG…), NULL sinon
   source_last_played TEXT,
   last_synced_at TEXT,
+  goldberg_appid INTEGER,             -- jeu local : AppID Steam pour les succès Goldberg (0011)
   UNIQUE(kind, external_id)
 );
 

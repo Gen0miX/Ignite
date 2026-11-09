@@ -34,6 +34,8 @@ pub struct SourceInfo {
     pub external_id: Option<String>,
     pub installed: bool,
     pub install_path: Option<String>,
+    /// Executable of a source when it has one (local games).
+    pub exe_path: Option<String>,
     pub size_bytes: Option<f64>,
     pub launch_uri: Option<String>,
     pub playtime_minutes: Option<u32>,
@@ -131,6 +133,7 @@ pub(crate) fn load_detail(db: &Db, id: &str) -> CommandResult<GameDetail> {
                 external_id: s.external_id,
                 installed: s.installed,
                 install_path: s.install_path,
+                exe_path: s.exe_path,
                 size_bytes: s.size_bytes.map(|b| b as f64),
                 launch_uri: s.launch_uri,
                 playtime_minutes: s.source_playtime_minutes.map(to_u32),

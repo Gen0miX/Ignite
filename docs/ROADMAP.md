@@ -70,4 +70,5 @@ Specs : `docs/FICHE-ONGLETS.md`, `docs/TIME-TO-BEAT.md`.
 - [x] Durées de vie via IGDB (`game_time_to_beats`) : migration 0008, carte « Durée de vie », tuile « Pour le finir », correction manuelle, jeton `duree:`. HowLongToBeat écarté : le site refuse les clients qui ne se font pas passer pour un navigateur.
 - [x] Onglet Succès : résumé, filtres, tri, succès cachés, icônes en cache.
 - [x] Onglet Captures et visionneuse : Steam, Xbox Game Bar, dossiers perso, en lecture seule (migration 0010, miniatures dans `artwork/thumbs/`, ligne « n captures » dans le récap de session).
+- [x] Succès des jeux locaux via Goldberg (migration 0011) : installation du DLL avec sauvegarde de l'original, définitions générées depuis Steam, suivi de la progression et notifications Windows (désactivables).
 

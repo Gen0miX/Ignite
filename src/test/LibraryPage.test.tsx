@@ -57,6 +57,7 @@ vi.mock('../api/client', async (importOriginal) => {
           externalId: '10',
           installed: true,
           installPath: 'C:\\Steam\\steamapps\\common\\X',
+          exePath: null,
           sizeBytes: 1024,
           launchUri: 'steam://rungameid/10',
           playtimeMinutes: summary.playtimeMinutes,

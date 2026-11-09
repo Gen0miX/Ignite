@@ -295,8 +295,11 @@ export function useTrackingSettings() {
 export function useSetTrackingSettings() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (settings: { minSessionMinutes: number; idleMinutes: number }) =>
-      unwrap(commands.trackingSettingsSet(settings)),
+    mutationFn: (settings: {
+      minSessionMinutes: number;
+      idleMinutes: number;
+      achievementToasts: boolean;
+    }) => unwrap(commands.trackingSettingsSet(settings)),
     onSuccess: () => client.invalidateQueries({ queryKey: ['tracking-settings'] }),
   });
 }
@@ -390,6 +393,15 @@ export function useLibraryEvents() {
       if (cancelled) fn();
       else unlisteners.push(fn);
     });
+    // A Goldberg achievement was just unlocked: refresh the list.
+    void listen<{ gameId: string }>('achievement-unlocked', ({ payload }) => {
+      void client.invalidateQueries({ queryKey: keys.achievements(payload.gameId) });
+      void client.invalidateQueries({ queryKey: keys.game(payload.gameId) });
+      void client.invalidateQueries({ queryKey: ['goldberg', payload.gameId] });
+    }).then((fn) => {
+      if (cancelled) fn();
+      else unlisteners.push(fn);
+    });
     return () => {
       cancelled = true;
       unlisteners.forEach((fn) => fn());
@@ -468,6 +480,45 @@ export function useAchievements(gameId: string, enabled = true) {
     enabled: isTauri() && enabled,
     staleTime: 5 * 60_000,
   });
+}
+
+/** Goldberg setup state of a local game. */
+export function useGoldbergStatus(gameId: string, enabled = true) {
+  return useQuery({
+    queryKey: ['goldberg', gameId],
+    queryFn: () => unwrap(commands.goldbergStatus(gameId)),
+    enabled: isTauri() && enabled,
+  });
+}
+
+/** Installs Goldberg and writes the definitions for this game. */
+export function useGoldbergSetup(gameId: string) {
+  const client = useQueryClient();
+  const invalidate = useInvalidateLibrary();
+  return useMutation({
+    mutationFn: ({ appid, force }: { appid: number; force: boolean }) =>
+      unwrap(commands.goldbergSetup(gameId, appid, force)),
+    onSuccess: (data) => {
+      client.setQueryData(['goldberg', gameId], data);
+      void client.invalidateQueries({ queryKey: keys.achievements(gameId) });
+      void invalidate();
+    },
+  });
+}
+
+export function useGoldbergClearAppid(gameId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => unwrap(commands.goldbergClearAppid(gameId)),
+    onSuccess: (data) => {
+      client.setQueryData(['goldberg', gameId], data);
+      void client.invalidateQueries({ queryKey: keys.achievements(gameId) });
+    },
+  });
+}
+
+export function useGoldbergOpenSaves(gameId: string) {
+  return useMutation({ mutationFn: () => unwrap(commands.goldbergOpenSaves(gameId)) });
 }
 
 export function useRefreshAchievements(gameId: string) {

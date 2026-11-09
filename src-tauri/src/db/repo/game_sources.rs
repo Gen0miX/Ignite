@@ -21,6 +21,8 @@ pub struct GameSource {
     pub source_playtime_minutes: Option<i64>,
     pub source_last_played: Option<String>,
     pub last_synced_at: Option<String>,
+    /// Steam appid used by Goldberg to store achievements of a local game.
+    pub goldberg_appid: Option<i64>,
 }
 
 /// Data reported by a source scan. Upserted on `(kind, external_id)`.
@@ -39,7 +41,7 @@ pub struct SourceData {
 
 const COLUMNS: &str = "id, game_id, kind, external_id, installed, install_path, exe_path, \
      size_bytes, launch_uri, process_matchers, source_playtime_minutes, source_last_played, \
-     last_synced_at";
+     last_synced_at, goldberg_appid";
 
 fn from_row(r: &Row<'_>) -> rusqlite::Result<GameSource> {
     Ok(GameSource {
@@ -56,6 +58,7 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<GameSource> {
         source_playtime_minutes: r.get(10)?,
         source_last_played: r.get(11)?,
         last_synced_at: r.get(12)?,
+        goldberg_appid: r.get(13)?,
     })
 }
 
@@ -147,6 +150,15 @@ pub fn set_installed(conn: &Connection, id: &str, installed: bool) -> AppResult<
     conn.execute(
         "UPDATE game_sources SET installed = ?2 WHERE id = ?1",
         params![id, installed],
+    )?;
+    Ok(())
+}
+
+/// Steam appid used by Goldberg for this source (`None` clears it).
+pub fn set_goldberg_appid(conn: &Connection, id: &str, appid: Option<i64>) -> AppResult<()> {
+    conn.execute(
+        "UPDATE game_sources SET goldberg_appid = ?2 WHERE id = ?1",
+        params![id, appid],
     )?;
     Ok(())
 }

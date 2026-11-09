@@ -15,6 +15,8 @@ pub struct TrackingSettings {
     pub min_session_minutes: u32,
     /// No input for this long pauses the timer.
     pub idle_minutes: u32,
+    /// Windows toast when a Goldberg achievement is unlocked.
+    pub achievement_toasts: bool,
 }
 
 pub fn validate(s: &TrackingSettings) -> Result<(), AppError> {
@@ -36,6 +38,10 @@ pub fn tracking_settings_get(db: tauri::State<'_, Db>) -> TrackingSettings {
     TrackingSettings {
         min_session_minutes: (config.min_session_secs / 60) as u32,
         idle_minutes: (config.idle_threshold_secs / 60) as u32,
+        achievement_toasts: settings::get::<bool>(&db.conn(), crate::sources::goldberg::NOTIFY_KEY)
+            .ok()
+            .flatten()
+            .unwrap_or(true),
     }
 }
 
@@ -54,6 +60,11 @@ pub fn tracking_settings_set(
         &i64::from(settings.min_session_minutes),
     )?;
     settings::set(&conn, IDLE_KEY, &i64::from(settings.idle_minutes))?;
+    settings::set(
+        &conn,
+        crate::sources::goldberg::NOTIFY_KEY,
+        &settings.achievement_toasts,
+    )?;
     Ok(())
 }
 
@@ -66,12 +77,14 @@ mod tests {
     fn validates_and_round_trips() {
         assert!(validate(&TrackingSettings {
             min_session_minutes: 31,
-            idle_minutes: 15
+            idle_minutes: 15,
+            achievement_toasts: true,
         })
         .is_err());
         assert!(validate(&TrackingSettings {
             min_session_minutes: 2,
-            idle_minutes: 0
+            idle_minutes: 0,
+            achievement_toasts: true,
         })
         .is_err());
         let db = Db::open_in_memory().unwrap();

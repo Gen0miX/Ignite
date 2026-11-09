@@ -785,6 +785,47 @@ export const fr = {
     raIdSave: 'Enregistrer',
     achievementsUnsupported:
       'Cette plateforme ne fournit pas de succès : utilise les objectifs perso.',
+    achievementsNeedsSetup: 'Installe Goldberg pour suivre les succès de ce jeu.',
+    goldberg: {
+      title: 'Succès du jeu (Goldberg)',
+      intro:
+        'Goldberg remplace le DLL Steam du jeu pour enregistrer les succès localement. Ignite installe la dernière version, sauvegarde le DLL d’origine et crée les définitions à partir de Steam.',
+      appid: 'AppID Steam',
+      appidHint:
+        'L’identifiant du jeu sur Steam (dans l’adresse de sa page store). Il nomme le dossier de sauvegarde des succès.',
+      appidPlaceholder: 'Ex. : 1245620',
+      install: 'Installer et configurer',
+      reinstall: 'Réinstaller le DLL',
+      refresh: 'Vérifier',
+      openSaves: 'Ouvrir les sauvegardes',
+      clearAppid: 'Oublier l’AppID',
+      ready: 'Goldberg est installé et configuré pour ce jeu.',
+      installedShort: 'Installé, à configurer',
+      readyShort: 'Installé et configuré',
+      notInstalled: 'Goldberg n’est pas encore installé.',
+      backup:
+        'Le DLL d’origine est conservé à côté du jeu (suffixe .ignite-original). Supprimer le jeu de la bibliothèque ne le restaure pas.',
+      noKey:
+        'Sans clé Steam Web API, le DLL est installé mais les définitions de succès ne peuvent pas être générées : ajoute la clé dans Réglages › Sources.',
+      savesMissing:
+        'Le fichier de progression n’apparaît qu’après le premier succès débloqué en jeu.',
+      settings: 'Dossier de configuration',
+      dll: 'DLL',
+      saves: 'Sauvegardes',
+      arch: 'Architecture',
+      issue: {
+        noExecutable: 'Jeu local avec exécutable requis.',
+        noDll: 'Aucun fichier steam_api(64).dll dans le dossier : ce jeu n’utilise pas Steamworks.',
+        notInstalled: 'Le DLL Steam d’origine n’a pas encore été remplacé.',
+        needsAppid: 'Indique l’AppID Steam du jeu.',
+        needsSteamKey:
+          'Ajoute une clé Steam Web API dans Réglages › Sources pour générer les succès.',
+        noDefinitions: 'Les définitions de succès manquent : relance l’installation.',
+        noSaves: 'Aucun succès débloqué pour l’instant.',
+      },
+      error: 'L’installation de Goldberg a échoué. Vérifie ta connexion et les droits d’écriture.',
+      invalidAppid: 'AppID invalide : indique un nombre.',
+    },
     achievementsError: 'Impossible de récupérer les succès.',
     achievementsLoading: 'Chargement des succès…',
     launch: 'Lancement',
@@ -930,6 +971,8 @@ export const fr = {
       idle: 'Pause si inactif',
       idleHint:
         'Sans clavier, souris ni manette pendant ce temps, la période d’inactivité est retirée de la session.',
+      toasts: 'Notifications de succès',
+      toastsHint: 'Affiche une notification Windows quand un succès Goldberg est débloqué.',
       none: 'aucune',
       minutes: (n: number) => `${n} min`,
       duplicates: 'Jeux sur plusieurs plateformes',

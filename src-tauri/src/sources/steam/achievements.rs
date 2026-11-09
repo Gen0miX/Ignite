@@ -177,6 +177,31 @@ fn get(url: &str, query: &[(&str, String)], key: Option<&str>) -> AppResult<Resu
     }
 }
 
+/// Achievement definitions of an app (French labels, icons, hidden flags).
+/// An empty list means the app has none; a private/no-stats game also gets 400.
+pub fn fetch_schema(key: &str, appid: u64) -> AppResult<Vec<SchemaEntry>> {
+    match get(
+        &format!("{API}/ISteamUserStats/GetSchemaForGame/v2/"),
+        &[
+            ("key", key.into()),
+            ("appid", appid.to_string()),
+            ("l", "french".into()),
+        ],
+        Some(key),
+    )? {
+        Ok(body) => parse_schema(&body),
+        Err(400) => Ok(Vec::new()),
+        Err(403) => Err(AppError::Network {
+            status: Some(403),
+            message: "Steam refused the schema".into(),
+        }),
+        Err(code) => Err(AppError::Network {
+            status: Some(code),
+            message: format!("HTTP {code}"),
+        }),
+    }
+}
+
 /// Fetches and merges everything. `Ok(None)` = no achievements for this game.
 pub fn fetch(key: &str, steam_id: u64, appid: u64) -> AppResult<Option<Vec<SteamAchievement>>> {
     let player = get(

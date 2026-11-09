@@ -1,8 +1,32 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Eye, Lock, RefreshCw, Search, Trophy } from 'lucide-react';
-import { artworkSrc, commands, unwrap, type AchievementItem } from '../../api/client';
-import { useAchievements, useRefreshAchievements } from '../../api/hooks';
+import {
+  CheckCircle2,
+  Download,
+  Eye,
+  FolderOpen,
+  Info,
+  Lock,
+  RefreshCw,
+  Search,
+  Trophy,
+  XCircle,
+} from 'lucide-react';
+import {
+  artworkSrc,
+  commands,
+  unwrap,
+  type AchievementItem,
+  type GoldbergStatus,
+} from '../../api/client';
+import {
+  useAchievements,
+  useGoldbergClearAppid,
+  useGoldbergOpenSaves,
+  useGoldbergSetup,
+  useGoldbergStatus,
+  useRefreshAchievements,
+} from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
 import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
@@ -38,16 +62,18 @@ const RECENT = 4;
 
 /**
  * Achievements tab (docs/FICHE-ONGLETS.md): summary, filters and the list.
- * `sourceLabel`: "Steam", "GOG", "RetroAchievements".
+ * `sourceLabel`: "Steam", "GOG", "RetroAchievements", "Goldberg".
  */
 export function AchievementsSection({
   gameId,
   sourceLabel,
   isEmulated = false,
+  isLocal = false,
 }: {
   gameId: string;
   sourceLabel: string;
   isEmulated?: boolean;
+  isLocal?: boolean;
 }) {
   const q = useAchievements(gameId);
   const refresh = useRefreshAchievements(gameId);
@@ -77,6 +103,8 @@ export function AchievementsSection({
     body = <p className={sheet.muted}>{t.achievementsNeedsKey}</p>;
   } else if (v.state === 'notMatched') {
     body = <p className={sheet.muted}>{t.achievementsNotMatched}</p>;
+  } else if (v.state === 'needsSetup') {
+    body = <p className={sheet.muted}>{t.achievementsNeedsSetup}</p>;
   } else if (v.state === 'none' || v.items.length === 0) {
     body = <p className={sheet.muted}>{t.achievementsNone}</p>;
   } else {
@@ -103,6 +131,7 @@ export function AchievementsSection({
         )}
       </div>
       {body}
+      {isLocal && <GoldbergSetup gameId={gameId} initial={v?.goldberg ?? null} />}
       {isEmulated && <RaIdForm gameId={gameId} />}
     </section>
   );
@@ -449,5 +478,128 @@ function RaIdForm({ gameId }: { gameId: string }) {
         {t.raIdSave}
       </button>
     </form>
+  );
+}
+
+/** Goldberg setup and installation check for a local game. */
+function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergStatus | null }) {
+  const status = useGoldbergStatus(gameId);
+  const setup = useGoldbergSetup(gameId);
+  const clear = useGoldbergClearAppid(gameId);
+  const openSaves = useGoldbergOpenSaves(gameId);
+  const [typed, setTyped] = useState<string | null>(null);
+  const s = status.data ?? initial;
+  const appid = typed ?? (s?.appid ? String(s.appid) : '');
+
+  if (!s) return null;
+  const ready = s.installed && s.appid != null && s.definitionsReady;
+  const valid = /^\d+$/.test(appid.trim()) && Number(appid) > 0;
+  const issues = s.issues.filter((i) => !(ready && (i === 'noSaves' || i === 'needsAppid')));
+
+  return (
+    <section className={`${sheet.card} ${styles.setup}`} aria-labelledby="goldberg-title">
+      <div className={sheet.sectionHeader}>
+        <h3 id="goldberg-title" className="section-label">
+          {t.goldberg.title}
+        </h3>
+        <span className={ready ? styles.ready : styles.notReady}>
+          {ready ? (
+            <CheckCircle2 size={16} aria-hidden="true" />
+          ) : (
+            <XCircle size={16} aria-hidden="true" />
+          )}
+          {ready
+            ? t.goldberg.readyShort
+            : s.installed
+              ? t.goldberg.installedShort
+              : t.goldberg.notInstalled}
+        </span>
+      </div>
+      <p className={sheet.muted}>{t.goldberg.intro}</p>
+
+      <dl className={styles.setupDetails}>
+        <dt>{t.goldberg.dll}</dt>
+        <dd className="mono">{s.dllPath ?? '—'}</dd>
+        <dt>{t.goldberg.settings}</dt>
+        <dd className="mono">{s.settingsDir ?? '—'}</dd>
+        <dt>{t.goldberg.saves}</dt>
+        <dd className="mono">{s.savesPath ?? '—'}</dd>
+        <dt>{t.goldberg.arch}</dt>
+        <dd>{s.architecture ?? '—'}</dd>
+      </dl>
+
+      {issues.length > 0 && (
+        <ul className={styles.issues}>
+          {issues.map((issue) => (
+            <li key={issue}>
+              <Info size={14} aria-hidden="true" />
+              {t.goldberg.issue[issue]}
+            </li>
+          ))}
+        </ul>
+      )}
+      {ready && <p className={styles.readyText}>{t.goldberg.ready}</p>}
+      {s.appid != null && !s.savesReady && <p className={sheet.muted}>{t.goldberg.savesMissing}</p>}
+      {!s.originalBackedUp && s.installed && <p className={sheet.muted}>{t.goldberg.backup}</p>}
+      {issues.includes('needsSteamKey') && <p className={sheet.muted}>{t.goldberg.noKey}</p>}
+
+      <form
+        className={`${sheet.inlineForm} ${styles.setupForm}`}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (valid) setup.mutate({ appid: Number(appid), force: s.installed });
+        }}
+      >
+        <label className="visually-hidden" htmlFor="goldberg-appid">
+          {t.goldberg.appid}
+        </label>
+        <input
+          id="goldberg-appid"
+          className={sheet.input}
+          inputMode="numeric"
+          placeholder={t.goldberg.appidPlaceholder}
+          value={appid}
+          onChange={(e) => setTyped(e.target.value)}
+          title={t.goldberg.appidHint}
+        />
+        <button type="submit" className={buttons.secondary} disabled={!valid || setup.isPending}>
+          <Download size={14} aria-hidden="true" />
+          {s.installed ? t.goldberg.reinstall : t.goldberg.install}
+        </button>
+        <button
+          type="button"
+          className={buttons.secondary}
+          onClick={() => void status.refetch()}
+          disabled={status.isFetching}
+          title={t.goldberg.refresh}
+        >
+          <RefreshCw size={14} aria-hidden="true" />
+          <span className="visually-hidden">{t.goldberg.refresh}</span>
+        </button>
+        {s.appid != null && (
+          <>
+            <button type="button" className={buttons.secondary} onClick={() => openSaves.mutate()}>
+              <FolderOpen size={14} aria-hidden="true" />
+              {t.goldberg.openSaves}
+            </button>
+            <button
+              type="button"
+              className={buttons.secondary}
+              onClick={() => {
+                clear.mutate();
+                setTyped('');
+              }}
+            >
+              {t.goldberg.clearAppid}
+            </button>
+          </>
+        )}
+      </form>
+      {(setup.isError || clear.isError) && (
+        <p role="alert" className={sheet.error}>
+          {t.goldberg.error}
+        </p>
+      )}
+    </section>
   );
 }

@@ -40,6 +40,7 @@ const detail: GameDetail = {
       externalId: '392110',
       installed: true,
       installPath: 'C:\\Steam\\steamapps\\common\\ENDLESS Space 2',
+      exePath: null,
       sizeBytes: null,
       launchUri: 'steam://rungameid/392110',
       playtimeMinutes: 8700,
