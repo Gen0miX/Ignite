@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
+  Bell,
   Download,
   Eye,
   FolderOpen,
@@ -26,6 +27,7 @@ import {
   useGoldbergOpenSaves,
   useGoldbergSetup,
   useGoldbergStatus,
+  useGoldbergTestToast,
   useRefreshAchievements,
 } from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
@@ -489,6 +491,7 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
   const clear = useGoldbergClearAppid(gameId);
   const openSaves = useGoldbergOpenSaves(gameId);
   const findSaves = useGoldbergFindSaves(gameId);
+  const testToast = useGoldbergTestToast();
   const [typed, setTyped] = useState<string | null>(null);
   const s = status.data ?? initial;
   const appid = typed ?? (s?.appid ? String(s.appid) : '');
@@ -607,6 +610,20 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
                 className={findSaves.isPending ? styles.spin : ''}
               />
               {t.goldberg.findSaves}
+            </button>
+            <button
+              type="button"
+              className={buttons.secondary}
+              onClick={() =>
+                testToast.mutate({
+                  title: t.goldberg.testToastTitle,
+                  body: t.goldberg.testToastBody,
+                })
+              }
+              title={t.goldberg.testToastHint}
+            >
+              <Bell size={14} aria-hidden="true" />
+              {t.goldberg.testToast}
             </button>
             <button
               type="button"

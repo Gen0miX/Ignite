@@ -76,6 +76,7 @@ const setup = vi.fn(() => ok({ ...status, installed: true, appid: 42 }));
 const findSaves = vi.fn(() =>
   ok({ paths: ['C:\\Users\\Public\\Documents\\Steam\\42\\achievements.json'], unlocked: ['A'] }),
 );
+const testToast = vi.fn(() => ok(null));
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: () => Promise.resolve(() => {}) }));
 vi.mock('../api/client', async (importOriginal) => {
@@ -113,6 +114,7 @@ vi.mock('../api/client', async (importOriginal) => {
       goldbergStatus: () => ok(currentStatus),
       goldbergSetup: setup,
       goldbergFindSaves: findSaves,
+      goldbergTestToast: testToast,
       libraryCounts: () =>
         ok({
           all: 1,
@@ -184,5 +186,13 @@ describe('Goldberg setup', () => {
     expect(
       screen.getByText('C:\\Users\\Public\\Documents\\Steam\\42\\achievements.json'),
     ).toBeVisible();
+  });
+
+  it('shows a test notification', async () => {
+    currentStatus = { ...status, installed: true, appid: 42, definitionsReady: true };
+    const user = userEvent.setup();
+    renderAt('/game/g1/succes');
+    await user.click(await screen.findByRole('button', { name: /Tester la notification/ }));
+    expect(testToast).toHaveBeenCalledWith('Ignite', 'Ceci est un test de notification.');
   });
 });

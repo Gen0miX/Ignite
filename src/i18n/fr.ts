@@ -805,6 +805,10 @@ export const fr = {
       found: (n: number, files: number) =>
         `${n} succès déjà débloqué${n > 1 ? 's' : ''} trouvé${n > 1 ? 's' : ''} dans ${files} fichier${files > 1 ? 's' : ''}.`,
       foundNone: 'Aucun succès déjà débloqué trouvé.',
+      testToast: 'Tester la notification',
+      testToastHint: 'Affiche une notification Windows de test.',
+      testToastTitle: 'Ignite',
+      testToastBody: 'Ceci est un test de notification.',
       clearAppid: 'Oublier l’AppID',
       ready: 'Goldberg est installé et configuré pour ce jeu.',
       installedShort: 'Installé, à configurer',

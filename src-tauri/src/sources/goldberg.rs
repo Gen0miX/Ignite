@@ -89,7 +89,13 @@ fn public_steam_root() -> Option<PathBuf> {
 const MAX_FIND_DEPTH: usize = 6;
 const MAX_FIND_ENTRIES: usize = 4000;
 
-/// Depth-limited walk of `root` looking for `<appid>\achievements.json`.
+/// Steam emulators save unlocks under different names: Goldberg/GBE use
+/// `achievements.json`, other Steam emulators use `achievements.ini`.
+fn is_achievements_file(name: &std::ffi::OsStr) -> bool {
+    name == "achievements.json" || name == "achievements.ini"
+}
+
+/// Depth-limited walk of `root` looking for `<appid>\achievements.*`.
 fn walk_for_appid(root: &Path, appid: u32) -> Vec<PathBuf> {
     let target = appid.to_string();
     let mut found = Vec::new();
@@ -116,7 +122,7 @@ fn walk_for_appid(root: &Path, appid: u32) -> Vec<PathBuf> {
                 if depth < MAX_FIND_DEPTH {
                     stack.push((path, depth + 1));
                 }
-            } else if path.file_name().is_some_and(|n| n == "achievements.json")
+            } else if path.file_name().is_some_and(is_achievements_file)
                 && path
                     .parent()
                     .and_then(|p| p.file_name())
@@ -811,32 +817,116 @@ pub fn read_earned_for(appid: u32) -> HashMap<String, i64> {
     merge_earned(&find_save_files(appid))
 }
 
-/// Merges several `achievements.json` files; the earliest time wins.
+/// Merges several `achievements.*` files; the earliest time wins.
 fn merge_earned(files: &[PathBuf]) -> HashMap<String, i64> {
     let mut merged: HashMap<String, i64> = HashMap::new();
     for file in files {
         let Ok(text) = std::fs::read_to_string(file) else {
             continue;
         };
-        let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
-            continue;
+        let earned = match file.extension().and_then(|e| e.to_str()) {
+            Some("ini") => read_ini_earned(&text),
+            _ => read_json_earned(&text),
         };
-        let Some(map) = value.as_object() else { continue };
-        for (name, data) in map {
-            if data.get("earned").and_then(serde_json::Value::as_bool) != Some(true) {
-                continue;
-            }
-            let at = data
-                .get("earned_time")
-                .and_then(serde_json::Value::as_i64)
-                .unwrap_or(0);
+        for (name, at) in earned {
             merged
-                .entry(name.clone())
+                .entry(name)
                 .and_modify(|t| *t = (*t).min(at))
                 .or_insert(at);
         }
     }
     merged
+}
+
+/// Goldberg saves: `{ "<name>": { "earned": bool, "earned_time": unix } }`.
+fn read_json_earned(text: &str) -> HashMap<String, i64> {
+    let mut earned = HashMap::new();
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(text) else {
+        return earned;
+    };
+    let Some(map) = value.as_object() else {
+        return earned;
+    };
+    for (name, data) in map {
+        if data.get("earned").and_then(serde_json::Value::as_bool) != Some(true) {
+            continue;
+        }
+        let at = data
+            .get("earned_time")
+            .and_then(serde_json::Value::as_i64)
+            .unwrap_or(0);
+        earned.insert(name.clone(), at);
+    }
+    earned
+}
+
+fn truthy_str(value: &str) -> bool {
+    value == "1" || value.eq_ignore_ascii_case("true")
+}
+
+/// INI saves from other Steam emulators: one `[<api_name>]` section per achievement with
+/// `Achieved` and `UnlockTime`, plus a `[SteamAchievements]` index of the
+/// unlocked names.
+fn read_ini_earned(text: &str) -> HashMap<String, i64> {
+    let mut sections: HashMap<String, HashMap<String, String>> = HashMap::new();
+    let mut current: Option<String> = None;
+    for raw in text.lines() {
+        let line = raw.trim();
+        if line.is_empty() || line.starts_with(';') || line.starts_with('#') {
+            continue;
+        }
+        if let Some(name) = line.strip_prefix('[').and_then(|l| l.strip_suffix(']')) {
+            current = Some(name.trim().to_string());
+            continue;
+        }
+        let Some(section) = current.as_deref() else {
+            continue;
+        };
+        if let Some((key, value)) = line.split_once('=') {
+            sections
+                .entry(section.to_string())
+                .or_default()
+                .insert(key.trim().to_string(), value.trim().to_string());
+        }
+    }
+
+    let mut unlocked: HashMap<String, i64> = HashMap::new();
+    // Every section other than the index is an achievement; `Achieved=1`
+    // marks an unlock and `UnlockTime` carries its date.
+    for (name, fields) in &sections {
+        if name.eq_ignore_ascii_case("SteamAchievements") {
+            continue;
+        }
+        let achieved = fields
+            .iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case("achieved"))
+            .is_some_and(|(_, v)| truthy_str(v));
+        if !achieved {
+            continue;
+        }
+        let at = fields
+            .iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case("unlocktime"))
+            .and_then(|(_, v)| v.parse::<i64>().ok())
+            .unwrap_or(0);
+        unlocked
+            .entry(name.clone())
+            .and_modify(|t| *t = (*t).min(at))
+            .or_insert(at);
+    }
+    // `[SteamAchievements]` maps indexes to unlocked names; it fills in the
+    // names whose section is missing (no date known).
+    if let Some(index) = sections
+        .iter()
+        .find(|(s, _)| s.eq_ignore_ascii_case("SteamAchievements"))
+    {
+        for (key, value) in index.1 {
+            if key.chars().all(|c| c.is_ascii_digit()) && !value.is_empty() {
+                unlocked.entry(value.clone()).or_insert(0);
+            }
+        }
+    }
+    unlocked
 }
 
 /// Cache rows for the achievements tab.
@@ -880,6 +970,12 @@ fn toasts_enabled(conn: &Connection) -> bool {
 fn toast(app: &AppHandle, title: &str, body: &str) {
     use tauri_plugin_notification::NotificationExt;
     let _ = app.notification().builder().title(title).body(body).show();
+}
+
+/// Shows a notification through the same path as achievement toasts, so the
+/// user can check that Windows notifications work.
+pub fn test_toast(app: &AppHandle, title: &str, body: &str) {
+    toast(app, title, body);
 }
 
 /// Achievement watches, seeded on first sight so existing unlocks are silent.
@@ -1126,5 +1222,35 @@ mod tests {
         assert_eq!(merged.get("A"), Some(&10));
         assert_eq!(merged.get("C"), Some(&0));
         assert!(!merged.contains_key("B"));
+    }
+
+    #[test]
+    fn ini_unlocks_are_merged() {
+        let text = r#"[ACH_FIRST]
+Achieved=1
+CurProgress=0
+MaxProgress=0
+UnlockTime=1700000000
+[ACH_SECOND]
+Achieved=0
+UnlockTime=1700000001
+[SteamAchievements]
+00000=ACH_FIRST
+00001=ACH_THIRD
+Count=2
+"#;
+        let earned = read_ini_earned(text);
+        assert_eq!(earned.get("ACH_FIRST"), Some(&1700000000));
+        assert_eq!(earned.get("ACH_SECOND"), None);
+        assert_eq!(earned.get("ACH_THIRD"), Some(&0));
+    }
+
+    #[test]
+    fn walk_finds_ini_files() {
+        let tmp = tempfile::tempdir().unwrap();
+        let target = tmp.path().join("Emu").join("541570").join("achievements.ini");
+        std::fs::create_dir_all(target.parent().unwrap()).unwrap();
+        std::fs::write(&target, "[SteamAchievements]\r\nCount=0\r\n").unwrap();
+        assert_eq!(walk_for_appid(tmp.path(), 541570), vec![target]);
     }
 }

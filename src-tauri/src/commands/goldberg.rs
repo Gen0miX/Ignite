@@ -128,3 +128,11 @@ pub async fn goldberg_find_saves(app: AppHandle, game_id: String) -> CommandResu
         super::CommandError::from(AppError::Invalid(format!("goldberg task failed: {e}")))
     })?
 }
+
+/// Shows a test notification through the same path as achievement toasts.
+#[tauri::command]
+#[specta::specta]
+pub fn goldberg_test_toast(app: AppHandle, title: String, body: String) -> CommandResult<()> {
+    goldberg::test_toast(&app, &title, &body);
+    Ok(())
+}

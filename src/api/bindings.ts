@@ -80,6 +80,8 @@ export const commands = {
 	 *  Documents).
 	 */
 	goldbergFindSaves: (gameId: string) => typedError<GoldbergFind, CommandError>(__TAURI_INVOKE("goldberg_find_saves", { gameId })),
+	/**  Shows a test notification through the same path as achievement toasts. */
+	goldbergTestToast: (title: string, body: string) => typedError<null, CommandError>(__TAURI_INVOKE("goldberg_test_toast", { title, body })),
 	homeOverview: () => typedError<HomeOverview_Serialize, CommandError>(__TAURI_INVOKE("home_overview")),
 	homeTonight: (choice: Tonight) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("home_tonight", { choice })),
 	/**  Steam news of the games played in the last 30 days. */

@@ -533,6 +533,14 @@ export function useGoldbergFindSaves(gameId: string) {
   });
 }
 
+/** Sends a test notification through the achievement-toast path. */
+export function useGoldbergTestToast() {
+  return useMutation({
+    mutationFn: ({ title, body }: { title: string; body: string }) =>
+      unwrap(commands.goldbergTestToast(title, body)),
+  });
+}
+
 export function useRefreshAchievements(gameId: string) {
   const client = useQueryClient();
   const invalidate = useInvalidateLibrary();
