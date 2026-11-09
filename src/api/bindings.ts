@@ -77,7 +77,7 @@ export const commands = {
 	/**
 	 *  Looks for achievements already unlocked for the configured appid in the
 	 *  usual Goldberg save locations (GSE saves, classic Goldberg and Public
-	 *  Documents).
+	 *  Documents), then announces each one so the user gets a notification.
 	 */
 	goldbergFindSaves: (gameId: string) => typedError<GoldbergFind, CommandError>(__TAURI_INVOKE("goldberg_find_saves", { gameId })),
 	/**  Shows a test notification through the same path as achievement toasts. */

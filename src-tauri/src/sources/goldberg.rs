@@ -967,15 +967,91 @@ fn toasts_enabled(conn: &Connection) -> bool {
         .unwrap_or(true)
 }
 
-fn toast(app: &AppHandle, title: &str, body: &str) {
+/// Whether the running executable is a dev build (`target\debug` or
+/// `target\release`): those are not installed, so Windows has no
+/// AppUserModelID for them and the notification plugin drops toasts.
+#[cfg(target_os = "windows")]
+fn is_dev_build() -> bool {
+    let Ok(exe) = std::env::current_exe() else {
+        return false;
+    };
+    let Some(profile) = exe.parent().and_then(|p| p.file_name()) else {
+        return false;
+    };
+    let in_target = exe
+        .parent()
+        .and_then(|p| p.parent())
+        .and_then(|p| p.file_name())
+        .is_some_and(|n| n == "target");
+    in_target && profile.to_str().is_some_and(|n| n == "debug" || n == "release")
+}
+
+/// Shows a Windows notification. The error is returned instead of swallowed.
+fn toast(app: &AppHandle, title: &str, body: &str) -> AppResult<()> {
+    #[cfg(target_os = "windows")]
+    {
+        // Dev builds have no AUMID, so `tauri-plugin-notification` silently
+        // drops the toast. Use the PowerShell AUMID, which works for
+        // unpackaged executables (the toast is attributed to PowerShell).
+        if is_dev_build() {
+            return notify_rust::Notification::new()
+                .app_id(tauri_winrt_notification::Toast::POWERSHELL_APP_ID)
+                .summary(title)
+                .body(body)
+                .show()
+                .map(|_| ())
+                .map_err(|e| AppError::Invalid(format!("toast: {e}")));
+        }
+    }
     use tauri_plugin_notification::NotificationExt;
-    let _ = app.notification().builder().title(title).body(body).show();
+    app.notification()
+        .builder()
+        .title(title)
+        .body(body)
+        .show()
+        .map_err(|e| AppError::Invalid(format!("toast: {e}")))
 }
 
 /// Shows a notification through the same path as achievement toasts, so the
 /// user can check that Windows notifications work.
-pub fn test_toast(app: &AppHandle, title: &str, body: &str) {
-    toast(app, title, body);
+pub fn test_toast(app: &AppHandle, title: &str, body: &str) -> AppResult<()> {
+    toast(app, title, body)
+}
+
+/// Announces unlocked achievements: emits the UI event and, when toasts are
+/// enabled, shows a Windows notification per achievement. Shared by the
+/// watcher and the manual "find existing saves" search.
+pub fn announce_unlocks(
+    app: &AppHandle,
+    conn: &Connection,
+    source: &crate::db::repo::game_sources::GameSource,
+    unlocked: &[String],
+) {
+    let definitions = read_definitions(source);
+    let title = games::get(conn, &source.game_id)
+        .map(|g| g.title)
+        .unwrap_or_default();
+    let notify = toasts_enabled(conn);
+    for api_name in unlocked {
+        let definition = definitions.iter().find(|d| d.api_name == *api_name);
+        let display = definition
+            .map(|d| d.name.clone())
+            .unwrap_or_else(|| api_name.clone());
+        let _ = app.emit(
+            ACHIEVEMENT_UNLOCKED_EVENT,
+            serde_json::json!({
+                "gameId": source.game_id,
+                "apiName": api_name,
+                "name": display,
+                "description": definition.and_then(|d| d.description.clone()),
+            }),
+        );
+        if notify {
+            if let Err(e) = toast(app, &display, &title) {
+                tracing::warn!(error = %e, api_name, "goldberg: toast failed");
+            }
+        }
+    }
 }
 
 /// Achievement watches, seeded on first sight so existing unlocks are silent.
@@ -1018,7 +1094,6 @@ fn tick(app: &AppHandle) {
             return;
         }
     };
-    let notify = toasts_enabled(&conn);
     let mut watcher = WATCHER.lock().unwrap_or_else(|e| e.into_inner());
     let live: HashSet<String> = sources.iter().map(|s| s.id.clone()).collect();
     watcher.seen.retain(|id, _| live.contains(id));
@@ -1033,28 +1108,7 @@ fn tick(app: &AppHandle) {
         if new.is_empty() {
             continue;
         }
-        let definitions = read_definitions(source);
-        let title = games::get(&conn, &source.game_id)
-            .map(|g| g.title)
-            .unwrap_or_default();
-        for api_name in new {
-            let definition = definitions.iter().find(|d| d.api_name == api_name);
-            let display = definition
-                .map(|d| d.name.clone())
-                .unwrap_or_else(|| api_name.clone());
-            let _ = app.emit(
-                ACHIEVEMENT_UNLOCKED_EVENT,
-                serde_json::json!({
-                    "gameId": source.game_id,
-                    "apiName": api_name,
-                    "name": display,
-                    "description": definition.and_then(|d| d.description.clone()),
-                }),
-            );
-            if notify {
-                toast(app, &display, &title);
-            }
-        }
+        announce_unlocks(app, &conn, source, &new);
     }
 }
 

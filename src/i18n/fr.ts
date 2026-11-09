@@ -809,6 +809,8 @@ export const fr = {
       testToastHint: 'Affiche une notification Windows de test.',
       testToastTitle: 'Ignite',
       testToastBody: 'Ceci est un test de notification.',
+      testToastError:
+        'La notification n’a pas pu être affichée. Vérifie que Windows autorise les notifications pour Ignite.',
       clearAppid: 'Oublier l’AppID',
       ready: 'Goldberg est installé et configuré pour ce jeu.',
       installedShort: 'Installé, à configurer',

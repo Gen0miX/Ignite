@@ -110,18 +110,21 @@ pub fn goldberg_open_saves(app: AppHandle, game_id: String) -> CommandResult<Str
 
 /// Looks for achievements already unlocked for the configured appid in the
 /// usual Goldberg save locations (GSE saves, classic Goldberg and Public
-/// Documents).
+/// Documents), then announces each one so the user gets a notification.
 #[tauri::command]
 #[specta::specta]
 pub async fn goldberg_find_saves(app: AppHandle, game_id: String) -> CommandResult<GoldbergFind> {
     tauri::async_runtime::spawn_blocking(move || {
         let db = app.state::<Db>();
         let source = local_source(&db, &game_id)?;
-        let status = goldberg::status(&db.conn(), &source);
+        let conn = db.conn();
+        let status = goldberg::status(&conn, &source);
         let appid = status
             .appid
             .ok_or_else(|| AppError::Invalid("no appid configured".into()))?;
-        Ok::<_, super::CommandError>(goldberg::find_saves(appid))
+        let found = goldberg::find_saves(appid);
+        goldberg::announce_unlocks(&app, &conn, &source, &found.unlocked);
+        Ok::<_, super::CommandError>(found)
     })
     .await
     .map_err(|e| {
@@ -133,6 +136,5 @@ pub async fn goldberg_find_saves(app: AppHandle, game_id: String) -> CommandResu
 #[tauri::command]
 #[specta::specta]
 pub fn goldberg_test_toast(app: AppHandle, title: String, body: String) -> CommandResult<()> {
-    goldberg::test_toast(&app, &title, &body);
-    Ok(())
+    Ok(goldberg::test_toast(&app, &title, &body)?)
 }

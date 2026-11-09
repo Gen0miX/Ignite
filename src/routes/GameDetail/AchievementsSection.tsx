@@ -667,6 +667,11 @@ function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergS
           ))}
         </ul>
       )}
+      {testToast.isError && (
+        <p role="alert" className={sheet.error}>
+          {t.goldberg.testToastError}
+        </p>
+      )}
       {(setup.isError || clear.isError || findSaves.isError) && (
         <p role="alert" className={sheet.error}>
           {t.goldberg.error}
