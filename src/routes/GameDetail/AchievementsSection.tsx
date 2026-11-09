@@ -1,37 +1,11 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  CheckCircle2,
-  Download,
-  Eye,
-  FolderOpen,
-  Info,
-  Lock,
-  RefreshCw,
-  Search,
-  Trophy,
-  XCircle,
-} from 'lucide-react';
-import {
-  artworkSrc,
-  commands,
-  unwrap,
-  type AchievementItem,
-  type GoldbergStatus,
-} from '../../api/client';
-import {
-  useAchievements,
-  useGoldbergClearAppid,
-  useGoldbergFindSaves,
-  useGoldbergOpenSaves,
-  useGoldbergSetup,
-  useGoldbergStatus,
-  useGoldbergSetOverlay,
-  useRefreshAchievements,
-} from '../../api/hooks';
+import { ArrowRight, Eye, Lock, RefreshCw, Search, Trophy } from 'lucide-react';
+import { artworkSrc, commands, unwrap, type AchievementItem } from '../../api/client';
+import { useAchievements, useRefreshAchievements } from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
-import { Switch } from '../../components/Switch/Switch';
 import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
 import { SkeletonImage } from '../../components/Skeleton/SkeletonImage';
 import { fr } from '../../i18n/fr';
@@ -107,7 +81,17 @@ export function AchievementsSection({
   } else if (v.state === 'notMatched') {
     body = <p className={sheet.muted}>{t.achievementsNotMatched}</p>;
   } else if (v.state === 'needsSetup') {
-    body = <p className={sheet.muted}>{t.achievementsNeedsSetup}</p>;
+    body = isLocal ? (
+      <div className={styles.needsGoldberg}>
+        <p>{t.achievementsNeedsGoldberg}</p>
+        <Link to={`/game/${gameId}/goldberg`} className={`${buttons.primary} ${styles.small}`}>
+          {t.achievementsOpenGoldberg}
+          <ArrowRight size={14} aria-hidden="true" />
+        </Link>
+      </div>
+    ) : (
+      <p className={sheet.muted}>{t.achievementsNeedsSetup}</p>
+    );
   } else if (v.state === 'none' || v.items.length === 0) {
     body = <p className={sheet.muted}>{t.achievementsNone}</p>;
   } else {
@@ -121,7 +105,12 @@ export function AchievementsSection({
           {t.achievementsTitle}
         </h2>
         {v?.error && <p className={sheet.error}>{t.achievementsError}</p>}
-        {v && v.state !== 'needsKey' && (
+        {isLocal && v?.state !== 'needsSetup' && (
+          <Link to={`/game/${gameId}/goldberg`} className={styles.goldbergLink}>
+            {t.achievementsGoldbergLink}
+          </Link>
+        )}
+        {v && v.state !== 'needsKey' && v.state !== 'needsSetup' && (
           <button
             type="button"
             className={`${buttons.secondary} ${sheet.smallButton} ${styles.refresh}`}
@@ -134,7 +123,6 @@ export function AchievementsSection({
         )}
       </div>
       {body}
-      {isLocal && <GoldbergSetup gameId={gameId} initial={v?.goldberg ?? null} />}
       {isEmulated && <RaIdForm gameId={gameId} />}
     </section>
   );
@@ -481,213 +469,5 @@ function RaIdForm({ gameId }: { gameId: string }) {
         {t.raIdSave}
       </button>
     </form>
-  );
-}
-
-/** Goldberg setup and installation check for a local game. */
-function GoldbergSetup({ gameId, initial }: { gameId: string; initial: GoldbergStatus | null }) {
-  const status = useGoldbergStatus(gameId);
-  const setup = useGoldbergSetup(gameId);
-  const clear = useGoldbergClearAppid(gameId);
-  const openSaves = useGoldbergOpenSaves(gameId);
-  const findSaves = useGoldbergFindSaves(gameId);
-  const overlay = useGoldbergSetOverlay(gameId);
-  const [typed, setTyped] = useState<string | null>(null);
-  const s = status.data ?? initial;
-  const appid = typed ?? (s?.appid ? String(s.appid) : '');
-
-  if (!s) return null;
-  const ready = s.installed && s.appid != null && s.definitionsReady;
-  const valid = /^\d+$/.test(appid.trim()) && Number(appid) > 0;
-  const issues = s.issues.filter((i) => !(ready && (i === 'noSaves' || i === 'needsAppid')));
-  const busy = setup.isPending;
-
-  const small = `${buttons.secondary} ${styles.small}`;
-
-  return (
-    <section className={`${sheet.card} ${styles.setup}`} aria-labelledby="goldberg-title">
-      <div className={sheet.sectionHeader}>
-        <h3 id="goldberg-title" className="section-label">
-          {t.goldberg.title}
-        </h3>
-        <span className={ready ? styles.ready : styles.notReady}>
-          {ready ? (
-            <CheckCircle2 size={14} aria-hidden="true" />
-          ) : (
-            <XCircle size={14} aria-hidden="true" />
-          )}
-          {ready
-            ? t.goldberg.readyShort
-            : s.installed
-              ? t.goldberg.installedShort
-              : t.goldberg.notInstalled}
-        </span>
-      </div>
-      {!ready && <p className={sheet.muted}>{t.goldberg.intro}</p>}
-
-      {issues.length > 0 && (
-        <ul className={styles.issues}>
-          {issues.map((issue) => (
-            <li key={issue}>
-              <Info size={14} aria-hidden="true" />
-              {t.goldberg.issue[issue]}
-            </li>
-          ))}
-        </ul>
-      )}
-      {s.appid != null && !s.savesReady && <p className={styles.note}>{t.goldberg.savesMissing}</p>}
-      {issues.includes('needsSteamKey') && <p className={styles.note}>{t.goldberg.noKey}</p>}
-
-      <form
-        className={styles.setupForm}
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (valid) setup.mutate({ appid: Number(appid), force: s.installed });
-        }}
-      >
-        <label className={styles.appidLabel} htmlFor="goldberg-appid">
-          {t.goldberg.appid}
-        </label>
-        <input
-          id="goldberg-appid"
-          className={`${sheet.input} ${styles.appidInput}`}
-          inputMode="numeric"
-          placeholder={t.goldberg.appidPlaceholder}
-          value={appid}
-          onChange={(e) => setTyped(e.target.value)}
-          title={t.goldberg.appidHint}
-        />
-        <button
-          type="submit"
-          className={s.installed ? small : `${buttons.primary} ${styles.small}`}
-          disabled={!valid || setup.isPending}
-        >
-          {setup.isPending ? (
-            <>
-              <RefreshCw size={14} aria-hidden="true" className={styles.spin} />
-              {t.goldberg.installing}
-            </>
-          ) : (
-            <>
-              <Download size={14} aria-hidden="true" />
-              {s.installed ? t.goldberg.reinstall : t.goldberg.install}
-            </>
-          )}
-        </button>
-        <button
-          type="button"
-          className={`${small} ${styles.iconOnly}`}
-          onClick={() => void status.refetch()}
-          disabled={status.isFetching || busy}
-          title={t.goldberg.refresh}
-        >
-          <RefreshCw
-            size={14}
-            aria-hidden="true"
-            className={status.isFetching ? styles.spin : ''}
-          />
-          <span className="visually-hidden">{t.goldberg.refresh}</span>
-        </button>
-      </form>
-
-      {s.appid != null && (
-        <div className={styles.toolbar}>
-          <button
-            type="button"
-            className={small}
-            onClick={() => findSaves.mutate()}
-            disabled={busy || findSaves.isPending}
-            title={t.goldberg.findSavesHint}
-          >
-            <Search
-              size={14}
-              aria-hidden="true"
-              className={findSaves.isPending ? styles.spin : ''}
-            />
-            {t.goldberg.findSaves}
-          </button>
-          <button
-            type="button"
-            className={small}
-            onClick={() => openSaves.mutate()}
-            disabled={busy}
-          >
-            <FolderOpen size={14} aria-hidden="true" />
-            {t.goldberg.openSaves}
-          </button>
-          <button
-            type="button"
-            className={`${small} ${styles.quiet}`}
-            onClick={() => {
-              clear.mutate();
-              setTyped('');
-            }}
-            disabled={busy}
-          >
-            {t.goldberg.clearAppid}
-          </button>
-        </div>
-      )}
-
-      {findSaves.data && (
-        <p
-          className={findSaves.data.unlocked.length > 0 ? styles.findFound : sheet.muted}
-          role="status"
-        >
-          {findSaves.data.unlocked.length > 0
-            ? t.goldberg.found(findSaves.data.unlocked.length, findSaves.data.paths.length)
-            : t.goldberg.foundNone}
-        </p>
-      )}
-      {findSaves.data && findSaves.data.paths.length > 0 && (
-        <ul className={styles.findPaths}>
-          {findSaves.data.paths.map((path) => (
-            <li key={path} className="mono">
-              {path}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {s.installed && (
-        <div className={styles.overlayRow}>
-          <div>
-            <p className={styles.overlayLabel}>{t.goldberg.overlay}</p>
-            <p className={styles.note}>{t.goldberg.overlayHint}</p>
-          </div>
-          <Switch
-            label={t.goldberg.overlay}
-            checked={s.overlay}
-            disabled={overlay.isPending}
-            onChange={(enabled) => overlay.mutate(enabled)}
-          />
-        </div>
-      )}
-
-      <details className={styles.techDetails}>
-        <summary>{t.goldberg.details}</summary>
-        <dl className={styles.setupDetails}>
-          <dt>{t.goldberg.dll}</dt>
-          <dd className="mono">{s.dllPath ?? '—'}</dd>
-          <dt>{t.goldberg.settings}</dt>
-          <dd className="mono">{s.settingsDir ?? '—'}</dd>
-          <dt>{t.goldberg.saves}</dt>
-          <dd className="mono">{s.savesPath ?? '—'}</dd>
-          <dt>{t.goldberg.arch}</dt>
-          <dd>{s.architecture ?? '—'}</dd>
-        </dl>
-        {s.installed && (
-          <p className={styles.note}>
-            {s.originalBackedUp ? t.goldberg.backup : t.goldberg.noBackup}
-          </p>
-        )}
-      </details>
-
-      {(setup.isError || clear.isError || findSaves.isError || overlay.isError) && (
-        <p role="alert" className={sheet.error}>
-          {t.goldberg.error}
-        </p>
-      )}
-    </section>
   );
 }

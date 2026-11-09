@@ -28,6 +28,7 @@ import { PageMain } from '../../app/AppShell';
 import buttons from '../../components/Button/Button.module.css';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { Cover } from '../../components/GameCard/Cover';
+import { GoldbergOptions } from '../../components/GoldbergOptions/GoldbergOptions';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { SourceChip } from '../../components/SourceBadge/SourceBadge';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
@@ -702,11 +703,24 @@ function AboutCard() {
   );
 }
 
+/** Goldberg's global options (every game using it). */
+function GoldbergCard() {
+  return (
+    <section className={styles.card} aria-labelledby="goldberg-title">
+      <h2 id="goldberg-title" className="section-label">
+        {fr.goldbergOptions.globalTitle}
+      </h2>
+      <GoldbergOptions />
+    </section>
+  );
+}
+
 const TOC: [string, string][] = [
   ['general-title', t.general.title],
   ['settings-sources', t.sourcesSection],
   ['emulators-title', t.emulators.title],
   ['tracking-title', t.trackingTitle],
+  ['goldberg-title', fr.goldbergOptions.globalTitle],
   ['app-title', t.app.title],
   ['hidden-title', t.hidden.title],
   ['metadata-title', t.metadataTitle],
@@ -756,6 +770,7 @@ export function SettingsSourcesPage() {
       )}
       {isTauri() && <CaptureFoldersCard />}
       {isTauri() && <TrackingCard />}
+      {isTauri() && <GoldbergCard />}
       {isTauri() && <AppCard />}
       {isTauri() && <HiddenGamesCard />}
       {isTauri() && <MetadataCard />}

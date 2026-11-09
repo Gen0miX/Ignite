@@ -27,6 +27,7 @@ use crate::error::{AppError, AppResult};
 use crate::http;
 use crate::models::SourceKind;
 use crate::popup::{self, Popup, PopupKind};
+use crate::sources::goldberg_settings;
 use crate::sources::steam::achievements as steam;
 use crate::sources::unix_to_rfc3339;
 
@@ -235,8 +236,12 @@ pub struct GoldbergStatus {
     pub definitions_ready: bool,
     pub saves_path: Option<String>,
     pub saves_ready: bool,
-    /// Goldberg's in-game overlay is turned on (`configs.overlay.ini`).
+    /// Goldberg's in-game overlay is on for this game (its config, else the
+    /// global one).
     pub overlay: bool,
+    /// The installed DLL is the "experimental" build, the only one with the
+    /// overlay (a bundled "regular" build has none).
+    pub overlay_build: bool,
     pub issues: Vec<GoldbergIssue>,
 }
 
@@ -265,31 +270,147 @@ fn game_dir(source: &crate::db::repo::game_sources::GameSource) -> Option<PathBu
         .filter(|d| d.is_dir())
 }
 
-/// DLL name already present in the install folder (depth 2, deterministic).
-fn find_dll(dir: &Path) -> Option<PathBuf> {
-    let names = ["steam_api64.dll", "steam_api.dll"];
-    for name in names {
-        let direct = dir.join(name);
-        if direct.is_file() {
-            return Some(direct);
-        }
-    }
-    let mut subdirs: Vec<PathBuf> = std::fs::read_dir(dir)
-        .ok()?
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| p.is_dir() && p.file_name() != Some("steam_settings".as_ref()))
-        .collect();
-    subdirs.sort();
-    for sub in subdirs {
-        for name in names {
-            let candidate = sub.join(name);
-            if candidate.is_file() {
-                return Some(candidate);
+/// Folders walked below the game folder when looking for its Steam DLL
+/// (Unreal keeps it in `Engine\Binaries\ThirdParty\Steamworks\Steamv1xx\Win64`).
+const DLL_SEARCH_DEPTH: usize = 7;
+const DLL_SEARCH_ENTRIES: usize = 20_000;
+
+/// Every `steam_api(64).dll` below `dir` (bounded walk, `steam_settings`
+/// folders skipped).
+fn dll_candidates(dir: &Path) -> Vec<PathBuf> {
+    let mut found = Vec::new();
+    let mut visited = 0usize;
+    let mut stack = vec![(dir.to_path_buf(), 0usize)];
+    while let Some((folder, depth)) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&folder) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            visited += 1;
+            if visited > DLL_SEARCH_ENTRIES {
+                return found;
+            }
+            let path = entry.path();
+            let Ok(kind) = entry.file_type() else {
+                continue;
+            };
+            if kind.is_dir() {
+                if depth < DLL_SEARCH_DEPTH
+                    && !path
+                        .file_name()
+                        .is_some_and(|n| n.eq_ignore_ascii_case("steam_settings"))
+                {
+                    stack.push((path, depth + 1));
+                }
+            } else if path.file_name().is_some_and(|n| {
+                n.eq_ignore_ascii_case("steam_api64.dll") || n.eq_ignore_ascii_case("steam_api.dll")
+            }) {
+                found.push(path);
             }
         }
     }
-    None
+    found
+}
+
+/// Sort key of a candidate: lower is the DLL the game actually loads.
+/// Unity loads plugins from `<Game>_Data\Plugins\<arch>` and Unreal from
+/// `ThirdParty\Steamworks`, even when a copy sits beside the exe; other
+/// engines load the one beside the exe. 64-bit names first.
+fn dll_rank(dir: &Path, dll: &Path) -> (u8, u8, usize, String) {
+    let rel = dll
+        .strip_prefix(dir)
+        .unwrap_or(dll)
+        .to_string_lossy()
+        .replace('\\', "/")
+        .to_lowercase();
+    let engine = if rel.contains("_data/plugins/") || rel.contains("thirdparty/steamworks/") {
+        0
+    } else if dll.parent() == Some(dir) {
+        1
+    } else {
+        2
+    };
+    let name = u8::from(!rel.ends_with("steam_api64.dll"));
+    (engine, name, rel.matches('/').count(), rel)
+}
+
+/// The Steam DLL the game loads (see [`dll_rank`]), if it has one.
+fn find_dll(dir: &Path) -> Option<PathBuf> {
+    dll_candidates(dir)
+        .into_iter()
+        .min_by_key(|d| dll_rank(dir, d))
+}
+
+/// Whether a Goldberg DLL is the "experimental" build, the only one with the
+/// in-game overlay: it embeds Dear ImGui. Cached by path, size and date.
+pub fn has_overlay_build(dll: &Path) -> bool {
+    type Key = (PathBuf, u64, Option<std::time::SystemTime>);
+    static CACHE: std::sync::LazyLock<Mutex<HashMap<Key, bool>>> =
+        std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
+    let Ok(meta) = dll.metadata() else {
+        return false;
+    };
+    let key = (dll.to_path_buf(), meta.len(), meta.modified().ok());
+    if let Some(v) = CACHE.lock().unwrap_or_else(|e| e.into_inner()).get(&key) {
+        return *v;
+    }
+    let found = std::fs::read(dll).is_ok_and(|bytes| {
+        bytes.windows(5).any(|w| w == b"ImGui")
+            && bytes
+                .windows(27)
+                .any(|w| w == b"enable_experimental_overlay")
+    });
+    CACHE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(key, found);
+    found
+}
+
+/// Folder holding the achievement definitions: beside the DLL the game
+/// loads, else the `steam_settings` beside the exe (where Ignite wrote them
+/// before it looked inside Unity/Unreal folders).
+fn definitions_dir(dir: &Path) -> PathBuf {
+    let settings = settings_dir(find_dll(dir).as_deref(), dir);
+    let legacy = dir.join("steam_settings");
+    if !settings.join("achievements.json").is_file() && legacy.join("achievements.json").is_file() {
+        legacy
+    } else {
+        settings
+    }
+}
+
+/// Copies what Ignite wrote beside the exe into the `steam_settings` of the
+/// DLL the game loads, without overwriting anything already there.
+fn migrate_legacy_settings(dir: &Path, settings: &Path) {
+    let legacy = dir.join("steam_settings");
+    if legacy == settings || !legacy.is_dir() {
+        return;
+    }
+    let _ = std::fs::create_dir_all(settings);
+    for name in [
+        "achievements.json",
+        "steam_appid.txt",
+        "configs.user.ini",
+        "configs.main.ini",
+        "configs.app.ini",
+        "configs.overlay.ini",
+    ] {
+        let (from, to) = (legacy.join(name), settings.join(name));
+        if from.is_file() && !to.exists() {
+            let _ = std::fs::copy(&from, &to);
+        }
+    }
+    if let Ok(images) = std::fs::read_dir(legacy.join("images")) {
+        let target = settings.join("images");
+        let _ = std::fs::create_dir_all(&target);
+        for image in images.flatten() {
+            let to = target.join(image.file_name());
+            if !to.exists() {
+                let _ = std::fs::copy(image.path(), to);
+            }
+        }
+    }
 }
 
 fn is_goldberg_dll(dll: &Path) -> bool {
@@ -401,7 +522,7 @@ pub fn status(
         issues.push(GoldbergIssue::NeedsAppid);
     }
     let settings = settings_dir(dll.as_deref(), &dir);
-    let definitions = settings.join("achievements.json").is_file();
+    let definitions = definitions_dir(&dir).join("achievements.json").is_file();
     if !definitions {
         issues.push(GoldbergIssue::NoDefinitions);
     }
@@ -432,8 +553,8 @@ pub fn status(
         definitions_ready: definitions,
         saves_path: saves_path.as_ref().map(|p| p.display().to_string()),
         saves_ready,
-        overlay: std::fs::read_to_string(settings.join(OVERLAY_FILE))
-            .is_ok_and(|ini| overlay_on(&ini)),
+        overlay: overlay_enabled_in(Some(&settings)),
+        overlay_build: installed && dll.as_deref().is_some_and(has_overlay_build),
         issues,
     }
 }
@@ -521,7 +642,8 @@ pub fn fetch_goldberg_dll(arch: Architecture) -> AppResult<Vec<u8>> {
 }
 
 fn backup_and_write(dll: &Path, bytes: &[u8]) -> AppResult<()> {
-    if dll.is_file() && !is_goldberg_dll(dll) {
+    // Valve's DLL or a bundled "regular" Goldberg: keep it.
+    if dll.is_file() && !has_overlay_build(dll) {
         let backup = PathBuf::from(format!("{}{BACKUP_SUFFIX}", dll.display()));
         if !backup.is_file() {
             std::fs::copy(dll, &backup)
@@ -686,12 +808,13 @@ pub fn install(
     );
     let dll = existing.unwrap_or_else(|| dir.join(arch.dll_name()));
 
-    if force || !is_goldberg_dll(&dll) {
+    if force || !has_overlay_build(&dll) {
         let bytes = fetch_goldberg_dll(arch)?;
         backup_and_write(&dll, &bytes)?;
     }
 
     let settings = settings_dir(Some(&dll), &dir);
+    migrate_legacy_settings(&dir, &settings);
     let appid = appid.or_else(|| find_appid(source, Some(&dll), &dir));
     if let Some(id) = appid {
         game_sources::set_goldberg_appid(conn, &source.id, Some(i64::from(id)))?;
@@ -773,7 +896,7 @@ pub fn read_definitions(source: &crate::db::repo::game_sources::GameSource) -> V
     let Some(dir) = game_dir(source) else {
         return Vec::new();
     };
-    let settings = settings_dir(find_dll(&dir).as_deref(), &dir);
+    let settings = definitions_dir(&dir);
     let Ok(raw) = std::fs::read_to_string(settings.join("achievements.json")) else {
         return Vec::new();
     };
@@ -1132,12 +1255,9 @@ pub fn announce_unlocks(
     }
 }
 
-const OVERLAY_FILE: &str = "configs.overlay.ini";
-const OVERLAY_KEY: &str = "enable_experimental_overlay";
-
 /// Goldberg's in-game overlay with Ignite's colors (« Braise »). Keys from
 /// gbe_fork's `configs.overlay.EXAMPLE.ini`; colors are 0–1 floats.
-const OVERLAY_TEMPLATE: &str = "\
+pub const OVERLAY_TEMPLATE: &str = "\
 # Written by Ignite: Goldberg's in-game overlay, with Ignite's colors.
 # Shift+Tab opens it. Experimental: turn it off in Ignite if the game crashes.
 [overlay::general]
@@ -1175,91 +1295,24 @@ ElementHovered_A=1.0
 PosAchievement=bot_right
 ";
 
-fn ini_key(line: &str) -> Option<&str> {
-    let line = line.trim_start();
-    if line.starts_with('#') || line.starts_with(';') {
+/// `steam_settings` folder of an eligible game (beside its DLL).
+pub fn game_settings_dir(source: &crate::db::repo::game_sources::GameSource) -> Option<PathBuf> {
+    if !is_eligible_source(source) {
         return None;
     }
-    line.split_once('=').map(|(k, _)| k.trim())
-}
-
-/// Whether an overlay config turns the overlay on.
-fn overlay_on(ini: &str) -> bool {
-    ini.lines()
-        .rev()
-        .find(|l| ini_key(l) == Some(OVERLAY_KEY))
-        .and_then(|l| l.split_once('='))
-        .is_some_and(|(_, v)| v.trim() == "1")
-}
-
-/// New content of `configs.overlay.ini`: the Ignite template for a new file,
-/// otherwise the user's file with only the enable line changed.
-fn overlay_ini(existing: Option<&str>, enabled: bool) -> String {
-    let value = format!("{OVERLAY_KEY}={}", u8::from(enabled));
-    let Some(existing) = existing else {
-        return OVERLAY_TEMPLATE.replace(&format!("{OVERLAY_KEY}=1"), &value);
-    };
-    let mut found = false;
-    let mut lines: Vec<String> = existing
-        .lines()
-        .map(|l| {
-            if ini_key(l) == Some(OVERLAY_KEY) {
-                found = true;
-                value.clone()
-            } else {
-                l.to_string()
-            }
-        })
-        .collect();
-    if !found {
-        match lines
-            .iter()
-            .position(|l| l.trim().eq_ignore_ascii_case("[overlay::general]"))
-        {
-            Some(i) => lines.insert(i + 1, value),
-            None => {
-                lines.insert(0, value);
-                lines.insert(0, "[overlay::general]".into());
-            }
-        }
-    }
-    let mut out = lines.join("\n");
-    out.push('\n');
-    out
-}
-
-fn overlay_path(source: &crate::db::repo::game_sources::GameSource) -> Option<PathBuf> {
     let dir = game_dir(source)?;
-    Some(settings_dir(find_dll(&dir).as_deref(), &dir).join(OVERLAY_FILE))
+    Some(settings_dir(find_dll(&dir).as_deref(), &dir))
+}
+
+/// Whether Goldberg's overlay is on for this game: its own config, then the
+/// global one.
+fn overlay_enabled_in(settings: Option<&Path>) -> bool {
+    let def = goldberg_settings::option(goldberg_settings::OVERLAY_ID).expect("overlay option");
+    goldberg_settings::effective(settings, def) == "1"
 }
 
 fn overlay_enabled_for(source: &crate::db::repo::game_sources::GameSource) -> bool {
-    overlay_path(source)
-        .and_then(|p| std::fs::read_to_string(p).ok())
-        .is_some_and(|ini| overlay_on(&ini))
-}
-
-/// Turns Goldberg's in-game overlay on or off (`steam_settings\configs.overlay.ini`).
-pub fn set_overlay(
-    conn: &Connection,
-    source: &crate::db::repo::game_sources::GameSource,
-    enabled: bool,
-) -> AppResult<GoldbergStatus> {
-    if !is_eligible_source(source) {
-        return Err(AppError::Invalid(
-            "only a local game with an executable is supported".into(),
-        ));
-    }
-    let path =
-        overlay_path(source).ok_or_else(|| AppError::Invalid("game folder not found".into()))?;
-    let existing = std::fs::read_to_string(&path).ok();
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| AppError::Invalid(format!("cannot create steam_settings: {e}")))?;
-    }
-    std::fs::write(&path, overlay_ini(existing.as_deref(), enabled))
-        .map_err(|e| AppError::Invalid(format!("cannot write {OVERLAY_FILE}: {e}")))?;
-    Ok(status(conn, source))
+    overlay_enabled_in(game_settings_dir(source).as_deref())
 }
 
 /// Achievement watches, seeded on first sight so existing unlocks are silent.
@@ -1544,54 +1597,6 @@ Count=2
         assert_eq!(walk_for_appid(tmp.path(), 541570), vec![target]);
     }
 
-    #[test]
-    fn overlay_template_is_written_on_or_off() {
-        let on = overlay_ini(None, true);
-        assert!(overlay_on(&on));
-        assert!(on.contains("Notification_R=0.141"));
-        let off = overlay_ini(None, false);
-        assert!(!overlay_on(&off));
-        assert!(off.contains("enable_experimental_overlay=0"));
-    }
-
-    #[test]
-    fn overlay_toggle_keeps_the_user_file() {
-        let user = "[overlay::general]\n# comment enable_experimental_overlay=1\nenable_experimental_overlay = 0\nhook_delay_sec=5\n";
-        let on = overlay_ini(Some(user), true);
-        assert!(overlay_on(&on));
-        assert!(on.contains("hook_delay_sec=5"));
-        assert!(on.contains("# comment enable_experimental_overlay=1"));
-        assert!(!overlay_on(&overlay_ini(Some(&on), false)));
-        // Commented-out line only: not on.
-        assert!(!overlay_on("#enable_experimental_overlay=1\n"));
-    }
-
-    #[test]
-    fn overlay_line_added_when_missing() {
-        let out = overlay_ini(Some("[overlay::appearance]\nFont_Size=20.0\n"), true);
-        assert!(out.starts_with("[overlay::general]\nenable_experimental_overlay=1\n"));
-        let out = overlay_ini(Some("[overlay::general]\nhook_delay_sec=0\n"), true);
-        assert_eq!(
-            out,
-            "[overlay::general]\nenable_experimental_overlay=1\nhook_delay_sec=0\n"
-        );
-    }
-
-    #[test]
-    fn set_overlay_writes_beside_the_dll() {
-        let tmp = tempfile::tempdir().unwrap();
-        std::fs::write(tmp.path().join("game.exe"), b"MZ").unwrap();
-        std::fs::write(tmp.path().join("steam_api64.dll"), b"x").unwrap();
-        let db = crate::db::Db::open_in_memory().unwrap();
-        let conn = db.conn();
-        let source = exe(tmp.path());
-        let status = set_overlay(&conn, &source, true).unwrap();
-        assert!(status.overlay);
-        assert!(overlay_enabled_for(&source));
-        let status = set_overlay(&conn, &source, false).unwrap();
-        assert!(!status.overlay);
-    }
-
     fn def(name: &str) -> Definition {
         Definition {
             api_name: name.into(),
@@ -1686,5 +1691,85 @@ Count=2
         assert_eq!(cached[0].global_percent, Some(2.5));
         assert!(cached[0].unlocked_at.is_some());
         assert_eq!(cached[1].global_percent, None);
+    }
+
+    fn touch(path: &Path, bytes: &[u8]) {
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, bytes).unwrap();
+    }
+
+    #[test]
+    fn unity_plugins_dll_wins_over_one_beside_the_exe() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path();
+        touch(&dir.join("steam_api64.dll"), b"x");
+        touch(&dir.join("Game_Data/Plugins/x86_64/steam_api.dll"), b"x");
+        touch(&dir.join("Game_Data/Plugins/x86_64/steam_api64.dll"), b"x");
+        touch(
+            &dir.join("Game_Data/Plugins/x86_64/steam_settings/steam_api64.dll"),
+            b"x",
+        );
+        assert_eq!(
+            find_dll(dir).unwrap(),
+            dir.join("Game_Data/Plugins/x86_64/steam_api64.dll")
+        );
+    }
+
+    #[test]
+    fn unreal_and_plain_layouts() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path();
+        let unreal = "Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_api64.dll";
+        touch(&dir.join(unreal), b"x");
+        touch(&dir.join("lib/steam_api64.dll"), b"x");
+        assert_eq!(find_dll(dir).unwrap(), dir.join(unreal));
+
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path();
+        touch(&dir.join("lib/deep/steam_api64.dll"), b"x");
+        touch(&dir.join("lib/steam_api64.dll"), b"x");
+        assert_eq!(find_dll(dir).unwrap(), dir.join("lib/steam_api64.dll"));
+        touch(&dir.join("steam_api.dll"), b"x");
+        assert_eq!(find_dll(dir).unwrap(), dir.join("steam_api.dll"));
+    }
+
+    #[test]
+    fn overlay_build_needs_imgui() {
+        let tmp = tempfile::tempdir().unwrap();
+        let regular = tmp.path().join("regular.dll");
+        let experimental = tmp.path().join("experimental.dll");
+        touch(&regular, b"MZ enable_experimental_overlay ...");
+        touch(
+            &experimental,
+            b"MZ enable_experimental_overlay ... ImGui::Begin",
+        );
+        assert!(!has_overlay_build(&regular));
+        assert!(has_overlay_build(&experimental));
+    }
+
+    #[test]
+    fn definitions_fall_back_to_the_folder_beside_the_exe() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path();
+        touch(&dir.join("Game_Data/Plugins/x86_64/steam_api64.dll"), b"x");
+        touch(&dir.join("steam_settings/achievements.json"), b"[]");
+        assert_eq!(definitions_dir(dir), dir.join("steam_settings"));
+
+        let plugins = dir.join("Game_Data/Plugins/x86_64/steam_settings");
+        touch(&dir.join("steam_settings/images/a.png"), b"png");
+        touch(
+            &dir.join("steam_settings/configs.overlay.ini"),
+            b"[overlay::general]",
+        );
+        touch(&plugins.join("configs.user.ini"), b"bundled");
+        migrate_legacy_settings(dir, &plugins);
+        assert!(plugins.join("achievements.json").is_file());
+        assert!(plugins.join("images/a.png").is_file());
+        assert!(plugins.join("configs.overlay.ini").is_file());
+        assert_eq!(
+            std::fs::read(plugins.join("configs.user.ini")).unwrap(),
+            b"bundled"
+        );
+        assert_eq!(definitions_dir(dir), plugins);
     }
 }

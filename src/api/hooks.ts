@@ -534,11 +534,27 @@ export function useGoldbergFindSaves(gameId: string) {
 }
 
 /** Turns Goldberg's in-game overlay on or off. */
-export function useGoldbergSetOverlay(gameId: string) {
+/** Goldberg options of a game, or the global ones (`gameId = null`). */
+export function useGoldbergSettings(gameId: string | null) {
+  return useQuery({
+    queryKey: ['goldberg-settings', gameId ?? 'global'],
+    queryFn: () => unwrap(commands.goldbergSettingsGet(gameId)),
+    enabled: isTauri(),
+  });
+}
+
+/** Sets (or clears with `value = null`) one Goldberg option. */
+export function useSetGoldbergSetting(gameId: string | null) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (enabled: boolean) => unwrap(commands.goldbergSetOverlay(gameId, enabled)),
-    onSuccess: (status) => client.setQueryData(['goldberg', gameId], status),
+    mutationFn: ({ id, value }: { id: string; value: string | null }) =>
+      unwrap(commands.goldbergSettingSet(gameId, id, value)),
+    onSuccess: (data) => {
+      client.setQueryData(['goldberg-settings', gameId ?? 'global'], data);
+      // Global values are inherited by every game; the overlay shows in the status.
+      if (gameId == null) void client.invalidateQueries({ queryKey: ['goldberg-settings'] });
+      void client.invalidateQueries({ queryKey: ['goldberg'] });
+    },
   });
 }
 

@@ -10,6 +10,7 @@ pub mod epic;
 pub mod folder_scan;
 pub mod gog;
 pub mod goldberg;
+pub mod goldberg_settings;
 pub mod local;
 pub mod others;
 pub mod steam;

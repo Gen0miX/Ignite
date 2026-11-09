@@ -3,9 +3,16 @@ import { Link } from 'react-router-dom';
 import { fr } from '../../i18n/fr';
 import styles from './GameTabs.module.css';
 
-export type SheetTab = 'apercu' | 'succes' | 'captures' | 'actus' | 'lancement';
+export type SheetTab = 'apercu' | 'succes' | 'goldberg' | 'captures' | 'actus' | 'lancement';
 
-export const SHEET_TABS: SheetTab[] = ['apercu', 'succes', 'captures', 'actus', 'lancement'];
+export const SHEET_TABS: SheetTab[] = [
+  'apercu',
+  'succes',
+  'goldberg',
+  'captures',
+  'actus',
+  'lancement',
+];
 
 export interface TabItem {
   id: SheetTab;

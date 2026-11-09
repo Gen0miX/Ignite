@@ -80,8 +80,13 @@ export const commands = {
 	 *  Documents), then announces each one so the user gets a notification.
 	 */
 	goldbergFindSaves: (gameId: string) => typedError<GoldbergFind, CommandError>(__TAURI_INVOKE("goldberg_find_saves", { gameId })),
-	/**  Turns Goldberg's in-game overlay on or off for this game. */
-	goldbergSetOverlay: (gameId: string, enabled: boolean) => typedError<GoldbergStatus_Serialize, CommandError>(__TAURI_INVOKE("goldberg_set_overlay", { gameId, enabled })),
+	/**  Goldberg options of a game (`game_id`) or the global ones (`None`). */
+	goldbergSettingsGet: (gameId: string | null) => typedError<GoldbergSettings_Serialize, CommandError>(__TAURI_INVOKE("goldberg_settings_get", { gameId })),
+	/**
+	 *  Sets one Goldberg option, or clears it with `value = None` (back to the
+	 *  global value for a game, to Goldberg's default globally).
+	 */
+	goldbergSettingSet: (gameId: string | null, id: string, value: string | null) => typedError<GoldbergSettings_Serialize, CommandError>(__TAURI_INVOKE("goldberg_setting_set", { gameId, id, value })),
 	/**  Next popup to show, if any. */
 	popupNext: () => __TAURI_INVOKE<Popup_Serialize | null>("popup_next"),
 	/**
@@ -815,6 +820,47 @@ export type GoldbergIssue =
 /**  No achievement earned yet: Goldberg only creates the saves file then. */
 "noSaves";
 
+/**  One option as the UI shows it. */
+export type GoldbergSetting = GoldbergSetting_Serialize | GoldbergSetting_Deserialize;
+
+/**  One option as the UI shows it. */
+export type GoldbergSetting_Deserialize = {
+	id: string,
+	/**  Value set at this level (`None`: not set here). */
+	value?: string | null,
+	/**
+	 *  Value in effect without it: the global one for a game, Goldberg's
+	 *  default for the global level.
+	 */
+	inherited: string,
+};
+
+/**  One option as the UI shows it. */
+export type GoldbergSetting_Serialize = {
+	id: string,
+	/**  Value set at this level (`None`: not set here). */
+	value: string | null,
+	/**
+	 *  Value in effect without it: the global one for a game, Goldberg's
+	 *  default for the global level.
+	 */
+	inherited: string,
+};
+
+export type GoldbergSettings = GoldbergSettings_Serialize | GoldbergSettings_Deserialize;
+
+export type GoldbergSettings_Deserialize = {
+	/**  Folder holding the files edited at this level. */
+	folder: string,
+	settings: GoldbergSetting_Deserialize[],
+};
+
+export type GoldbergSettings_Serialize = {
+	/**  Folder holding the files edited at this level. */
+	folder: string,
+	settings: GoldbergSetting_Serialize[],
+};
+
 export type GoldbergStatus = GoldbergStatus_Serialize | GoldbergStatus_Deserialize;
 
 export type GoldbergStatus_Deserialize = {
@@ -832,8 +878,16 @@ export type GoldbergStatus_Deserialize = {
 	definitionsReady: boolean,
 	savesPath?: string | null,
 	savesReady: boolean,
-	/**  Goldberg's in-game overlay is turned on (`configs.overlay.ini`). */
+	/**
+	 *  Goldberg's in-game overlay is on for this game (its config, else the
+	 *  global one).
+	 */
 	overlay: boolean,
+	/**
+	 *  The installed DLL is the "experimental" build, the only one with the
+	 *  overlay (a bundled "regular" build has none).
+	 */
+	overlayBuild: boolean,
 	issues: GoldbergIssue[],
 };
 
@@ -852,8 +906,16 @@ export type GoldbergStatus_Serialize = {
 	definitionsReady: boolean,
 	savesPath: string | null,
 	savesReady: boolean,
-	/**  Goldberg's in-game overlay is turned on (`configs.overlay.ini`). */
+	/**
+	 *  Goldberg's in-game overlay is on for this game (its config, else the
+	 *  global one).
+	 */
 	overlay: boolean,
+	/**
+	 *  The installed DLL is the "experimental" build, the only one with the
+	 *  overlay (a bundled "regular" build has none).
+	 */
+	overlayBuild: boolean,
 	issues: GoldbergIssue[],
 };
 

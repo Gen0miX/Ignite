@@ -34,6 +34,7 @@ import { CapturesTab } from './CapturesTab';
 import { ArtworkPicker } from '../../components/ArtworkPicker/ArtworkPicker';
 import { GameTabs, SHEET_TABS, type SheetTab, type TabItem } from './GameTabs';
 import { GoalsSection } from './GoalsSection';
+import { GoldbergTab } from './GoldbergTab';
 import { LaunchSection } from './LaunchSection';
 import { MediaSection } from './MediaSection';
 import { NewsSection } from './NewsSection';
@@ -98,6 +99,7 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
   const [picking, setPicking] = useState(false);
 
   const platformAchievements = hasPlatformAchievements(game);
+  const localExe = game.sources.some((src) => src.kind === 'local' && !!src.exePath);
   // Loaded with the sheet, so the icons download while you look at Aperçu.
   useAchievements(s.id, platformAchievements);
   const ach = s.achievements && s.achievements.total > 0 ? s.achievements : null;
@@ -116,6 +118,7 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
       : goals
         ? [{ id: 'succes' as const, label: t.tabs.goals, count: `${goals.done}/${goals.total}` }]
         : []),
+    ...(localExe ? [{ id: 'goldberg' as const, label: t.tabs.goldberg }] : []),
     { id: 'captures', label: t.tabs.captures, count: captures ? String(captures) : undefined },
     { id: 'actus', label: t.tabs.news },
     { id: 'lancement', label: t.tabs.launch },
@@ -280,11 +283,12 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
                     : 'Goldberg'
             }
             isEmulated={s.sources.includes('emulator')}
-            isLocal={game.sources.some((src) => src.kind === 'local' && !!src.exePath)}
+            isLocal={localExe}
           />
         ) : (
           <GoalsSection gameId={s.id} />
         ))}
+      {current === 'goldberg' && <GoldbergTab gameId={s.id} />}
       {current === 'captures' && <CapturesTab game={game} />}
       {current === 'actus' && <NewsSection gameId={s.id} />}
       {current === 'lancement' && <LaunchSection game={game} />}

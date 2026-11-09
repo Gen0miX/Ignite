@@ -10,6 +10,7 @@ use crate::db::Db;
 use crate::error::AppError;
 use crate::secrets::{SecretKind, Secrets};
 use crate::sources::goldberg::{self, GoldbergFind, GoldbergStatus};
+use crate::sources::goldberg_settings::{self, GoldbergSettings};
 
 fn local_source(db: &Db, game_id: &str) -> CommandResult<GameSource> {
     game_sources::list_for_game(&db.conn(), game_id)?
@@ -56,6 +57,9 @@ pub async fn goldberg_setup(
             .flatten();
         goldberg::install(&db.conn(), &source, Some(appid), force)?;
         let mut status = goldberg::configure(&db.conn(), &source, appid, key.as_deref())?;
+        // New definitions: their Steam rarity is not cached yet.
+        goldberg::refresh_cache(&mut db.conn(), &source)?;
+        goldberg::refresh_rarity(&db, &source, true);
         if key.is_none() && !status.definitions_ready {
             status
                 .issues
@@ -132,16 +136,45 @@ pub async fn goldberg_find_saves(app: AppHandle, game_id: String) -> CommandResu
     })?
 }
 
-/// Turns Goldberg's in-game overlay on or off for this game.
+/// Folder whose Goldberg configs are edited: the game's `steam_settings`,
+/// or the global settings folder when `game_id` is `None`.
+fn settings_folder(
+    app: &AppHandle,
+    game_id: Option<&str>,
+) -> CommandResult<Option<std::path::PathBuf>> {
+    let Some(game_id) = game_id else {
+        return Ok(None);
+    };
+    let db = app.state::<Db>();
+    let source = local_source(&db, game_id)?;
+    let dir = goldberg::game_settings_dir(&source)
+        .ok_or_else(|| AppError::Invalid("game folder not found".into()))?;
+    Ok(Some(dir))
+}
+
+/// Goldberg options of a game (`game_id`) or the global ones (`None`).
 #[tauri::command]
 #[specta::specta]
-pub fn goldberg_set_overlay(
+pub fn goldberg_settings_get(
     app: AppHandle,
-    game_id: String,
-    enabled: bool,
-) -> CommandResult<GoldbergStatus> {
-    let db = app.state::<Db>();
-    let source = local_source(&db, &game_id)?;
-    let status = goldberg::set_overlay(&db.conn(), &source, enabled)?;
-    Ok(status)
+    game_id: Option<String>,
+) -> CommandResult<GoldbergSettings> {
+    let folder = settings_folder(&app, game_id.as_deref())?;
+    Ok(goldberg_settings::view(folder.as_deref()))
+}
+
+/// Sets one Goldberg option, or clears it with `value = None` (back to the
+/// global value for a game, to Goldberg's default globally).
+#[tauri::command]
+#[specta::specta]
+pub fn goldberg_setting_set(
+    app: AppHandle,
+    game_id: Option<String>,
+    id: String,
+    value: Option<String>,
+) -> CommandResult<GoldbergSettings> {
+    let folder = settings_folder(&app, game_id.as_deref())?;
+    let target = folder.clone().unwrap_or_else(goldberg_settings::global_dir);
+    goldberg_settings::set(&target, &id, value.as_deref(), goldberg::OVERLAY_TEMPLATE)?;
+    Ok(goldberg_settings::view(folder.as_deref()))
 }

@@ -67,6 +67,7 @@ const status: GoldbergStatus = {
   savesPath: null,
   savesReady: false,
   overlay: false,
+  overlayBuild: true,
   issues: ['notInstalled', 'needsAppid', 'noSaves'],
 };
 
@@ -76,9 +77,22 @@ const setup = vi.fn(() => ok({ ...status, installed: true, appid: 42 }));
 const findSaves = vi.fn(() =>
   ok({ paths: ['C:\\Users\\Public\\Documents\\Steam\\42\\achievements.json'], unlocked: ['A'] }),
 );
-const setOverlay = vi.fn((_gameId: string, enabled: boolean) =>
-  ok({ ...status, installed: true, appid: 42, definitionsReady: true, overlay: enabled }),
-);
+type Setting = { id: string; value: string | null; inherited: string };
+const baseSettings: Setting[] = [
+  { id: 'accountName', value: null, inherited: 'gse orca' },
+  { id: 'language', value: null, inherited: 'english' },
+  { id: 'ipCountry', value: null, inherited: 'US' },
+  { id: 'overlay', value: null, inherited: '1' },
+  { id: 'overlayNoProgress', value: null, inherited: '1' },
+  { id: 'offline', value: '1', inherited: '0' },
+];
+let gameSettings: Setting[] = baseSettings;
+const settingsView = () =>
+  ok({ folder: 'C:\\Games\\Jeu local\\steam_settings', settings: gameSettings });
+const setSetting = vi.fn((_gameId: string | null, id: string, value: string | null) => {
+  gameSettings = gameSettings.map((x) => (x.id === id ? { ...x, value } : x));
+  return settingsView();
+});
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: () => Promise.resolve(() => {}) }));
 vi.mock('../api/client', async (importOriginal) => {
@@ -116,7 +130,8 @@ vi.mock('../api/client', async (importOriginal) => {
       goldbergStatus: () => ok(currentStatus),
       goldbergSetup: setup,
       goldbergFindSaves: findSaves,
-      goldbergSetOverlay: setOverlay,
+      goldbergSettingsGet: () => settingsView(),
+      goldbergSettingSet: setSetting,
       libraryCounts: () =>
         ok({
           all: 1,
@@ -151,19 +166,43 @@ describe('Goldberg setup', () => {
     currentStatus = status;
   });
 
-  it('shows the Succès tab and the setup card for a local game', async () => {
-    renderAt('/game/g1/succes');
+  it('sends the Succès tab to the Goldberg tab until it is set up', async () => {
+    const router = renderAt('/game/g1/succes');
     const nav = await screen.findByRole('navigation', { name: 'Sections de la fiche' });
     expect(within(nav).getByRole('link', { name: 'Succès' })).toBeVisible();
+    expect(within(nav).getByRole('link', { name: 'Goldberg' })).toBeVisible();
+    expect(
+      await screen.findByText(/Ils s’afficheront ici une fois Goldberg installé et configuré/),
+    ).toBeVisible();
+    // No setup form on the Succès tab any more.
+    expect(screen.queryByLabelText('AppID Steam')).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole('link', { name: /Configurer Goldberg/ }));
+    expect(router.state.location.pathname).toBe('/game/g1/goldberg');
+  });
+
+  it('shows the setup card on the Goldberg tab', async () => {
+    renderAt('/game/g1/goldberg');
     expect(await screen.findByText('Succès du jeu (Goldberg)')).toBeVisible();
-    expect(screen.getByText('Installe Goldberg pour suivre les succès de ce jeu.')).toBeVisible();
     expect(screen.getByLabelText('AppID Steam')).toBeVisible();
     expect(screen.getByRole('button', { name: /Installer et configurer/ })).toBeVisible();
   });
 
+  it('warns when the installed DLL has no overlay', async () => {
+    currentStatus = {
+      ...status,
+      installed: true,
+      appid: 42,
+      definitionsReady: true,
+      overlayBuild: false,
+    };
+    gameSettings = baseSettings;
+    renderAt('/game/g1/goldberg');
+    expect(await screen.findByText(/version « regular » de Goldberg/)).toBeVisible();
+  });
+
   it('installs with the typed appid', async () => {
     const user = userEvent.setup();
-    renderAt('/game/g1/succes');
+    renderAt('/game/g1/goldberg');
     await user.type(await screen.findByLabelText('AppID Steam'), '42');
     await user.click(screen.getByRole('button', { name: /Installer et configurer/ }));
     expect(setup).toHaveBeenCalledWith('g1', 42, false);
@@ -172,7 +211,7 @@ describe('Goldberg setup', () => {
   it('shows a pending state while installing', async () => {
     setup.mockImplementationOnce(() => new Promise<never>(() => {}));
     const user = userEvent.setup();
-    renderAt('/game/g1/succes');
+    renderAt('/game/g1/goldberg');
     await user.type(await screen.findByLabelText('AppID Steam'), '42');
     await user.click(screen.getByRole('button', { name: /Installer et configurer/ }));
     expect(await screen.findByRole('button', { name: /Installation…/ })).toBeVisible();
@@ -181,7 +220,7 @@ describe('Goldberg setup', () => {
   it('finds and reports already-unlocked achievements', async () => {
     currentStatus = { ...status, installed: true, appid: 42, definitionsReady: true };
     const user = userEvent.setup();
-    renderAt('/game/g1/succes');
+    renderAt('/game/g1/goldberg');
     await user.click(await screen.findByRole('button', { name: /Chercher des succès existants/ }));
     expect(findSaves).toHaveBeenCalledWith('g1');
     expect(await screen.findByText('1 succès déjà débloqué trouvé dans 1 fichier.')).toBeVisible();
@@ -190,23 +229,49 @@ describe('Goldberg setup', () => {
     ).toBeVisible();
   });
 
-  it('turns the in-game overlay on', async () => {
+  it('shows the emulator options once installed, with inherited values', async () => {
     currentStatus = { ...status, installed: true, appid: 42, definitionsReady: true };
-    const user = userEvent.setup();
-    renderAt('/game/g1/succes');
-    const toggle = await screen.findByRole('switch', { name: 'Overlay en jeu' });
-    expect(toggle).toHaveAttribute('aria-checked', 'false');
-    await user.click(toggle);
-    expect(setOverlay).toHaveBeenCalledWith('g1', true);
-    expect(await screen.findByRole('switch', { name: 'Overlay en jeu' })).toHaveAttribute(
+    gameSettings = baseSettings;
+    renderAt('/game/g1/goldberg');
+    expect(await screen.findByText('Options de l’émulateur')).toBeVisible();
+    // Global overlay already on: the game inherits it.
+    const overlay = await screen.findByRole('switch', { name: 'Activer l’overlay' });
+    expect(overlay).toHaveAttribute('aria-checked', 'true');
+    // Inverted option: disable_achievement_progress=1 shows as off.
+    expect(screen.getByRole('switch', { name: 'Notifications de progression' })).toHaveAttribute(
       'aria-checked',
-      'true',
+      'false',
     );
+    expect(screen.getByLabelText('Langue du jeu')).toHaveValue('english');
+    expect(screen.getAllByText('global').length).toBeGreaterThan(0);
   });
 
-  it('hides the overlay switch until Goldberg is installed', async () => {
-    renderAt('/game/g1/succes');
+  it('overrides an option for the game and resets it', async () => {
+    currentStatus = { ...status, installed: true, appid: 42, definitionsReady: true };
+    gameSettings = baseSettings;
+    const user = userEvent.setup();
+    renderAt('/game/g1/goldberg');
+    await user.selectOptions(await screen.findByLabelText('Langue du jeu'), 'french');
+    expect(setSetting).toHaveBeenCalledWith('g1', 'language', 'french');
+
+    await user.click(screen.getByRole('switch', { name: 'Notifications de progression' }));
+    expect(setSetting).toHaveBeenCalledWith('g1', 'overlayNoProgress', '0');
+
+    const name = screen.getByLabelText('Pseudo');
+    await user.clear(name);
+    await user.type(name, 'Gen0miX{Enter}');
+    expect(setSetting).toHaveBeenCalledWith('g1', 'accountName', 'Gen0miX');
+
+    // "offline" is set for this game: a reset button brings back the global value.
+    await user.click(
+      screen.getByRole('button', { name: 'Revenir à la valeur globale pour « Mode hors ligne »' }),
+    );
+    expect(setSetting).toHaveBeenCalledWith('g1', 'offline', null);
+  });
+
+  it('hides the emulator options until Goldberg is installed', async () => {
+    renderAt('/game/g1/goldberg');
     expect(await screen.findByText('Succès du jeu (Goldberg)')).toBeVisible();
-    expect(screen.queryByRole('switch', { name: 'Overlay en jeu' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Options de l’émulateur')).not.toBeInTheDocument();
   });
 });
