@@ -47,6 +47,7 @@ import { Switch } from '../../components/Switch/Switch';
 import { fr } from '../../i18n/fr';
 import { formatLastPlayed } from '../../lib/format';
 import { usePrefs, type RecapMode } from '../../lib/prefs';
+import { useUpdates } from '../../lib/updates';
 import styles from './SettingsSourcesPage.module.css';
 import { CaptureFoldersCard } from './CaptureFoldersCard';
 import { EmulatorsCard, RaAccount } from './EmulatorsCard';
@@ -698,6 +699,53 @@ function MetadataCard() {
   );
 }
 
+function UpdateRow() {
+  const { status, version, check, install } = useUpdates();
+  const tu = fr.updates;
+  const busy = status === 'checking' || status === 'downloading' || status === 'installing';
+  const message =
+    status === 'upToDate'
+      ? tu.upToDate
+      : status === 'error'
+        ? tu.error
+        : status === 'available' && version
+          ? tu.available(version)
+          : status === 'downloading' || status === 'installing'
+            ? tu.installing
+            : null;
+  return (
+    <div className={styles.updateRow}>
+      {status === 'available' ? (
+        <button type="button" className={buttons.primary} onClick={() => void install()}>
+          {tu.install}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={buttons.secondary}
+          disabled={busy}
+          onClick={() => void check()}
+        >
+          {status === 'checking' ? tu.checking : tu.check}
+        </button>
+      )}
+      {message && (
+        <span className={styles.muted} role="status">
+          {message}
+        </span>
+      )}
+      <a
+        className={styles.inlineLink}
+        href="https://github.com/Gen0miX/ignite/releases"
+        target="_blank"
+        rel="noreferrer"
+      >
+        {tu.releases}
+      </a>
+    </div>
+  );
+}
+
 function AboutCard() {
   const info = useQuery({
     queryKey: ['app-info'],
@@ -727,6 +775,7 @@ function AboutCard() {
   return (
     <section className={styles.card} aria-label={t.about}>
       {body}
+      {isTauri() && <UpdateRow />}
     </section>
   );
 }

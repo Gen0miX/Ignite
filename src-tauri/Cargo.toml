@@ -2,6 +2,8 @@
 name = "ludotheque"
 version = "1.4.1"
 description = "Unified PC game library and launcher"
+license = "MIT"
+repository = "https://github.com/Gen0miX/ignite"
 edition = "2021"
 rust-version = "1.89"
 
@@ -41,6 +43,8 @@ tauri-plugin-clipboard-manager = "2"
 # Pure-Rust 7z: Goldberg releases are `.7z` archives, extracted in memory
 # (Windows Defender sometimes quarantines the downloaded file).
 sevenz-rust2 = "0.25.0"
+tauri-plugin-updater = "2.14.1"
+tauri-plugin-process = "2.4.0"
 
 [profile.dev]
 incremental = true

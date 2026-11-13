@@ -8,6 +8,7 @@ import { useLibraryEvents } from '../api/hooks';
 import { Sidebar } from '../components/Sidebar/Sidebar';
 import { SessionRecapHost } from '../components/SessionRecap/SessionRecapHost';
 import { Toaster } from '../components/Toaster/Toaster';
+import { UpdateBanner } from '../components/UpdateBanner/UpdateBanner';
 import styles from './AppShell.module.css';
 
 /** Fluid 3-column layout: sidebar, content, and the page's optional side panel. */
@@ -31,6 +32,7 @@ export function AppShell() {
       <DragGhost />
       <Toaster />
       <SessionRecapHost />
+      <UpdateBanner />
     </div>
   );
 }

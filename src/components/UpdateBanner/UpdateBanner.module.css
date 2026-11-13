@@ -1,0 +1,83 @@
+.banner {
+  position: fixed;
+  right: var(--space-6);
+  bottom: var(--space-6);
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 460px;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-panel);
+  box-shadow:
+    0 10px 30px rgb(0 0 0 / 45%),
+    inset 3px 0 0 var(--color-accent);
+  animation: rise 200ms ease-out;
+}
+
+.icon {
+  flex: none;
+  color: var(--color-accent-ink);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-2);
+}
+
+.text strong {
+  font-size: var(--text-md);
+  color: var(--color-text);
+}
+
+.close {
+  flex: none;
+  width: var(--h-control-sm);
+  height: var(--h-control-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+}
+
+.close:hover {
+  background: var(--color-active);
+  color: var(--color-text);
+}
+
+.close:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--color-accent);
+  transform-origin: left center;
+  transition: transform 200ms linear;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner {
+    animation: none;
+  }
+}

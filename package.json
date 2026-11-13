@@ -2,6 +2,9 @@
   "name": "ludotheque",
   "private": true,
   "version": "1.4.1",
+  "description": "Ignite: tous tes jeux PC au même endroit",
+  "license": "MIT",
+  "repository": "github:Gen0miX/ignite",
   "type": "module",
   "packageManager": "pnpm@12.16.1",
   "scripts": {
@@ -24,6 +27,8 @@
     "@tanstack/react-query": "5.106.0",
     "@tauri-apps/api": "2.12.4",
     "@tauri-apps/plugin-dialog": "2.8.4",
+    "@tauri-apps/plugin-process": "~2.4.0",
+    "@tauri-apps/plugin-updater": "~2.14.1",
     "hls.js": "^1.7.4",
     "lucide-react": "1.68.0",
     "react": "19.3.1",
