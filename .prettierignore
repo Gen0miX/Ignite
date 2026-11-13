@@ -6,3 +6,4 @@ design/mockups
 src/api/bindings.ts
 pnpm-lock.yaml
 *.md
+src-tauri/tests/fixtures

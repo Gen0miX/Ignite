@@ -1,0 +1,58 @@
+name: Release
+
+# Push a tag `vX.Y.Z` (same version as tauri.conf.json) to build, sign and
+# publish the Windows installer as a draft release, with `latest.json` for the
+# in-app updater. Review the draft on GitHub, then click "Publish release".
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag matches the app version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $version = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          if ("v$version" -ne "${{ github.ref_name }}") {
+            Write-Error "Tag ${{ github.ref_name }} does not match tauri.conf.json version $version"
+            exit 1
+          }
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Updater signature (keys made with `pnpm tauri signer generate`).
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: Ignite ${{ github.ref_name }}
+          releaseBody: |
+            Télécharge **Ignite_*_x64-setup.exe** ci-dessous et lance-le (Windows 10/11, 64 bits).
+            Si Ignite est déjà installé, il propose la mise à jour tout seul au démarrage.
+
+            Nouveautés : voir [CHANGELOG.md](https://github.com/Gen0miX/ignite/blob/main/CHANGELOG.md).
+          releaseDraft: true
+          prerelease: false
+          includeUpdaterJson: true

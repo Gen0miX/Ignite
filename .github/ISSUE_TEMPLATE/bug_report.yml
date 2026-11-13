@@ -1,0 +1,57 @@
+name: Signaler un bug
+description: Quelque chose ne marche pas comme prévu.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de signaler un problème. Ne colle jamais de clé d'API ni de mot de passe dans un ticket.
+  - type: input
+    id: version
+    attributes:
+      label: Version d'Ignite
+      description: Réglages › À propos.
+      placeholder: '1.5.0'
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Partie concernée
+      options:
+        - Bibliothèque / sources (Steam, GOG, Epic…)
+        - Suivi du temps de jeu
+        - Succès (Steam, GOG, RetroAchievements, Goldberg)
+        - Collections / recherche
+        - Fiche de jeu / captures
+        - Mode Canapé
+        - Réglages
+        - Installation / mise à jour
+        - Autre
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: Ce qui se passe
+      description: Ce que tu as fait, ce que tu attendais, et ce qui s'est passé à la place.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pour reproduire
+      placeholder: |
+        1. Ouvrir…
+        2. Cliquer sur…
+        3. …
+  - type: input
+    id: windows
+    attributes:
+      label: Version de Windows
+      placeholder: 'Windows 11 24H2'
+  - type: textarea
+    id: extra
+    attributes:
+      label: Captures ou informations en plus
+      description: Captures d'écran, launcher concerné, message d'erreur affiché dans Réglages › Sources…

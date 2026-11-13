@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, types and tests
+    # Windows only: sources, tracker and Credential Manager are Windows code.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # version from package.json "packageManager"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Frontend lint, format and types
+        run: |
+          pnpm lint
+          pnpm format:check
+          pnpm typecheck
+      - name: Frontend tests
+        run: pnpm test
+
+      - name: Rust format and clippy
+        working-directory: src-tauri
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+      - name: Rust tests (also regenerates src/api/bindings.ts)
+        run: pnpm test:rust
+      - name: TypeScript bindings are up to date
+        run: git diff --exit-code -- src/api/bindings.ts

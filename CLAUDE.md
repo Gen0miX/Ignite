@@ -30,8 +30,10 @@ pnpm test:rust        # tests Rust (= cargo test --manifest-path src-tauri/Cargo
 pnpm bindings         # régénérer les types TS des commandes Tauri sans lancer l'app
 pnpm lint && pnpm typecheck
 pnpm format           # Prettier ; côté Rust : cargo fmt / cargo clippy --all-targets -- -D warnings
-pnpm tauri build      # build installeur (NSIS)
+pnpm tauri build      # build installeur (NSIS), signé : voir docs/RELEASING.md
 ```
+
+**Releases** : un tag `vX.Y.Z` poussé sur GitHub (`Gen0miX/ignite`) lance `.github/workflows/release.yml`, qui publie une release en brouillon avec l'installeur et `latest.json` pour les mises à jour automatiques (`tauri-plugin-updater`). La clé privée de signature est dans `~/.tauri/ignite.key` (hors dépôt) et dans les secrets GitHub ; un `pnpm tauri build` local a besoin de `TAURI_SIGNING_PRIVATE_KEY` et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Procédure complète : `docs/RELEASING.md`. La CI (`.github/workflows/ci.yml`) lance lint, format, types, tests et clippy, et vérifie que `src/api/bindings.ts` est à jour.
 
 Test touchant le vrai Credential Manager (ignoré par défaut) :
 `cargo test --manifest-path src-tauri/Cargo.toml secrets -- --ignored`

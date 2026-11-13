@@ -1,0 +1,21 @@
+name: Proposer une idée
+description: Une fonctionnalité ou une amélioration.
+labels: [idée]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Le besoin
+      description: Qu'est-ce qui te manque ou te gêne aujourd'hui ?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: L'idée
+      description: À quoi ça pourrait ressembler dans Ignite ?
+  - type: textarea
+    id: extra
+    attributes:
+      label: Exemples ou captures
+      description: Un autre launcher qui le fait bien, une maquette…
