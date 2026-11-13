@@ -885,7 +885,7 @@ export type GoldbergStatus_Deserialize = {
 	overlay: boolean,
 	/**
 	 *  The installed DLL is the "experimental" build, the only one with the
-	 *  overlay (a bundled "regular" build has none).
+	 *  overlay (the "regular" build has none).
 	 */
 	overlayBuild: boolean,
 	issues: GoldbergIssue[],
@@ -913,7 +913,7 @@ export type GoldbergStatus_Serialize = {
 	overlay: boolean,
 	/**
 	 *  The installed DLL is the "experimental" build, the only one with the
-	 *  overlay (a bundled "regular" build has none).
+	 *  overlay (the "regular" build has none).
 	 */
 	overlayBuild: boolean,
 	issues: GoldbergIssue[],

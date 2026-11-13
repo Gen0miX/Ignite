@@ -89,7 +89,7 @@ const MAX_FIND_DEPTH: usize = 6;
 const MAX_FIND_ENTRIES: usize = 4000;
 
 /// Steam emulators save unlocks under different names: Goldberg/GBE use
-/// `achievements.json`, other Steam emulators use `achievements.ini`.
+/// `achievements.json`, some other Steam emulators use `achievements.ini`.
 fn is_achievements_file(name: &std::ffi::OsStr) -> bool {
     name == "achievements.json" || name == "achievements.ini"
 }
@@ -240,7 +240,7 @@ pub struct GoldbergStatus {
     /// global one).
     pub overlay: bool,
     /// The installed DLL is the "experimental" build, the only one with the
-    /// overlay (a bundled "regular" build has none).
+    /// overlay (the "regular" build has none).
     pub overlay_build: bool,
     pub issues: Vec<GoldbergIssue>,
 }
@@ -642,7 +642,7 @@ pub fn fetch_goldberg_dll(arch: Architecture) -> AppResult<Vec<u8>> {
 }
 
 fn backup_and_write(dll: &Path, bytes: &[u8]) -> AppResult<()> {
-    // Valve's DLL or a bundled "regular" Goldberg: keep it.
+    // Valve's DLL or a "regular" Goldberg build: keep it.
     if dll.is_file() && !has_overlay_build(dll) {
         let backup = PathBuf::from(format!("{}{BACKUP_SUFFIX}", dll.display()));
         if !backup.is_file() {
@@ -989,7 +989,7 @@ fn truthy_str(value: &str) -> bool {
     value == "1" || value.eq_ignore_ascii_case("true")
 }
 
-/// INI saves from other Steam emulators: one `[<api_name>]` section per achievement with
+/// INI saves of other Steam emulators: one `[<api_name>]` section per achievement with
 /// `Achieved` and `UnlockTime`, plus a `[SteamAchievements]` index of the
 /// unlocked names.
 fn read_ini_earned(text: &str) -> HashMap<String, i64> {
@@ -1589,7 +1589,7 @@ Count=2
         let tmp = tempfile::tempdir().unwrap();
         let target = tmp
             .path()
-            .join("Emu")
+            .join("OtherEmu")
             .join("541570")
             .join("achievements.ini");
         std::fs::create_dir_all(target.parent().unwrap()).unwrap();
@@ -1761,14 +1761,14 @@ Count=2
             &dir.join("steam_settings/configs.overlay.ini"),
             b"[overlay::general]",
         );
-        touch(&plugins.join("configs.user.ini"), b"bundled");
+        touch(&plugins.join("configs.user.ini"), b"existing");
         migrate_legacy_settings(dir, &plugins);
         assert!(plugins.join("achievements.json").is_file());
         assert!(plugins.join("images/a.png").is_file());
         assert!(plugins.join("configs.overlay.ini").is_file());
         assert_eq!(
             std::fs::read(plugins.join("configs.user.ini")).unwrap(),
-            b"bundled"
+            b"existing"
         );
         assert_eq!(definitions_dir(dir), plugins);
     }
