@@ -119,6 +119,8 @@ export const commands = {
 	couchWheel: (mood: Mood) => typedError<HomeGame_Serialize[], CommandError>(__TAURI_INVOKE("couch_wheel", { mood })),
 	appSettingsGet: () => __TAURI_INVOKE<AppSettings>("app_settings_get"),
 	appSettingsSet: (settings: AppSettings) => typedError<null, CommandError>(__TAURI_INVOKE("app_settings_set", { settings })),
+	/**  UI language chosen in Settings › General (the frontend reloads itself). */
+	languageSet: (language: Language) => typedError<null, CommandError>(__TAURI_INVOKE("language_set", { language })),
 	gamesBulkUpdate: (ids: string[], update: BulkUpdate_Deserialize) => typedError<null, CommandError>(__TAURI_INVOKE("games_bulk_update", { ids, update })),
 	/**
 	 *  Deletes executable games with their sessions, goals and cached images.
@@ -1079,6 +1081,8 @@ export type ImportScan_Serialize = {
 	sources: ScannedSource[],
 	candidates: ImportCandidate_Serialize[],
 };
+
+export type Language = "fr" | "en";
 
 export type LibraryCounts = {
 	all: number,

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import styles from './AppLogo.module.css';
 
 /** Ignite mark: a flame whose core is a Play triangle. */
@@ -18,7 +18,7 @@ export function IgniteMark({ size = 36 }: { size?: number }) {
 
 export function AppLogo() {
   return (
-    <Link to="/" className={styles.logo} aria-label={`${fr.app.name} — ${fr.nav.home}`}>
+    <Link to="/" className={styles.logo} aria-label={`${strings.app.name} — ${strings.nav.home}`}>
       <IgniteMark />
     </Link>
   );

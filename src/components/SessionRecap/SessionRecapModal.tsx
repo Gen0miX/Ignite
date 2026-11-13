@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Flame, ImageIcon, Trophy, X } from 'lucide-react';
 import { artworkSrc, commands, unwrap, type GameStatus, type SessionRecap } from '../../api/client';
-import { fr } from '../../i18n/fr';
+import { locale, strings } from '../../i18n';
 import { formatLastPlayed, formatPlaytimeLong, formatPlaytimeShort } from '../../lib/format';
 import { usePrefs } from '../../lib/prefs';
 import buttons from '../Button/Button.module.css';
@@ -22,14 +22,14 @@ import { SkeletonImage } from '../Skeleton/SkeletonImage';
 import { recapKey } from './useRecapEvents';
 import styles from './SessionRecapModal.module.css';
 
-const t = fr.recap;
-const FLAME_LABELS = ['Bof', 'Correcte', 'Bonne', 'Très bonne', 'Excellente'] as const;
+const t = strings.recap;
+const FLAME_LABELS = t.flames;
 /** Under this share of players, an achievement is "rare". */
 const RARE_PERCENT = 15;
 
-const time = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
+const time = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' });
 const pct = (p: number) =>
-  `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(p)} %`;
+  `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(p)} %`;
 const clock = (iso: string) => time.format(new Date(iso));
 const seconds = (a: string, b: string) => (new Date(b).getTime() - new Date(a).getTime()) / 1000;
 
@@ -298,8 +298,8 @@ function RecapContent({
               label={t.status}
               options={statusChoices(recap.status).map((v) => ({
                 value: v,
-                label: fr.statusShort[v],
-                ariaLabel: fr.statusSingular[v],
+                label: strings.statusShort[v],
+                ariaLabel: strings.statusSingular[v],
               }))}
               value={status}
               onChange={setStatus}

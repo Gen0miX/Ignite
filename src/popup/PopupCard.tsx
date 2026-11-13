@@ -4,13 +4,13 @@ import { Flame, Timer, Trophy } from 'lucide-react';
 import type { Popup } from '../api/bindings';
 import { isTauri } from '../api/client';
 import { IgniteMark } from '../components/AppLogo/AppLogo';
-import { fr } from '../i18n/fr';
+import { locale, strings } from '../i18n';
 import { rarity } from '../lib/achievements';
 import styles from './PopupCard.module.css';
 
-const t = fr.popup;
+const t = strings.popup;
 
-const percentFmt = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
+const percentFmt = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
 
 /** Rarity badge text: « Ultra-rare · 2,1 % », « Rare · 12 % », « 48 % des joueurs ». */
 export function rarityLabel(percent: number): string {

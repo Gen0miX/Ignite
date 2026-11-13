@@ -18,7 +18,7 @@ import { SegmentedControl } from '../../components/SegmentedControl/SegmentedCon
 import { GameTitle } from '../../components/GameTitle/GameTitle';
 import { SourceBadge } from '../../components/SourceBadge/SourceBadge';
 import { SkeletonImage } from '../../components/Skeleton/SkeletonImage';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import {
   folderName,
   formatLastPlayed,
@@ -43,7 +43,7 @@ import { TimeToBeatCard } from './TimeToBeatCard';
 import { WeeklyChart } from './WeeklyChart';
 import styles from './GameDetailPage.module.css';
 
-const t = fr.game;
+const t = strings.game;
 const STATUS_ORDER: GameStatus[] = ['todo', 'playing', 'done', 'dropped'];
 
 export function GameDetailPage() {
@@ -136,7 +136,7 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
       onClick={() => launch.mutate(s.id)}
     >
       <Play size={big ? 20 : 16} fill="currentColor" aria-hidden="true" />
-      {playSource ? fr.panel.playVia(fr.sources[playSource.kind]) : fr.panel.play}
+      {playSource ? strings.panel.playVia(strings.sources[playSource.kind]) : strings.panel.play}
     </button>
   );
 
@@ -169,8 +169,8 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
                   type="button"
                   className={`${buttons.secondary} ${styles.iconButton}`}
                   aria-pressed={s.favorite}
-                  aria-label={s.favorite ? fr.panel.favoriteRemove : fr.panel.favoriteAdd}
-                  title={s.favorite ? fr.panel.favoriteRemove : fr.panel.favoriteAdd}
+                  aria-label={s.favorite ? strings.panel.favoriteRemove : strings.panel.favoriteAdd}
+                  title={s.favorite ? strings.panel.favoriteRemove : strings.panel.favoriteAdd}
                   onClick={() => update.mutate({ favorite: !s.favorite })}
                 >
                   <Star size={18} fill={s.favorite ? 'currentColor' : 'none'} aria-hidden="true" />
@@ -181,12 +181,12 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
                   onClick={() => setPicking(true)}
                 >
                   <ImageIcon size={16} aria-hidden="true" />
-                  {fr.artwork.open}
+                  {strings.artwork.open}
                 </button>
               </div>
               {launch.isError && (
                 <p role="alert" className={styles.error}>
-                  {fr.panel.launchError}
+                  {strings.panel.launchError}
                 </p>
               )}
             </div>
@@ -218,8 +218,8 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
                 label={t.status}
                 options={STATUS_ORDER.map((v) => ({
                   value: v,
-                  label: fr.statusShort[v],
-                  ariaLabel: fr.statusSingular[v],
+                  label: strings.statusShort[v],
+                  ariaLabel: strings.statusSingular[v],
                 }))}
                 value={s.status}
                 onChange={(status) => update.mutate({ status })}
@@ -237,7 +237,10 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
           <div className={styles.compactContent}>
             <GameTitle as="h1" title={s.title} logo={game.logo} className={styles.compactTitle} />
             <span className={styles.compactMeta}>
-              {t.compactMeta(formatPlaytimeShort(s.playtimeMinutes), fr.statusSingular[s.status])}
+              {t.compactMeta(
+                formatPlaytimeShort(s.playtimeMinutes),
+                strings.statusSingular[s.status],
+              )}
             </span>
             {playButton(false)}
           </div>
@@ -277,9 +280,9 @@ function Sheet({ game, tabParam }: { game: GameDetail; tabParam: string | undefi
               s.sources.includes('emulator')
                 ? 'RetroAchievements'
                 : s.sources.includes('steam')
-                  ? fr.sources.steam
+                  ? strings.sources.steam
                   : s.sources.includes('gog')
-                    ? fr.sources.gog
+                    ? strings.sources.gog
                     : 'Goldberg'
             }
             isEmulated={s.sources.includes('emulator')}
@@ -307,11 +310,11 @@ function LaunchSummary({ game }: { game: GameDetail }) {
         {t.launch}
       </h2>
       <p className={styles.launchSummary}>
-        {t.launchVia(fr.sources[src.kind])}
+        {t.launchVia(strings.sources[src.kind])}
         {src.installed && src.installPath ? (
           <span title={src.installPath}> · {folderName(src.installPath)}</span>
         ) : (
-          <span> · {fr.panel.notInstalled}</span>
+          <span> · {strings.panel.notInstalled}</span>
         )}
       </p>
       <Link to={`/game/${game.summary.id}/lancement`} className={styles.linkButton}>

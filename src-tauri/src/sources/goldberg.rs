@@ -906,8 +906,9 @@ pub fn read_definitions(source: &crate::db::repo::game_sources::GameSource) -> V
     list.into_iter()
         .filter(|d| !d.name.trim().is_empty())
         .map(|d| Definition {
-            name: text(&d.display_name, "french").unwrap_or_else(|| d.name.clone()),
-            description: text(&d.description, "french"),
+            name: text(&d.display_name, crate::i18n::steam_language())
+                .unwrap_or_else(|| d.name.clone()),
+            description: text(&d.description, crate::i18n::steam_language()),
             icon: d.icon.map(|icon| {
                 if icon.starts_with("http://") || icon.starts_with("https://") {
                     icon

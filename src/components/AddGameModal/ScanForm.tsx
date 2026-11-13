@@ -3,11 +3,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FolderSearch } from 'lucide-react';
 import { commands, unwrap, type FolderCandidate } from '../../api/client';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import buttons from '../Button/Button.module.css';
 import styles from './AddGameModal.module.css';
 
-const t = fr.addGame.scanForm;
+const t = strings.addGame.scanForm;
 
 /** "Scanner ce PC": pick a folder, review the games found, add the selection. */
 export function ScanForm({ onDone }: { onDone: (added: number) => void }) {
@@ -110,7 +110,7 @@ export function ScanForm({ onDone }: { onDone: (added: number) => void }) {
           disabled={count === 0 || add.isPending}
           onClick={() => add.mutate()}
         >
-          {add.isPending ? fr.addGame.adding : t.add(count)}
+          {add.isPending ? strings.addGame.adding : t.add(count)}
         </button>
       </div>
     </div>

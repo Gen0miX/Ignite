@@ -1,8 +1,8 @@
 import type { HomeGame, Tonight } from '../../api/client';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { formatLastPlayedShort, formatPlaytimeLong, formatPlaytimeShort } from '../../lib/format';
 
-const t = fr.home;
+const t = strings.home;
 const BUDGET: Record<Tonight, number> = { halfHour: 30, hour: 60, evening: 240, coop: 240 };
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -52,5 +52,5 @@ export function pileMeta(g: HomeGame): string {
     if (played === 0) return t.hltbTotal(formatPlaytimeShort(g.hltbMinutes));
     if (g.hltbMinutes > played) return t.hltbLeft(formatPlaytimeShort(g.hltbMinutes - played));
   }
-  return g.game.installed ? fr.library.installedBadge : '';
+  return g.game.installed ? strings.library.installedBadge : '';
 }

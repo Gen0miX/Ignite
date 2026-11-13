@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useGameNews, useOpenLink } from '../../api/hooks';
 import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { formatLastPlayed } from '../../lib/format';
 import styles from './NewsSection.module.css';
 
-const t = fr.game;
+const t = strings.game;
 
 /** Latest Steam announcements of the game; promotions and press on demand. */
 export function NewsSection({ gameId }: { gameId: string }) {
@@ -49,9 +49,9 @@ export function NewsSection({ gameId }: { gameId: string }) {
       )}
       {data && data.hidden.length > 0 && (
         <p className={styles.muted}>
-          {fr.home.hiddenNews(data.hidden.length)}{' '}
+          {strings.home.hiddenNews(data.hidden.length)}{' '}
           <button type="button" className={styles.link} onClick={() => setShowHidden(!showHidden)}>
-            {showHidden ? fr.home.hideAgain : fr.home.showAnyway}
+            {showHidden ? strings.home.hideAgain : strings.home.showAnyway}
           </button>
         </p>
       )}

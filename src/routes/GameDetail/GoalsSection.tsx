@@ -2,10 +2,10 @@ import { useState, type FormEvent } from 'react';
 import { X } from 'lucide-react';
 import { useGoalMutations, useGoals } from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import styles from './GameDetailPage.module.css';
 
-const t = fr.game;
+const t = strings.game;
 
 export function GoalsSection({ gameId }: { gameId: string }) {
   const { data: goals = [] } = useGoals(gameId);

@@ -10,11 +10,11 @@ import {
 import buttons from '../../components/Button/Button.module.css';
 import { GoldbergOptions } from '../../components/GoldbergOptions/GoldbergOptions';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import styles from './AchievementsTab.module.css';
 import sheet from './GameDetailPage.module.css';
 
-const t = fr.game;
+const t = strings.game;
 
 /**
  * Goldberg tab of an executable: installation, then the emulator options
@@ -236,7 +236,7 @@ function GoldbergSetup({ gameId }: { gameId: string }) {
           aria-labelledby="goldberg-options-title"
         >
           <h3 id="goldberg-options-title" className="section-label">
-            {fr.goldbergOptions.title}
+            {strings.goldbergOptions.title}
           </h3>
           {!s.overlayBuild && (
             <p className={styles.overlayBuild} role="note">

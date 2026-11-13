@@ -2,11 +2,13 @@ import { useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { commands, isTauri, unwrap, type SourceKind } from '../../api/client';
 import { useLibraryCounts } from '../../api/hooks';
-import { fr } from '../../i18n/fr';
+import { genreLabel, strings } from '../../i18n';
+
+const keys = strings.searchKeys;
 import { setToken, tokenValue } from '../../lib/searchTokens';
 import styles from './FilterChips.module.css';
 
-const t = fr.filters;
+const t = strings.filters;
 
 interface Option {
   value: string;
@@ -103,12 +105,12 @@ export function FilterChips({
     );
   };
   const toggle = (key: string, label: string) => {
-    const on = tokenValue(text, key) === 'oui';
+    const on = tokenValue(text, key) === keys.yes;
     return (
       <Toggle
         label={label}
         on={on}
-        onToggle={() => onChange(setToken(text, key, on ? null : 'oui'))}
+        onToggle={() => onChange(setToken(text, key, on ? null : keys.yes))}
       />
     );
   };
@@ -116,24 +118,24 @@ export function FilterChips({
   const sources: Option[] =
     counts.data?.sources.map((s) => ({
       value: s.kind,
-      label: fr.sources[s.kind as SourceKind],
+      label: strings.sources[s.kind as SourceKind],
       count: s.count,
     })) ?? [];
   const facet = (list?: { name: string; count: number }[]) =>
-    list?.map((f) => ({ value: f.name, label: f.name, count: f.count })) ?? [];
+    list?.map((f) => ({ value: f.name, label: genreLabel(f.name), count: f.count })) ?? [];
 
   return (
     <div className={styles.chips} role="toolbar" aria-label={t.label}>
       {chip('source', t.source, sources)}
-      {toggle('installe', t.installed)}
+      {toggle(keys.installed, t.installed)}
       {chip('genre', t.genre, facet(facets.data?.genres))}
       {chip(
         'session',
         t.session,
         t.sessions.map(([value, label]) => ({ value, label })),
       )}
-      {chip('joueurs', t.players, facet(facets.data?.modes))}
-      {toggle('favori', t.favorites)}
+      {chip(keys.players, t.players, facet(facets.data?.modes))}
+      {toggle(keys.favorite, t.favorites)}
     </div>
   );
 }

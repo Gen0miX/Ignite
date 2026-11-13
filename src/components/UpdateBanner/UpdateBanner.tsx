@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { Download, X } from 'lucide-react';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { useUpdates } from '../../lib/updates';
 import buttons from '../Button/Button.module.css';
 import styles from './UpdateBanner.module.css';
 
-const t = fr.updates;
+const t = strings.updates;
 /** Wait a little after startup: the library sync comes first. */
 const FIRST_CHECK_MS = 8000;
 

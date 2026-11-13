@@ -14,13 +14,13 @@ import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
 import { SourceBadge } from '../../components/SourceBadge/SourceBadge';
-import { fr } from '../../i18n/fr';
+import { locale, strings } from '../../i18n';
 import { buildCalendar, calendarCell, monthStarts } from '../../lib/calendar';
 import { formatPlaytimeLong, titleTint } from '../../lib/format';
 import { defaultStatsRange, usePrefs } from '../../lib/prefs';
 import styles from './StatsPage.module.css';
 
-const t = fr.stats;
+const t = strings.stats;
 const ALL_SOURCES: SourceKind[] = [
   'steam',
   'gog',
@@ -33,29 +33,18 @@ const ALL_SOURCES: SourceKind[] = [
   'local',
   'emulator',
 ];
-const MONTHS = [
-  'janv.',
-  'févr.',
-  'mars',
-  'avr.',
-  'mai',
-  'juin',
-  'juil.',
-  'août',
-  'sept.',
-  'oct.',
-  'nov.',
-  'déc.',
-];
+const monthShort = new Intl.DateTimeFormat(locale, { month: 'short' });
+/** Month index (0-11) → short name, e.g. « janv. ». */
+const MONTHS = Array.from({ length: 12 }, (_, m) => monthShort.format(new Date(2024, m, 15)));
 
 const hours = (minutes: number) =>
-  minutes >= 60 ? `${Math.round(minutes / 60)} h` : `${minutes} min`;
-const longDate = new Intl.DateTimeFormat('fr-FR', {
+  minutes >= 60 ? strings.format.hours(Math.round(minutes / 60)) : strings.format.minutes(minutes);
+const longDate = new Intl.DateTimeFormat(locale, {
   day: 'numeric',
   month: 'long',
   year: 'numeric',
 });
-const monthName = new Intl.DateTimeFormat('fr-FR', { month: 'long' });
+const monthName = new Intl.DateTimeFormat(locale, { month: 'long' });
 
 function iso(d: Date) {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -69,7 +58,7 @@ function SourcesFilter({
   value: SourceKind[];
   onChange: (v: SourceKind[]) => void;
 }) {
-  const label = value.length === 0 ? t.allSources : value.map((k) => fr.sources[k]).join(', ');
+  const label = value.length === 0 ? t.allSources : value.map((k) => strings.sources[k]).join(', ');
   return (
     <details className={styles.sources}>
       <summary>{t.sourcesLabel(label)}</summary>
@@ -83,7 +72,7 @@ function SourcesFilter({
                 onChange(e.target.checked ? [...value, k] : value.filter((x) => x !== k))
               }
             />
-            {fr.sources[k]}
+            {strings.sources[k]}
           </label>
         ))}
         {value.length > 0 && (
@@ -210,7 +199,7 @@ export function StatsPage() {
     return (
       <PageMain>
         <PageHeader title={t.title} />
-        <EmptyState>{fr.library.backendUnavailable}</EmptyState>
+        <EmptyState>{strings.library.backendUnavailable}</EmptyState>
       </PageMain>
     );
   }
@@ -370,7 +359,7 @@ export function StatsPage() {
                               background: p.kind ? `var(--source-${p.kind})` : 'var(--color-muted)',
                             }}
                           />
-                          <span>{p.kind ? fr.sources[p.kind] : t.otherSessions}</span>
+                          <span>{p.kind ? strings.sources[p.kind] : t.otherSessions}</span>
                           <span className="mono">{hours(p.minutes)}</span>
                         </li>
                       ))}

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useLibraryCounts, useTrackerActive } from '../../api/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ActiveGame, GameSummary } from '../../api/client';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { formatClock } from '../../lib/sessions';
 import styles from './NowPlaying.module.css';
 import { useMenuPrefs } from '../Sidebar/menuPrefs';
@@ -30,14 +30,14 @@ function titleOf(client: ReturnType<typeof useQueryClient>, gameId: string): str
 function Row({ game, fetchedAt }: { game: ActiveGame; fetchedAt: number }) {
   const client = useQueryClient();
   const seconds = useLiveSeconds(game, fetchedAt);
-  const title = titleOf(client, game.gameId) ?? fr.tracking.nowPlaying;
+  const title = titleOf(client, game.gameId) ?? strings.tracking.nowPlaying;
   return (
     <Link to={`/game/${game.gameId}`} className={styles.row}>
       <span className={styles.dot} aria-hidden="true" />
       <span className={styles.title}>{title}</span>
       <span
         className={styles.clock}
-        aria-label={`${fr.tracking.nowPlaying} depuis ${formatClock(seconds)}`}
+        aria-label={`${strings.tracking.nowPlaying} depuis ${formatClock(seconds)}`}
       >
         {formatClock(seconds)}
       </span>
@@ -51,8 +51,8 @@ export function NowPlaying() {
   useLibraryCounts(); // keep library data warm for titles
   if (!data || data.length === 0) return null;
   return (
-    <section className={styles.box} aria-label={fr.tracking.nowPlaying} role="status">
-      <span className="section-label">{fr.tracking.nowPlaying}</span>
+    <section className={styles.box} aria-label={strings.tracking.nowPlaying} role="status">
+      <span className="section-label">{strings.tracking.nowPlaying}</span>
       {data.map((g) => (
         <Row key={g.sessionId} game={g} fetchedAt={dataUpdatedAt} />
       ))}
@@ -71,18 +71,18 @@ function RailRow({
 }) {
   const client = useQueryClient();
   const seconds = useLiveSeconds(game, fetchedAt);
-  const title = titleOf(client, game.gameId) ?? fr.tracking.nowPlaying;
+  const title = titleOf(client, game.gameId) ?? strings.tracking.nowPlaying;
   const clock = formatClock(seconds);
   const collapsed = useMenuPrefs((s) => s.collapsed);
   return (
     <Link
       to={`/game/${game.gameId}`}
       className={`${styles.rail} ${collapsed ? styles.railCompact : ''}`}
-      title={`${fr.tracking.nowPlaying} : ${title} · ${clock}`}
-      aria-label={`${fr.tracking.nowPlaying} : ${title}, ${clock}`}
+      title={`${strings.tracking.nowPlaying} : ${title} · ${clock}`}
+      aria-label={`${strings.tracking.nowPlaying} : ${title}, ${clock}`}
     >
       <span className={styles.dot} aria-hidden="true" />
-      {!collapsed && <span className={styles.railLabel}>{fr.tracking.inGame}</span>}
+      {!collapsed && <span className={styles.railLabel}>{strings.tracking.inGame}</span>}
       <span className={styles.railClock}>
         {clock}
         {extra > 0 ? ` +${extra}` : ''}

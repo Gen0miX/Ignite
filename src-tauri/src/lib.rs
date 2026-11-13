@@ -2,6 +2,7 @@ pub mod commands;
 pub mod db;
 pub mod error;
 pub mod http;
+pub mod i18n;
 pub mod launcher;
 pub mod legacy;
 pub mod library;
@@ -75,6 +76,9 @@ pub fn run() {
             let db_path = legacy::db_path(&data_dir);
             let database = db::Db::open(&db_path)?;
             tracing::info!(path = %db_path.display(), "database ready");
+            if let Err(e) = i18n::load(&database.conn()) {
+                tracing::warn!(error = %e, "language setting unreadable");
+            }
 
             app.manage(database);
             app.manage(secrets::default_store()?);

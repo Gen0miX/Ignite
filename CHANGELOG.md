@@ -2,9 +2,10 @@
 
 Toutes les évolutions notables d'Ignite. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions selon [SemVer](https://semver.org/lang/fr/).
 
-## [Non publié]
+## [1.5.0] - 2026-11-13
 
 ### Ajouté
+- Interface en anglais : choix de la langue dans Réglages › Général (français ou anglais, langue de Windows par défaut). Le menu de la zone de notification, les noms des succès et les infos venant de Steam suivent ce choix ; l'installeur s'affiche aussi en anglais sur un Windows anglais.
 - Mises à jour automatiques : Ignite vérifie les releases GitHub au démarrage et propose d'installer la nouvelle version (Réglages › À propos pour vérifier à la main).
 
 ### Modifié

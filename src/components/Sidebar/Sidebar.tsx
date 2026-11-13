@@ -11,7 +11,7 @@ import {
   useSourcesStatus,
 } from '../../api/hooks';
 import { CollectionEditor } from '../CollectionEditor/CollectionEditor';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { useGameDrag } from '../../lib/gameDrag';
 import { SourceChip } from '../SourceBadge/SourceBadge';
 import { StatusDot } from '../StatusDot/StatusDot';
@@ -103,23 +103,23 @@ function LibraryPanel() {
 
   return (
     <aside className={styles.panel}>
-      <nav aria-label={fr.nav.label} className={styles.nav}>
-        <p className={styles.panelTitle}>{fr.nav.library}</p>
+      <nav aria-label={strings.nav.label} className={styles.nav}>
+        <p className={styles.panelTitle}>{strings.nav.library}</p>
         <ul className={styles.group}>
           <li>
-            <NavItem to="/library" label={fr.nav.allGames} trailing={n(counts?.all)} />
+            <NavItem to="/library" label={strings.nav.allGames} trailing={n(counts?.all)} />
           </li>
           <li>
             <NavItem
               to="/library?view=installed"
-              label={fr.nav.installed}
+              label={strings.nav.installed}
               trailing={n(counts?.installed)}
             />
           </li>
           <li>
             <NavItem
               to="/library?view=favorites"
-              label={fr.nav.favorites}
+              label={strings.nav.favorites}
               trailing={n(counts?.favorites)}
             />
           </li>
@@ -127,13 +127,13 @@ function LibraryPanel() {
 
         <Section
           id="collections"
-          title={fr.collections.section}
+          title={strings.collections.section}
           action={
             <button
               type="button"
               className={styles.iconButton}
-              aria-label={fr.collections.add}
-              title={fr.collections.add}
+              aria-label={strings.collections.add}
+              title={strings.collections.add}
               onClick={() => setCreating(true)}
             >
               <Plus size={16} aria-hidden="true" />
@@ -161,18 +161,18 @@ function LibraryPanel() {
               })}
             </ul>
           ) : (
-            <p className={styles.hint}>{fr.sidebar.noCollections}</p>
+            <p className={styles.hint}>{strings.sidebar.noCollections}</p>
           )}
-          {dragging && <p className={styles.hint}>{fr.sidebar.dropHint}</p>}
+          {dragging && <p className={styles.hint}>{strings.sidebar.dropHint}</p>}
         </Section>
 
-        <Section id="status" title={fr.sidebar.status}>
+        <Section id="status" title={strings.sidebar.status}>
           <ul className={styles.group}>
             {STATUSES.map((s) => (
               <li key={s}>
                 <NavItem
                   to={`/library?view=status-${s}`}
-                  label={fr.status[s]}
+                  label={strings.status[s]}
                   leading={<StatusDot status={s} />}
                   trailing={n(counts?.status[s])}
                   size="compact"
@@ -184,10 +184,10 @@ function LibraryPanel() {
 
         <Section
           id="sources"
-          title={fr.sidebar.sources}
+          title={strings.sidebar.sources}
           action={
             <Link to="/settings/sources" className={styles.sectionLink}>
-              {fr.sidebar.manage}
+              {strings.sidebar.manage}
             </Link>
           }
         >
@@ -197,7 +197,7 @@ function LibraryPanel() {
                 <li key={s.kind}>
                   <NavItem
                     to={`/library?view=source-${s.kind}`}
-                    label={fr.sources[s.kind]}
+                    label={strings.sources[s.kind]}
                     leading={<SourceChip kind={s.kind} />}
                     trailing={String(s.count)}
                     size="compact"
@@ -206,7 +206,7 @@ function LibraryPanel() {
               ))}
             </ul>
           ) : (
-            <p className={styles.hint}>{fr.sidebar.noSources}</p>
+            <p className={styles.hint}>{strings.sidebar.noSources}</p>
           )}
         </Section>
       </nav>
@@ -215,7 +215,7 @@ function LibraryPanel() {
         <NowPlaying />
         {syncing && (
           <p className={styles.hint} role="status">
-            {fr.sidebar.syncing}
+            {strings.sidebar.syncing}
           </p>
         )}
       </div>

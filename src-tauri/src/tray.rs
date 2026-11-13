@@ -9,6 +9,7 @@ use tauri::{AppHandle, Emitter, Manager, Wry};
 
 use crate::db::repo::{games, settings};
 use crate::db::Db;
+use crate::i18n::{self, Language};
 use crate::tracker::TrackerState;
 
 pub const CLOSE_TO_TRAY_KEY: &str = "app.close_to_tray";
@@ -27,16 +28,35 @@ pub fn format_duration(secs: u32) -> String {
 }
 
 /// Line shown in the tray menu and tooltip, `None` when nothing is played.
-pub fn now_playing_label(playing: &[(String, u32)]) -> Option<String> {
+pub fn now_playing_label(playing: &[(String, u32)], lang: Language) -> Option<String> {
+    let prefix = i18n::texts(lang).in_game;
     match playing {
         [] => None,
-        [(title, secs)] => Some(format!("En jeu : {title} · {}", format_duration(*secs))),
+        [(title, secs)] => Some(format!("{prefix} {title} · {}", format_duration(*secs))),
         [(title, secs), rest @ ..] => Some(format!(
-            "En jeu : {title} · {} (+{})",
+            "{prefix} {title} · {} (+{})",
             format_duration(*secs),
             rest.len()
         )),
     }
+}
+
+/// Menu items whose text follows the UI language.
+struct TrayItems {
+    show: MenuItem<Wry>,
+    couch: MenuItem<Wry>,
+    quit: MenuItem<Wry>,
+}
+
+/// Re-labels the menu after a language change (the live line follows within 15 s).
+pub fn apply_language(app: &AppHandle) {
+    let Some(items) = app.try_state::<TrayItems>() else {
+        return;
+    };
+    let t = i18n::texts(i18n::current());
+    let _ = items.show.set_text(t.show);
+    let _ = items.couch.set_text(t.couch);
+    let _ = items.quit.set_text(t.quit);
 }
 
 pub fn close_to_tray(app: &AppHandle) -> bool {
@@ -81,10 +101,11 @@ fn playing(app: &AppHandle) -> Vec<(String, u32)> {
 }
 
 pub fn setup(app: &AppHandle) -> tauri::Result<()> {
-    let now = MenuItem::with_id(app, "now", "Aucun jeu en cours", false, None::<&str>)?;
-    let show = MenuItem::with_id(app, "show", "Afficher Ignite", true, None::<&str>)?;
-    let couch = MenuItem::with_id(app, "couch", "Mode Canapé", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Quitter", true, None::<&str>)?;
+    let t = i18n::texts(i18n::current());
+    let now = MenuItem::with_id(app, "now", t.no_game, false, None::<&str>)?;
+    let show = MenuItem::with_id(app, "show", t.show, true, None::<&str>)?;
+    let couch = MenuItem::with_id(app, "couch", t.couch, true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", t.quit, true, None::<&str>)?;
     let menu: Menu<Wry> = Menu::with_items(
         app,
         &[
@@ -124,21 +145,28 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
         builder = builder.icon(icon.clone());
     }
     let tray = builder.build(app)?;
+    app.manage(TrayItems {
+        show: show.clone(),
+        couch: couch.clone(),
+        quit: quit.clone(),
+    });
 
     // Live timer: refreshed every 15 s (the tracker polls every 3 s).
     let handle = app.clone();
     std::thread::spawn(move || {
-        let mut last: Option<String> = None;
+        let mut last: Option<(Option<String>, Language)> = None;
         loop {
-            let label = now_playing_label(&playing(&handle));
-            if label != last {
+            let lang = i18n::current();
+            let label = now_playing_label(&playing(&handle), lang);
+            let state = Some((label.clone(), lang));
+            if state != last {
                 let tooltip = match &label {
                     Some(l) => format!("Ignite — {l}"),
                     None => "Ignite".into(),
                 };
                 let _ = tray.set_tooltip(Some(&tooltip));
-                let _ = now.set_text(label.as_deref().unwrap_or("Aucun jeu en cours"));
-                last = label;
+                let _ = now.set_text(label.as_deref().unwrap_or(i18n::texts(lang).no_game));
+                last = state;
             }
             std::thread::sleep(Duration::from_secs(15));
         }
@@ -152,14 +180,18 @@ mod tests {
 
     #[test]
     fn labels_the_game_being_played() {
-        assert_eq!(now_playing_label(&[]), None);
+        assert_eq!(now_playing_label(&[], Language::Fr), None);
         assert_eq!(
-            now_playing_label(&[("Hades II".into(), 3_900)]).as_deref(),
+            now_playing_label(&[("Hades II".into(), 3_900)], Language::Fr).as_deref(),
             Some("En jeu : Hades II · 1 h 05")
         );
         assert_eq!(
-            now_playing_label(&[("Tetris".into(), 720), ("RetroArch".into(), 30)]).as_deref(),
-            Some("En jeu : Tetris · 12 min (+1)")
+            now_playing_label(
+                &[("Tetris".into(), 720), ("RetroArch".into(), 30)],
+                Language::En
+            )
+            .as_deref(),
+            Some("Playing: Tetris · 12 min (+1)")
         );
     }
 }

@@ -1,9 +1,14 @@
-// All user-facing text. The UI is French; keep code identifiers in English.
+// All user-facing text, in French (reference dictionary). `en.ts` has the same
+// shape (`Strings`); components read the active one through `i18n/index.ts`.
 
 export const fr = {
   app: {
     name: 'Ignite',
   },
+  /** Genres and player modes are stored in French: no translation needed. */
+  genreNames: {} as Record<string, string>,
+  /** Search keys written by the filter chips (the backend accepts both languages). */
+  searchKeys: { installed: 'installe', players: 'joueurs', favorite: 'favori', yes: 'oui' },
   actions: {
     menu: (title: string) => `Actions pour ${title}`,
     play: 'Jouer',
@@ -706,6 +711,7 @@ export const fr = {
     resumePlaceholder: 'Ex. : acte 3, juste avant le boss du pont.',
     resumeHint: 'Repris sur l’accueil et en haut de la fiche au prochain lancement.',
     rating: 'Cette session',
+    flames: ['Bof', 'Correcte', 'Bonne', 'Très bonne', 'Excellente'],
     ratingValue: (n: number) => (n > 1 ? `${n} flammes` : '1 flamme'),
     ratingOf: (n: number) =>
       `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(n)} flamme${n >= 2 ? 's' : ''} sur 5`,
@@ -1132,6 +1138,12 @@ export const fr = {
       openInLibrary: 'Gérer dans la bibliothèque',
       count: (n: number) => (n === 1 ? '1 jeu masqué' : `${n} jeux masqués`),
     },
+    language: {
+      title: 'Langue',
+      label: 'Langue de l’interface',
+      hint: 'Ignite redémarre son affichage pour appliquer la langue. Les noms des succès et les infos venant de Steam suivent ce choix à leur prochaine actualisation.',
+      saveError: 'Impossible de changer la langue.',
+    },
     general: {
       title: 'Affichage et sessions',
       showTrailers: 'Afficher la bande-annonce sur les fiches',
@@ -1218,6 +1230,7 @@ export const fr = {
       raHelp:
         'Facultatif. Ton nom d’utilisateur et ta clé Web API (retroachievements.org › Paramètres). La clé est stockée dans le Gestionnaire d’identification Windows.',
       raUser: "Nom d'utilisateur",
+      exeFilter: 'Exécutable',
     },
     metadataTitle: 'Images et informations des jeux',
     sgdb: {
@@ -1366,8 +1379,23 @@ export const fr = {
     today: "aujourd'hui",
     yesterday: 'hier',
     daysAgo: (n: number) => `il y a ${n} j`,
+    byteUnits: ['o', 'Ko', 'Mo', 'Go', 'To'],
     never: 'jamais',
   },
 } as const;
+
+/** Same shape as `fr` with plain `string` values: what `en.ts` must provide. */
+type Widen<T> = T extends string
+  ? string
+  : T extends number
+    ? number
+    : T extends (...args: infer A) => infer R
+      ? (...args: A) => Widen<R>
+      : T extends readonly unknown[]
+        ? { readonly [K in keyof T]: Widen<T[K]> }
+        : T extends object
+          ? { readonly [K in keyof T]: Widen<T[K]> }
+          : T;
+export type Strings = Widen<typeof fr>;
 
 export type SourceKindKey = keyof typeof fr.sources;

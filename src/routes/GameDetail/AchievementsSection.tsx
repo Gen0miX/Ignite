@@ -8,7 +8,7 @@ import buttons from '../../components/Button/Button.module.css';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
 import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
 import { SkeletonImage } from '../../components/Skeleton/SkeletonImage';
-import { fr } from '../../i18n/fr';
+import { locale, strings } from '../../i18n';
 import {
   defaultView,
   filterAchievements,
@@ -24,16 +24,16 @@ import {
 import styles from './AchievementsTab.module.css';
 import sheet from './GameDetailPage.module.css';
 
-const t = fr.game;
-const a = fr.game.ach;
+const t = strings.game;
+const a = strings.game.ach;
 const pct = (p: number) =>
-  `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(p)} %`;
-const dateFmt = new Intl.DateTimeFormat('fr-FR', {
+  `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(p)} %`;
+const dateFmt = new Intl.DateTimeFormat(locale, {
   day: 'numeric',
   month: 'short',
   year: 'numeric',
 });
-const monthFmt = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+const monthFmt = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
 /** "Débloqués récemment" at the top of "Tous". */
 const RECENT = 4;
 

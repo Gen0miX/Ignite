@@ -1,19 +1,19 @@
-import { fr } from '../i18n/fr';
+import { locale, strings } from '../i18n';
 
 /** Compact playtime for cards: "45 min", "12 h", "—" when never played. */
 export function formatPlaytimeShort(minutes: number): string {
   if (minutes <= 0) return '—';
-  if (minutes < 1) return fr.format.underMinute;
-  if (minutes < 60) return fr.format.minutes(Math.floor(minutes));
-  return fr.format.hours(Math.floor(minutes / 60));
+  if (minutes < 1) return strings.format.underMinute;
+  if (minutes < 60) return strings.format.minutes(Math.floor(minutes));
+  return strings.format.hours(Math.floor(minutes / 60));
 }
 
 /** Detailed playtime for the panel: "45 min", "12 h 05", "< 1 min", "0 min" (none). */
 export function formatPlaytimeLong(minutes: number): string {
-  if (minutes > 0 && minutes < 1) return fr.format.underMinute;
+  if (minutes > 0 && minutes < 1) return strings.format.underMinute;
   const m = Math.max(0, Math.round(minutes));
-  if (m < 60) return fr.format.minutes(m);
-  return fr.format.hoursMinutes(Math.floor(m / 60), m % 60);
+  if (m < 60) return strings.format.minutes(m);
+  return strings.format.hoursMinutes(Math.floor(m / 60), m % 60);
 }
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -24,14 +24,15 @@ function startOfDay(d: Date): number {
 
 /** "aujourd'hui", "hier", "il y a 3 jours", then a date ("12 mars 2025"). */
 export function formatLastPlayed(iso: string | null | undefined, now: Date = new Date()): string {
-  if (!iso) return fr.format.never;
+  if (!iso) return strings.format.never;
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return fr.format.never;
+  if (Number.isNaN(date.getTime())) return strings.format.never;
   const days = Math.round((startOfDay(now) - startOfDay(date)) / DAY);
-  if (days <= 0) return fr.format.today;
-  if (days === 1) return fr.format.yesterday;
-  if (days < 30) return new Intl.RelativeTimeFormat('fr', { numeric: 'auto' }).format(-days, 'day');
-  return new Intl.DateTimeFormat('fr-FR', {
+  if (days <= 0) return strings.format.today;
+  if (days === 1) return strings.format.yesterday;
+  if (days < 30)
+    return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(-days, 'day');
+  return new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -46,16 +47,16 @@ export function formatLastPlayedShort(
   iso: string | null | undefined,
   now: Date = new Date(),
 ): string {
-  if (!iso) return fr.format.never;
+  if (!iso) return strings.format.never;
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return fr.format.never;
+  if (Number.isNaN(date.getTime())) return strings.format.never;
   const days = Math.round((startOfDay(now) - startOfDay(date)) / DAY);
-  if (days <= 0) return fr.format.today;
-  if (days === 1) return fr.format.yesterday;
-  if (days < 30) return fr.format.daysAgo(days);
+  if (days <= 0) return strings.format.today;
+  if (days === 1) return strings.format.yesterday;
+  if (days < 30) return strings.format.daysAgo(days);
   const sameYear = date.getFullYear() === now.getFullYear();
   return new Intl.DateTimeFormat(
-    'fr-FR',
+    locale,
     sameYear ? { day: 'numeric', month: 'short' } : { month: 'short', year: 'numeric' },
   ).format(date);
 }
@@ -63,7 +64,7 @@ export function formatLastPlayedShort(
 /** "155,4 Go", "820 Mo". */
 export function formatBytes(bytes: number | null | undefined): string {
   if (!bytes || bytes <= 0) return '—';
-  const units = ['o', 'Ko', 'Mo', 'Go', 'To'];
+  const units = strings.format.byteUnits;
   let value = bytes;
   let unit = 0;
   while (value >= 1024 && unit < units.length - 1) {
@@ -71,7 +72,7 @@ export function formatBytes(bytes: number | null | undefined): string {
     unit += 1;
   }
   const digits = unit >= 3 && value < 100 ? 1 : 0;
-  return `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: digits }).format(value)} ${units[unit]}`;
+  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(value)} ${units[unit]}`;
 }
 
 /** Stable dark tint derived from a title, for covers without artwork. */

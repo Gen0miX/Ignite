@@ -1,10 +1,10 @@
 import type { PlaySession } from '../../api/client';
-import { fr } from '../../i18n/fr';
+import { locale, strings } from '../../i18n';
 import { formatPlaytimeLong } from '../../lib/format';
 import { weeklyMinutes } from '../../lib/sessions';
 import styles from './GameDetailPage.module.css';
 
-const dateFmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
+const dateFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' });
 
 /** One bar per week over 12 weeks; the current week in accent (DESIGN.md › graphiques). */
 export function WeeklyChart({ sessions }: { sessions: PlaySession[] }) {
@@ -14,14 +14,14 @@ export function WeeklyChart({ sessions }: { sessions: PlaySession[] }) {
   return (
     <section className={styles.section} aria-labelledby="sheet-weeks">
       <h2 id="sheet-weeks" className="section-label">
-        {fr.game.last12w}
+        {strings.game.last12w}
       </h2>
       {max === 0 ? (
-        <p className={styles.muted}>{fr.game.last12wEmpty}</p>
+        <p className={styles.muted}>{strings.game.last12wEmpty}</p>
       ) : (
         <ol className={`${styles.chart} ${styles.chartWeeks}`}>
           {bars.map((b) => {
-            const label = fr.game.weekLabel(
+            const label = strings.game.weekLabel(
               dateFmt.format(new Date(`${b.monday}T12:00:00`)),
               formatPlaytimeLong(b.minutes),
             );

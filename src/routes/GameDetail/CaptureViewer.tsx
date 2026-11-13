@@ -4,13 +4,13 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { artworkSrc, type CaptureItem, type GameDetail } from '../../api/client';
 import buttons from '../../components/Button/Button.module.css';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { dayFormat, fileName, timeFormat } from '../../lib/captures';
 import { formatBytes } from '../../lib/format';
 import type { useCaptureCommands } from './CapturesTab';
 import styles from './CaptureViewer.module.css';
 
-const c = fr.game.cap;
+const c = strings.game.cap;
 
 /**
  * Full-window viewer: ← → move between captures (disabled at the ends),

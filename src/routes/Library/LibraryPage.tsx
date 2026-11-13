@@ -33,7 +33,7 @@ import { SelectionBar } from '../../components/SelectionBar/SelectionBar';
 import { launchWithUndo, toast } from '../../components/Toaster/toasts';
 import { clickSelection, pruneSelection } from '../../lib/selection';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { readParams, withParams } from '../../lib/libraryParams';
 import styles from './LibraryPage.module.css';
 
@@ -44,20 +44,20 @@ function titleForView(view: LibraryView, collections?: CollectionInfo[]): string
     case 'collection':
       return (
         collections?.find((c) => c.collection.id === view.value)?.collection.name ??
-        fr.collections.section
+        strings.collections.section
       );
     case 'installed':
-      return fr.library.installedTitle;
+      return strings.library.installedTitle;
     case 'favorites':
-      return fr.library.favoritesTitle;
+      return strings.library.favoritesTitle;
     case 'hidden':
-      return fr.library.hiddenTitle;
+      return strings.library.hiddenTitle;
     case 'status':
-      return fr.status[view.value];
+      return strings.status[view.value];
     case 'source':
-      return fr.sources[view.value];
+      return strings.sources[view.value];
     default:
-      return fr.library.title;
+      return strings.library.title;
   }
 }
 
@@ -133,17 +133,17 @@ export function LibraryPage() {
 
   const libraryEmpty = counts.data?.all === 0;
   const sourceCount = counts.data?.sources.length ?? 0;
-  const meta = `${fr.library.count(games.length)} · ${fr.library.sourceCount(sourceCount)}`;
+  const meta = `${strings.library.count(games.length)} · ${strings.library.sourceCount(sourceCount)}`;
 
   let body;
   if (!isTauri()) {
-    body = <EmptyState>{fr.library.backendUnavailable}</EmptyState>;
+    body = <EmptyState>{strings.library.backendUnavailable}</EmptyState>;
   } else if (list.isPending) {
-    body = <p className={styles.muted}>{fr.library.loading}</p>;
+    body = <p className={styles.muted}>{strings.library.loading}</p>;
   } else if (libraryEmpty) {
     body = (
       <EmptyState
-        title={fr.library.emptyTitle}
+        title={strings.library.emptyTitle}
         action={
           <div className={styles.actions}>
             <button
@@ -152,20 +152,22 @@ export function LibraryPage() {
               onClick={() => sync.mutate()}
               disabled={sync.isPending}
             >
-              {sync.isPending ? fr.library.syncing : fr.library.sync}
+              {sync.isPending ? strings.library.syncing : strings.library.sync}
             </button>
             <Link to="/settings/sources" className={buttons.secondary}>
-              {fr.library.openSettings}
+              {strings.library.openSettings}
             </Link>
           </div>
         }
       >
-        {fr.library.emptyBody}
+        {strings.library.emptyBody}
       </EmptyState>
     );
   } else if (games.length === 0) {
     body = (
-      <EmptyState title={fr.library.emptyFilteredTitle}>{fr.library.emptyFilteredBody}</EmptyState>
+      <EmptyState title={strings.library.emptyFilteredTitle}>
+        {strings.library.emptyFilteredBody}
+      </EmptyState>
     );
   } else {
     body = (
@@ -190,7 +192,7 @@ export function LibraryPage() {
       <PageMain>
         <PageHeader
           title={titleForView(view, collections.data)}
-          meta={isTauri() ? meta : fr.library.count(0)}
+          meta={isTauri() ? meta : strings.library.count(0)}
           actions={
             isTauri() ? (
               <>
@@ -206,7 +208,7 @@ export function LibraryPage() {
                       aria-hidden="true"
                       className={sync.isPending ? styles.spin : ''}
                     />
-                    {sync.isPending ? fr.library.syncing : fr.library.sync}
+                    {sync.isPending ? strings.library.syncing : strings.library.sync}
                   </button>
                 )}
                 <button
@@ -215,22 +217,22 @@ export function LibraryPage() {
                   onClick={() => setParams((p) => withParams(p, { add: 'menu' }))}
                 >
                   <Plus size={16} aria-hidden="true" />
-                  {fr.addGame.open}
+                  {strings.addGame.open}
                 </button>
               </>
             ) : undefined
           }
         />
-        {view.kind === 'hidden' && <p className={styles.muted}>{fr.library.hiddenHint}</p>}
+        {view.kind === 'hidden' && <p className={styles.muted}>{strings.library.hiddenHint}</p>}
         <div className={styles.toolbar}>
           <label className={styles.search}>
             <Search size={16} aria-hidden="true" />
-            <span className="visually-hidden">{fr.library.searchLabel}</span>
+            <span className="visually-hidden">{strings.library.searchLabel}</span>
             <input
               type="search"
               value={draft}
-              placeholder={fr.library.searchPlaceholder}
-              title={fr.collections.syntaxHelp}
+              placeholder={strings.library.searchPlaceholder}
+              title={strings.collections.syntaxHelp}
               onChange={(e) => setDraft(e.target.value)}
             />
           </label>
@@ -240,7 +242,7 @@ export function LibraryPage() {
               className={buttons.secondary}
               onClick={() => setEditor({ mode: 'fromSearch' })}
             >
-              {fr.collections.saveSearch}
+              {strings.collections.saveSearch}
             </button>
           )}
           {currentCollection && (
@@ -250,25 +252,25 @@ export function LibraryPage() {
                 className={buttons.secondary}
                 onClick={() => setEditor({ mode: 'edit' })}
               >
-                {fr.collections.edit}
+                {strings.collections.edit}
               </button>
               <button
                 type="button"
                 className={buttons.secondary}
                 onClick={() => {
-                  if (window.confirm(fr.collections.confirmRemove(currentCollection.name))) {
+                  if (window.confirm(strings.collections.confirmRemove(currentCollection.name))) {
                     removeCollection.mutate(currentCollection.id, {
                       onSuccess: () => setParams(new URLSearchParams(), { replace: true }),
                     });
                   }
                 }}
               >
-                {fr.collections.remove}
+                {strings.collections.remove}
               </button>
             </>
           )}
           <label className={styles.sort}>
-            <span>{fr.library.sortLabel}</span>
+            <span>{strings.library.sortLabel}</span>
             <select
               value={sort}
               onChange={(e) =>
@@ -279,7 +281,7 @@ export function LibraryPage() {
             >
               {SORTS.map((s) => (
                 <option key={s} value={s}>
-                  {fr.library.sort[s]}
+                  {strings.library.sort[s]}
                 </option>
               ))}
             </select>
@@ -297,7 +299,7 @@ export function LibraryPage() {
         )}
         {check.data && check.data.warnings.length > 0 && (
           <p className={styles.warn} role="status">
-            {fr.collections.unknownFilters(check.data.warnings.join(', '))}
+            {strings.collections.unknownFilters(check.data.warnings.join(', '))}
           </p>
         )}
         {body}
@@ -324,7 +326,7 @@ export function LibraryPage() {
                 ids: checkedGames.map((g) => g.id),
                 titles: checkedGames.map((g) => g.title),
                 onDeleted: () => {
-                  toast(fr.toast.deleted(checkedGames.length));
+                  toast(strings.toast.deleted(checkedGames.length));
                   clearSelection();
                 },
               })
@@ -334,7 +336,7 @@ export function LibraryPage() {
       </PageMain>
       {menu && (
         <Menu
-          label={fr.actions.menu(menu.game.title)}
+          label={strings.actions.menu(menu.game.title)}
           at={menu.at}
           items={actions.menuItems(menu.game)}
           onClose={closeMenu}

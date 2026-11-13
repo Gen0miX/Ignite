@@ -1,4 +1,5 @@
 import type { AchievementItem } from '../api/client';
+import { locale } from '../i18n';
 
 export type Rarity = 'ultra' | 'rare' | 'common';
 
@@ -68,7 +69,7 @@ export function defaultView(items: AchievementItem[]): AchView {
   return items.some((i) => !i.unlockedAt) ? 'locked' : 'all';
 }
 
-const byName = (a: AchievementItem, b: AchievementItem) => a.name.localeCompare(b.name, 'fr');
+const byName = (a: AchievementItem, b: AchievementItem) => a.name.localeCompare(b.name, locale);
 
 export function sortAchievements(items: AchievementItem[], sort: AchSort): AchievementItem[] {
   const list = [...items];

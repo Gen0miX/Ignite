@@ -3,10 +3,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { open } from '@tauri-apps/plugin-dialog';
 import { commands, unwrap, type EmulatorConfig } from '../../api/client';
 import buttons from '../../components/Button/Button.module.css';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import styles from './SettingsSourcesPage.module.css';
 
-const t = fr.settings.emulators;
+const t = strings.settings.emulators;
 
 const blank = (): EmulatorConfig => ({
   id: '',
@@ -38,7 +38,7 @@ function EmulatorForm({
   const pickExe = async () => {
     const p = await open({
       multiple: false,
-      filters: [{ name: 'Exécutable', extensions: ['exe'] }],
+      filters: [{ name: strings.settings.emulators.exeFilter, extensions: ['exe'] }],
     });
     if (typeof p === 'string') {
       const name = e.name || (p.split('\\').pop() ?? '').replace(/\.exe$/i, '');

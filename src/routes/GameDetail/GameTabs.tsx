@@ -1,6 +1,6 @@
 import { useRef, type KeyboardEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import styles from './GameTabs.module.css';
 
 export type SheetTab = 'apercu' | 'succes' | 'goldberg' | 'captures' | 'actus' | 'lancement';
@@ -44,7 +44,7 @@ export function GameTabs({
     next?.click();
   };
   return (
-    <nav className={styles.tabs} aria-label={fr.game.tabsLabel}>
+    <nav className={styles.tabs} aria-label={strings.game.tabsLabel}>
       {tabs.map((tab, i) => (
         <Link
           key={tab.id}

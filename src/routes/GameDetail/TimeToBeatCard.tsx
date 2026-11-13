@@ -5,12 +5,12 @@ import type { TimeToBeat, TimeToBeatView } from '../../api/client';
 import { useOpenLink, useTimeToBeat, useTimeToBeatMutations } from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
 import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { formatLastPlayed, formatPlaytimeShort } from '../../lib/format';
 import { hoursToMinutes, ttbChart, ttbProgress, type TtbKey } from '../../lib/timeToBeat';
 import styles from './TimeToBeatCard.module.css';
 
-const t = fr.game.ttb;
+const t = strings.game.ttb;
 const approx = (minutes: number) => `≈ ${formatPlaytimeShort(minutes)}`;
 
 /** "Durée de vie" (docs/TIME-TO-BEAT.md): IGDB or the user's correction. */

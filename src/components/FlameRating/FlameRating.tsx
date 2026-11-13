@@ -1,5 +1,5 @@
 import { Flame } from 'lucide-react';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import styles from './FlameRating.module.css';
 
 /** Read-only 1–5 flames (session rating from the recap); nothing when unrated. */
@@ -7,7 +7,7 @@ export function FlameRating({ value, size = 13 }: { value: number | null; size?:
   if (!value) return null;
   const rounded = Math.round(value);
   return (
-    <span className={styles.flames} role="img" aria-label={fr.recap.ratingOf(value)}>
+    <span className={styles.flames} role="img" aria-label={strings.recap.ratingOf(value)}>
       {[1, 2, 3, 4, 5].map((n) => (
         <Flame
           key={n}

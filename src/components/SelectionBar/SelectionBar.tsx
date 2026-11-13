@@ -1,12 +1,12 @@
 import { Eye, EyeOff, FolderPlus, Trash2, X } from 'lucide-react';
 import type { BulkUpdate, GameStatus, GameSummary } from '../../api/client';
 import { useBulkUpdate } from '../../api/hooks';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { isDeletable } from '../../lib/selection';
 import buttons from '../Button/Button.module.css';
 import styles from './SelectionBar.module.css';
 
-const t = fr.selection;
+const t = strings.selection;
 const STATUSES: GameStatus[] = ['todo', 'playing', 'done', 'dropped'];
 
 interface SelectionBarProps {
@@ -42,7 +42,7 @@ export function SelectionBar({
       () => undefined,
     );
   const setStatus = (status: GameStatus) =>
-    run({ status }, fr.toast.status(ids.length, fr.statusSingular[status]));
+    run({ status }, strings.toast.status(ids.length, strings.statusSingular[status]));
 
   return (
     <div role="toolbar" aria-label={t.label} className={styles.bar}>
@@ -65,7 +65,7 @@ export function SelectionBar({
           <option value="">{t.statusPlaceholder}</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
-              {fr.statusSingular[s]}
+              {strings.statusSingular[s]}
             </option>
           ))}
         </select>
@@ -75,7 +75,10 @@ export function SelectionBar({
         className={buttons.secondary}
         disabled={bulk.isPending}
         onClick={() =>
-          run({ hidden: !allHidden }, (allHidden ? fr.toast.unhidden : fr.toast.hidden)(ids.length))
+          run(
+            { hidden: !allHidden },
+            (allHidden ? strings.toast.unhidden : strings.toast.hidden)(ids.length),
+          )
         }
       >
         {allHidden ? <Eye size={16} aria-hidden="true" /> : <EyeOff size={16} aria-hidden="true" />}
@@ -100,7 +103,7 @@ export function SelectionBar({
       </button>
       {bulk.isError && (
         <p role="alert" className={styles.error}>
-          {fr.actions.error}
+          {strings.actions.error}
         </p>
       )}
     </div>

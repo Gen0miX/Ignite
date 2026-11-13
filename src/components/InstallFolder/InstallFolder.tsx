@@ -1,6 +1,6 @@
 import { FolderOpen } from 'lucide-react';
 import { useOpenFolder } from '../../api/hooks';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { folderName } from '../../lib/format';
 import { isTauri } from '../../api/client';
 import styles from './InstallFolder.module.css';
@@ -18,8 +18,8 @@ export function InstallFolder({ sourceId, path }: { sourceId: string; path: stri
         <button
           type="button"
           className={styles.open}
-          aria-label={fr.panel.openFolderLabel(name)}
-          title={fr.panel.openFolder}
+          aria-label={strings.panel.openFolderLabel(name)}
+          title={strings.panel.openFolder}
           disabled={open.isPending}
           onClick={() => open.mutate(sourceId)}
         >
@@ -28,7 +28,7 @@ export function InstallFolder({ sourceId, path }: { sourceId: string; path: stri
       )}
       {open.isError && (
         <span role="alert" className={styles.error}>
-          {fr.panel.openFolderError}
+          {strings.panel.openFolderError}
         </span>
       )}
     </span>

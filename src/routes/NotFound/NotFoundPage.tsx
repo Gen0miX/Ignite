@@ -2,15 +2,15 @@ import { PageMain } from '../../app/AppShell';
 import { Link } from 'react-router-dom';
 import buttons from '../../components/Button/Button.module.css';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 
 export function NotFoundPage() {
   return (
     <PageMain>
-      <PageHeader title={fr.notFound.title} />
+      <PageHeader title={strings.notFound.title} />
       <div>
         <Link to="/library" className={buttons.secondary}>
-          {fr.notFound.action}
+          {strings.notFound.action}
         </Link>
       </div>
     </PageMain>

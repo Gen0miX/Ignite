@@ -6,7 +6,7 @@ import { useCaptureActions, useCaptures, useCapturesScan, useGameMedia } from '.
 import buttons from '../../components/Button/Button.module.css';
 import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
 import { useToasts } from '../../components/Toaster/toasts';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import {
   CAPTURE_SOURCES,
   dayFormat,
@@ -20,7 +20,7 @@ import { formatPlaytimeLong } from '../../lib/format';
 import { CaptureViewer } from './CaptureViewer';
 import styles from './CapturesTab.module.css';
 
-const c = fr.game.cap;
+const c = strings.game.cap;
 
 /** Below this many captures, a card recalls the capture shortcuts. */
 const FEW = 4;

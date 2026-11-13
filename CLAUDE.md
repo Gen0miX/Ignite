@@ -50,7 +50,7 @@ Nom : l'app s'appelle **Ignite** (`productName`, textes UI, logo `design/logo/ig
 
 ## Règles
 
-- **Langue** : l'interface est en français. Code, noms de fichiers, commits et commentaires en anglais. Centralise les textes UI dans `src/i18n/fr.ts`.
+- **Langue** : l'interface est en français et en anglais. Code, noms de fichiers, commits et commentaires en anglais. Les textes UI vont dans `src/i18n/fr.ts` (référence) **et** `src/i18n/en.ts` (même forme, vérifiée par le type `Strings`) ; les composants les lisent via `strings` de `src/i18n` (`locale` pour `Intl`, `genreLabel` pour les genres stockés en français). Le choix est dans `localStorage` et copié côté Rust (`i18n.rs` : menu de la zone de notification, langue demandée à Steam).
 - **Secrets** : la clé Steam Web API et les jetons (SteamGridDB, IGDB, RetroAchievements…) ne vont **jamais** dans le frontend, les logs ou la base SQLite en clair. Stocke-les dans le coffre de l'OS (`keyring` crate / Windows Credential Manager). Le frontend n'appelle jamais d'API tierce directement : tout passe par des commandes Tauri.
 - **Lecture seule sur les autres launchers** : on lit leurs fichiers et bases (manifests, SQLite GOG…) sans jamais les modifier. Copie un fichier SQLite tiers avant de l'ouvrir s'il peut être verrouillé.
 - **Temps de jeu** : ne jamais compter deux fois le même temps (voir la règle de cumul dans `docs/ARCHITECTURE.md`). Chaque session garde son origine (`auto`, `manual`, `imported`, `estimate`).

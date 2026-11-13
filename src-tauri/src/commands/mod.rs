@@ -114,6 +114,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         home::couch_wheel,
         app::app_settings_get,
         app::app_settings_set,
+        app::language_set,
         library::games_bulk_update,
         library::games_delete,
         library::source_open_folder,

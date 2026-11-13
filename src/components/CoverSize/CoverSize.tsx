@@ -1,10 +1,10 @@
 import type { CSSProperties } from 'react';
 import { ZoomIn, ZoomOut } from 'lucide-react';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { COVER_DEFAULT, COVER_MAX, COVER_MIN, COVER_STEP, usePrefs } from '../../lib/prefs';
 import styles from './CoverSize.module.css';
 
-const t = fr.library;
+const t = strings.library;
 
 /** Cover size of the library grid: −/+ buttons around a slider, remembered. */
 export function CoverSize() {

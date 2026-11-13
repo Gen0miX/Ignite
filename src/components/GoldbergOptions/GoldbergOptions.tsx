@@ -2,11 +2,11 @@ import { useState, type ReactNode } from 'react';
 import { RotateCcw } from 'lucide-react';
 import type { GoldbergSetting } from '../../api/client';
 import { useGoldbergSettings, useSetGoldbergSetting } from '../../api/hooks';
-import { fr } from '../../i18n/fr';
+import { locale, strings } from '../../i18n';
 import { Switch } from '../Switch/Switch';
 import styles from './GoldbergOptions.module.css';
 
-const t = fr.goldbergOptions;
+const t = strings.goldbergOptions;
 
 type OptionId = keyof typeof t.options;
 
@@ -77,7 +77,7 @@ export function displayValue(control: Control, value: string): string {
     case 'choice':
       return control.choices[value] ?? value;
     case 'number':
-      return `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(Number(value))} s`;
+      return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(Number(value))} s`;
     default:
       return value;
   }

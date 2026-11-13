@@ -7,10 +7,10 @@ import buttons from '../../components/Button/Button.module.css';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
 import { Skeleton, SkeletonGroup } from '../Skeleton/Skeleton';
 import { SkeletonImage } from '../Skeleton/SkeletonImage';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import styles from './ArtworkPicker.module.css';
 
-const t = fr.artwork;
+const t = strings.artwork;
 /** Placeholders shown per type while SteamGridDB answers. */
 const SKELETONS: Record<ArtworkSlot, number> = { cover: 12, hero: 6, logo: 8 };
 const RATIO: Record<ArtworkSlot, string> = { cover: '2 / 3', hero: '96 / 31', logo: '2 / 1' };

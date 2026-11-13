@@ -14,7 +14,7 @@ import {
   useSplitSource,
   useUpdateGame,
 } from '../../api/hooks';
-import { fr } from '../../i18n/fr';
+import { genreLabel, strings } from '../../i18n';
 import {
   formatBytes,
   formatLastPlayed,
@@ -63,8 +63,13 @@ export function GamePanel({ gameId, onClose }: GamePanelProps) {
   }, [onClose]);
 
   return (
-    <aside className={styles.panel} aria-label={fr.panel.label}>
-      <button type="button" className={styles.close} onClick={onClose} aria-label={fr.panel.close}>
+    <aside className={styles.panel} aria-label={strings.panel.label}>
+      <button
+        type="button"
+        className={styles.close}
+        onClick={onClose}
+        aria-label={strings.panel.close}
+      >
         <X size={18} aria-hidden="true" />
       </button>
       {game ? (
@@ -88,9 +93,9 @@ function PanelContent({ game }: { game: GameDetail }) {
 
   const launchError =
     launch.error && 'message' in launch.error && /not installed/i.test(launch.error.message)
-      ? fr.panel.steamMissing
+      ? strings.panel.steamMissing
       : launch.error
-        ? fr.panel.launchError
+        ? strings.panel.launchError
         : null;
 
   return (
@@ -105,7 +110,7 @@ function PanelContent({ game }: { game: GameDetail }) {
       </div>
 
       <div className={styles.body}>
-        {s.hidden && <p className={styles.notice}>{fr.panel.hiddenNotice}</p>}
+        {s.hidden && <p className={styles.notice}>{strings.panel.hiddenNotice}</p>}
         <div className={styles.row}>
           {s.sources.map((k) => (
             <SourceBadge key={k} kind={k} />
@@ -114,8 +119,8 @@ function PanelContent({ game }: { game: GameDetail }) {
             type="button"
             className={`${styles.iconButton} ${s.favorite ? styles.favorite : ''}`}
             aria-pressed={s.favorite}
-            aria-label={s.favorite ? fr.panel.favoriteRemove : fr.panel.favoriteAdd}
-            title={s.favorite ? fr.panel.favoriteRemove : fr.panel.favoriteAdd}
+            aria-label={s.favorite ? strings.panel.favoriteRemove : strings.panel.favoriteAdd}
+            title={s.favorite ? strings.panel.favoriteRemove : strings.panel.favoriteAdd}
             onClick={() => update.mutate({ favorite: !s.favorite })}
           >
             <Star size={18} fill={s.favorite ? 'currentColor' : 'none'} aria-hidden="true" />
@@ -130,10 +135,10 @@ function PanelContent({ game }: { game: GameDetail }) {
         >
           <Play size={18} fill="currentColor" aria-hidden="true" />
           {launch.isPending
-            ? fr.panel.launching
+            ? strings.panel.launching
             : playSource
-              ? fr.panel.playVia(fr.sources[playSource.kind])
-              : fr.panel.play}
+              ? strings.panel.playVia(strings.sources[playSource.kind])
+              : strings.panel.play}
         </button>
         {launchError && (
           <p role="alert" className={styles.error}>
@@ -144,7 +149,7 @@ function PanelContent({ game }: { game: GameDetail }) {
         <div className={styles.actions}>
           <Link to={`/game/${s.id}`} className={styles.action}>
             <FileText size={18} aria-hidden="true" />
-            {fr.actions.openSheet}
+            {strings.actions.openSheet}
           </Link>
           <button
             type="button"
@@ -152,7 +157,7 @@ function PanelContent({ game }: { game: GameDetail }) {
             onClick={() => actions.open({ kind: 'images', game: s })}
           >
             <ImageIcon size={18} aria-hidden="true" />
-            {fr.panel.images}
+            {strings.panel.images}
           </button>
           <button
             type="button"
@@ -160,13 +165,13 @@ function PanelContent({ game }: { game: GameDetail }) {
             onClick={() => actions.open({ kind: 'collections', ids: [s.id] })}
           >
             <FolderPlus size={18} aria-hidden="true" />
-            {fr.panel.collections}
+            {strings.panel.collections}
           </button>
           <button
             type="button"
             className={`${styles.action} ${styles.actionMore}`}
-            aria-label={fr.actions.menu(s.title)}
-            title={fr.panel.moreActions}
+            aria-label={strings.actions.menu(s.title)}
+            title={strings.panel.moreActions}
             aria-haspopup="menu"
             aria-expanded={menuAt !== null}
             onClick={(e) => {
@@ -180,7 +185,7 @@ function PanelContent({ game }: { game: GameDetail }) {
         {actions.element}
         {menuAt && (
           <Menu
-            label={fr.actions.menu(s.title)}
+            label={strings.actions.menu(s.title)}
             at={menuAt}
             items={actions.menuItems(s)}
             onClose={() => setMenuAt(null)}
@@ -189,22 +194,22 @@ function PanelContent({ game }: { game: GameDetail }) {
 
         <div className={styles.tiles}>
           <StatTile
-            label={fr.panel.totalTime}
+            label={strings.panel.totalTime}
             value={total > 0 ? formatPlaytimeShort(total) : formatPlaytimeLong(0)}
             detail={formatPlaytimeLong(total)}
           />
           {s.achievements && s.achievements.total > 0 ? (
             <StatTile
-              label={fr.panel.achievements}
+              label={strings.panel.achievements}
               value={`${s.achievements.done}/${s.achievements.total}`}
             />
           ) : s.goals && s.goals.total > 0 ? (
-            <StatTile label={fr.panel.goals} value={`${s.goals.done}/${s.goals.total}`} />
+            <StatTile label={strings.panel.goals} value={`${s.goals.done}/${s.goals.total}`} />
           ) : (
-            <StatTile label={fr.panel.achievements} value="—" />
+            <StatTile label={strings.panel.achievements} value="—" />
           )}
           <StatTile
-            label={fr.panel.lastSession}
+            label={strings.panel.lastSession}
             value={formatLastPlayedShort(s.lastPlayed)}
             detail={formatLastPlayed(s.lastPlayed)}
           />
@@ -217,13 +222,13 @@ function PanelContent({ game }: { game: GameDetail }) {
         <SourcesSection game={game} />
 
         <section className={styles.section}>
-          <h3 className="section-label">{fr.panel.status}</h3>
+          <h3 className="section-label">{strings.panel.status}</h3>
           <SegmentedControl
-            label={fr.panel.status}
+            label={strings.panel.status}
             options={STATUS_ORDER.map((v) => ({
               value: v,
-              label: fr.statusShort[v],
-              ariaLabel: fr.statusSingular[v],
+              label: strings.statusShort[v],
+              ariaLabel: strings.statusSingular[v],
             }))}
             value={s.status}
             onChange={(status) => update.mutate({ status })}
@@ -233,14 +238,14 @@ function PanelContent({ game }: { game: GameDetail }) {
         <Notes game={game} onSave={(notes) => update.mutate({ notes })} saving={update.isPending} />
 
         <section className={styles.section}>
-          <h3 className="section-label">{fr.panel.details}</h3>
+          <h3 className="section-label">{strings.panel.details}</h3>
           <dl className={styles.details}>
             {game.sources.map((src) => (
               <div key={src.id} className={styles.detailGroup}>
-                <dt>{fr.panel.installPath}</dt>
+                <dt>{strings.panel.installPath}</dt>
                 <dd>
                   {!src.installed ? (
-                    fr.panel.notInstalled
+                    strings.panel.notInstalled
                   ) : src.installPath ? (
                     <InstallFolder sourceId={src.id} path={src.installPath} />
                   ) : (
@@ -249,7 +254,7 @@ function PanelContent({ game }: { game: GameDetail }) {
                 </dd>
                 {src.installed && src.sizeBytes ? (
                   <>
-                    <dt>{fr.panel.size}</dt>
+                    <dt>{strings.panel.size}</dt>
                     <dd className="mono">{formatBytes(src.sizeBytes)}</dd>
                   </>
                 ) : null}
@@ -261,12 +266,12 @@ function PanelContent({ game }: { game: GameDetail }) {
         {(game.genres.length > 0 || game.modes.length > 0) && (
           <section className={styles.section} aria-labelledby="panel-genres">
             <h3 id="panel-genres" className="section-label">
-              {fr.panel.genres}
+              {strings.panel.genres}
             </h3>
             <ul className={styles.tags}>
               {[...game.genres, ...game.modes].map((g) => (
                 <li key={g} className={styles.tag}>
-                  {g}
+                  {genreLabel(g)}
                 </li>
               ))}
             </ul>
@@ -300,7 +305,7 @@ function TimeBreakdown({ game }: { game: GameDetail }) {
   if (total === 0) return null;
   return (
     <section className={styles.section}>
-      <h3 className="section-label">{fr.panel.timeOrigin}</h3>
+      <h3 className="section-label">{strings.panel.timeOrigin}</h3>
       <div className={styles.bar} aria-hidden="true">
         {parts.map((p, i) => (
           <span
@@ -320,9 +325,9 @@ function TimeBreakdown({ game }: { game: GameDetail }) {
               style={{ background: p.kind ? `var(--source-${p.kind})` : 'var(--color-muted)' }}
             />
             <span>
-              {p.kind ? fr.sources[p.kind] : fr.panel.otherSessions}
+              {p.kind ? strings.sources[p.kind] : strings.panel.otherSessions}
               {p.fromPlatform && (
-                <span className={styles.muted}> · {fr.panel.platformCounter}</span>
+                <span className={styles.muted}> · {strings.panel.platformCounter}</span>
               )}
             </span>
             <span className="mono">{formatPlaytimeLong(p.minutes)}</span>
@@ -347,18 +352,18 @@ function Notes({
   return (
     <section className={styles.section}>
       <label htmlFor="game-notes" className="section-label">
-        {fr.panel.notes}
+        {strings.panel.notes}
       </label>
       <textarea
         id="game-notes"
         className={styles.notes}
         value={draft}
-        placeholder={fr.panel.notesPlaceholder}
+        placeholder={strings.panel.notesPlaceholder}
         rows={3}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => dirty && onSave(draft)}
       />
-      {saving && <span className={styles.muted}>{fr.panel.saved}</span>}
+      {saving && <span className={styles.muted}>{strings.panel.saved}</span>}
     </section>
   );
 }
@@ -378,7 +383,7 @@ function Tags({ game }: { game: GameDetail }) {
 
   return (
     <section className={styles.section}>
-      <h3 className="section-label">{fr.panel.tags}</h3>
+      <h3 className="section-label">{strings.panel.tags}</h3>
       <ul className={styles.tags}>
         {game.tags.map((t) => (
           <li key={t.id} className={styles.tag}>
@@ -386,7 +391,7 @@ function Tags({ game }: { game: GameDetail }) {
             <button
               type="button"
               className={styles.tagRemove}
-              aria-label={fr.panel.removeTag(t.name)}
+              aria-label={strings.panel.removeTag(t.name)}
               onClick={() => remove.mutate(t.id)}
             >
               <X size={12} aria-hidden="true" />
@@ -398,7 +403,7 @@ function Tags({ game }: { game: GameDetail }) {
             <input
               autoFocus
               className={styles.tagInput}
-              aria-label={fr.panel.addTagLabel}
+              aria-label={strings.panel.addTagLabel}
               value={name}
               maxLength={40}
               onChange={(e) => setName(e.target.value)}
@@ -413,7 +418,7 @@ function Tags({ game }: { game: GameDetail }) {
             />
           ) : (
             <button type="button" className={styles.tagAdd} onClick={() => setEditing(true)}>
-              {fr.panel.addTag}
+              {strings.panel.addTag}
             </button>
           )}
         </li>
@@ -432,11 +437,14 @@ function DuplicateHint({ game }: { game: GameDetail }) {
   return (
     <section className={styles.duplicate} aria-labelledby="dup-title">
       <h3 id="dup-title" className="section-label">
-        {fr.panel.duplicateTitle}
+        {strings.panel.duplicateTitle}
       </h3>
       {others.map((o) => (
         <p key={o.id}>
-          {fr.panel.duplicateBody(o.title, o.sources.map((k) => fr.sources[k]).join(', '))}
+          {strings.panel.duplicateBody(
+            o.title,
+            o.sources.map((k) => strings.sources[k]).join(', '),
+          )}
         </p>
       ))}
       <button
@@ -447,7 +455,7 @@ function DuplicateHint({ game }: { game: GameDetail }) {
           merge.mutate({ targetId: game.summary.id, otherIds: others.map((o) => o.id) })
         }
       >
-        {fr.panel.merge}
+        {strings.panel.merge}
       </button>
     </section>
   );
@@ -461,18 +469,18 @@ function SourcesSection({ game }: { game: GameDetail }) {
   return (
     <section className={styles.section} aria-labelledby="panel-sources">
       <h3 id="panel-sources" className="section-label">
-        {fr.panel.sources}
+        {strings.panel.sources}
       </h3>
       <label className={styles.preferred}>
-        <span>{fr.panel.preferred}</span>
+        <span>{strings.panel.preferred}</span>
         <select
           value={game.preferredSourceId ?? ''}
           onChange={(e) => update.mutate({ preferredSourceId: e.target.value })}
         >
-          <option value="">{fr.panel.preferredAuto}</option>
+          <option value="">{strings.panel.preferredAuto}</option>
           {game.sources.map((src) => (
             <option key={src.id} value={src.id}>
-              {fr.sources[src.kind]}
+              {strings.sources[src.kind]}
             </option>
           ))}
         </select>
@@ -487,11 +495,11 @@ function SourcesSection({ game }: { game: GameDetail }) {
             <button
               type="button"
               className={styles.linkButton}
-              aria-label={fr.panel.splitLabel(fr.sources[src.kind])}
+              aria-label={strings.panel.splitLabel(strings.sources[src.kind])}
               disabled={split.isPending}
               onClick={() => split.mutate(src.id)}
             >
-              {fr.panel.split}
+              {strings.panel.split}
             </button>
           </li>
         ))}
@@ -512,7 +520,7 @@ function ManualCollections({ gameId, onAdd }: { gameId: string; onAdd: () => voi
   return (
     <section className={styles.section} aria-labelledby="panel-collections">
       <h3 id="panel-collections" className="section-label">
-        {fr.collections.manualIn}
+        {strings.collections.manualIn}
       </h3>
       <ul className={styles.tags}>
         {mine.map((c) => (
@@ -527,7 +535,7 @@ function ManualCollections({ gameId, onAdd }: { gameId: string; onAdd: () => voi
         ))}
         <li>
           <button type="button" className={styles.tagAdd} onClick={onAdd}>
-            {fr.panel.addToCollection}
+            {strings.panel.addToCollection}
           </button>
         </li>
       </ul>

@@ -1,6 +1,6 @@
 [package]
 name = "ludotheque"
-version = "1.4.1"
+version = "1.5.0"
 description = "Unified PC game library and launcher"
 license = "MIT"
 repository = "https://github.com/Gen0miX/ignite"

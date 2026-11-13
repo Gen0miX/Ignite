@@ -13,7 +13,7 @@ import {
 } from '../../api/client';
 import { useLaunchGame } from '../../api/hooks';
 import { Cover } from '../../components/GameCard/Cover';
-import { fr } from '../../i18n/fr';
+import { locale, strings } from '../../i18n';
 import {
   formatLastPlayed,
   formatPlaytimeLong,
@@ -24,7 +24,7 @@ import { cycle, step, type PadAction } from '../../lib/gamepad';
 import { usePad } from '../../lib/usePad';
 import styles from './CouchPage.module.css';
 
-const t = fr.couch;
+const t = strings.couch;
 const SHELVES: Shelf[] = ['recent', 'favorites', 'coop', 'short', 'all'];
 const MOODS: Mood[] = ['chill', 'intense', 'coop', 'never'];
 /** Delays between two covers while the wheel slows down (ms). */
@@ -44,7 +44,7 @@ function useClock(): string {
     const id = setInterval(() => setNow(new Date()), 15_000);
     return () => clearInterval(id);
   }, []);
-  return new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(now);
+  return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(now);
 }
 
 /** Couch mode runs fullscreen; the window goes back to normal on exit. */
@@ -173,11 +173,11 @@ function Details({ g }: { g: HomeGame }) {
     <dl className={styles.details}>
       <div>
         <dt>{t.status}</dt>
-        <dd>{fr.statusSingular[s.status]}</dd>
+        <dd>{strings.statusSingular[s.status]}</dd>
       </div>
       <div>
         <dt>{t.sources}</dt>
-        <dd>{s.sources.map((k) => fr.sources[k]).join(', ')}</dd>
+        <dd>{s.sources.map((k) => strings.sources[k]).join(', ')}</dd>
       </div>
       <div>
         <dt>{t.playtime}</dt>
@@ -335,7 +335,7 @@ export function CouchPage() {
     return (
       <main className={styles.page}>
         <h1>{t.title}</h1>
-        <p>{fr.library.backendUnavailable}</p>
+        <p>{strings.library.backendUnavailable}</p>
         <Link to="/">{t.exit}</Link>
       </main>
     );

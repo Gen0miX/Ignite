@@ -3,19 +3,19 @@ import { Pencil, Trash2 } from 'lucide-react';
 import type { GameDetail, PlaySession, SessionOrigin } from '../../api/client';
 import { useDeleteSession, useSaveSession } from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
-import { fr } from '../../i18n/fr';
+import { locale, strings } from '../../i18n';
 import { formatPlaytimeLong, toLocalInput } from '../../lib/format';
 import { sessionStats } from '../../lib/sessions';
 import styles from './GameDetailPage.module.css';
 import { FlameRating } from '../../components/FlameRating/FlameRating';
 
-const t = fr.game;
-const dateFmt = new Intl.DateTimeFormat('fr-FR', {
+const t = strings.game;
+const dateFmt = new Intl.DateTimeFormat(locale, {
   day: 'numeric',
   month: 'short',
   year: 'numeric',
 });
-const timeFmt = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
+const timeFmt = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' });
 
 type Draft = {
   id: string | null;

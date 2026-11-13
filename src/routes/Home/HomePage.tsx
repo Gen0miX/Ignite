@@ -18,7 +18,7 @@ import { Cover } from '../../components/GameCard/Cover';
 import { Menu } from '../../components/Menu/Menu';
 import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
 import { SkeletonImage } from '../../components/Skeleton/SkeletonImage';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import {
   formatLastPlayed,
   formatLastPlayedShort,
@@ -29,7 +29,7 @@ import {
 import { pileMeta, pileTag, tonightReason } from './homeText';
 import styles from './HomePage.module.css';
 
-const t = fr.home;
+const t = strings.home;
 const libraryLink = (id: string) => `/library?game=${encodeURIComponent(id)}`;
 
 /** Cover with title and a line under it (recently played, pile). */
@@ -147,7 +147,7 @@ function HeroGame({ g }: { g: HomeGame }) {
             onClick={() => launch.mutate(s.id)}
           >
             <Play size={18} fill="currentColor" aria-hidden="true" />
-            {fr.panel.play}
+            {strings.panel.play}
           </button>
           <Link to={`/game/${s.id}`} className={styles.heroGhost}>
             {t.sheet}
@@ -171,7 +171,7 @@ function HeroGame({ g }: { g: HomeGame }) {
         </div>
         {launch.isError && (
           <p role="alert" className={styles.error}>
-            {fr.panel.launchError}
+            {strings.panel.launchError}
           </p>
         )}
       </div>
@@ -180,7 +180,7 @@ function HeroGame({ g }: { g: HomeGame }) {
           label={t.launchOptions}
           at={menuAt}
           items={sources.map((src) => ({
-            label: t.launchVia(fr.sources[src.kind]),
+            label: t.launchVia(strings.sources[src.kind]),
             onSelect: () => void commands.launchGameSource(s.id, src.id),
           }))}
           onClose={() => setMenuAt(null)}
@@ -471,7 +471,7 @@ export function HomePage() {
   if (!isTauri()) {
     return (
       <PageMain>
-        <EmptyState title={t.title}>{fr.library.backendUnavailable}</EmptyState>
+        <EmptyState title={t.title}>{strings.library.backendUnavailable}</EmptyState>
       </PageMain>
     );
   }

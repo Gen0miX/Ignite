@@ -192,7 +192,7 @@ fn get(url: &str, query: &[(&str, &str)]) -> AppResult<String> {
 pub fn fetch_details(appid: &str) -> AppResult<Option<StoreMedia>> {
     let body = get(
         "https://store.steampowered.com/api/appdetails",
-        &[("appids", appid), ("l", "french")],
+        &[("appids", appid), ("l", crate::i18n::steam_language())],
     )?;
     parse_details(&body, appid)
 }

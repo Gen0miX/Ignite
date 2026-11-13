@@ -9,11 +9,11 @@ import {
 import buttons from '../Button/Button.module.css';
 import { Dialog } from '../Dialog/Dialog';
 import dialog from '../Dialog/Dialog.module.css';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { toast } from '../Toaster/toasts';
 import styles from './GameActions.module.css';
 
-const t = fr.picker;
+const t = strings.picker;
 
 interface CollectionPickerProps {
   gameIds: string[];
@@ -40,7 +40,7 @@ export function CollectionPicker({ gameIds, onClose, onAdded }: CollectionPicker
   const [name, setName] = useState('');
 
   const confirm = (collectionName: string) => {
-    toast(fr.toast.addedTo(gameIds.length, collectionName), gameIds);
+    toast(strings.toast.addedTo(gameIds.length, collectionName), gameIds);
     onAdded?.();
   };
 
@@ -140,7 +140,7 @@ export function CollectionPicker({ gameIds, onClose, onAdded }: CollectionPicker
       </form>
       {(add.isError || toggle.isError) && (
         <p role="alert" className={styles.error}>
-          {fr.actions.error}
+          {strings.actions.error}
         </p>
       )}
       <p className={dialog.muted}>

@@ -44,15 +44,16 @@ import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { SourceChip } from '../../components/SourceBadge/SourceBadge';
 import { SegmentedControl } from '../../components/SegmentedControl/SegmentedControl';
 import { Switch } from '../../components/Switch/Switch';
-import { fr } from '../../i18n/fr';
+import { language, LANGUAGES, strings, type Language } from '../../i18n';
 import { formatLastPlayed } from '../../lib/format';
+import { changeLanguage } from '../../lib/language';
 import { usePrefs, type RecapMode } from '../../lib/prefs';
 import { useUpdates } from '../../lib/updates';
 import styles from './SettingsSourcesPage.module.css';
 import { CaptureFoldersCard } from './CaptureFoldersCard';
 import { EmulatorsCard, RaAccount } from './EmulatorsCard';
 
-const t = fr.settings;
+const t = strings.settings;
 
 function StatusPill({ status }: { status: SourceStatus }) {
   const tone =
@@ -130,7 +131,7 @@ function SteamCard({ card }: { card: SourceCard }) {
 
 function SourceSwitch({ card }: { card: SourceCard }) {
   const toggle = useSetSourceEnabled();
-  const name = fr.sources[card.kind];
+  const name = strings.sources[card.kind];
   return (
     <Switch
       label={card.enabled ? t.disable(name) : t.enable(name)}
@@ -153,7 +154,7 @@ const DETAILS: Partial<Record<SourceCard['kind'], { provides: string; note: stri
 /** Card for launchers without extra settings (GOG, Epic). */
 function GenericSourceCard({ card }: { card: SourceCard }) {
   const sync = useSync();
-  const name = fr.sources[card.kind];
+  const name = strings.sources[card.kind];
   const info = DETAILS[card.kind];
   const report = card.lastSync;
   const installed = card.status.state !== 'not_installed';
@@ -510,6 +511,44 @@ function NotificationsCard() {
 }
 
 /** Display preferences (stored in the WebView, no backend). */
+function LanguageCard() {
+  const tl = t.language;
+  const [error, setError] = useState(false);
+  return (
+    <section className={styles.card} aria-labelledby="language-title">
+      <h3 id="language-title" className="section-label">
+        {tl.title}
+      </h3>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="ui-language">
+          {tl.label}
+        </label>
+        <select
+          id="ui-language"
+          className={styles.select}
+          value={language}
+          onChange={(e) => {
+            setError(false);
+            changeLanguage(e.target.value as Language).catch(() => setError(true));
+          }}
+        >
+          {LANGUAGES.map((l) => (
+            <option key={l.id} value={l.id} lang={l.id}>
+              {l.label}
+            </option>
+          ))}
+        </select>
+        <span className={styles.muted}>{tl.hint}</span>
+        {error && (
+          <p role="alert" className={styles.errorText}>
+            {tl.saveError}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function GeneralCard() {
   const showTrailers = usePrefs((p) => p.showTrailers);
   const setShowTrailers = usePrefs((p) => p.setShowTrailers);
@@ -701,7 +740,7 @@ function MetadataCard() {
 
 function UpdateRow() {
   const { status, version, check, install } = useUpdates();
-  const tu = fr.updates;
+  const tu = strings.updates;
   const busy = status === 'checking' || status === 'downloading' || status === 'installing';
   const message =
     status === 'upToDate'
@@ -785,7 +824,7 @@ function GoldbergCard() {
   return (
     <section className={styles.card} aria-labelledby="goldberg-title">
       <h3 id="goldberg-title" className="section-label">
-        {fr.goldbergOptions.globalTitle}
+        {strings.goldbergOptions.globalTitle}
       </h3>
       <GoldbergOptions />
     </section>
@@ -866,6 +905,7 @@ function SectionBody({ id }: { id: SectionId }) {
     case 'general':
       return (
         <>
+          <LanguageCard />
           <GeneralCard />
           {isTauri() && <AppCard />}
         </>

@@ -4,11 +4,14 @@ import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Popup } from '../api/bindings';
 import { commands } from '../api/client';
+import { language } from '../i18n';
 import '../styles/fonts';
 import '../styles/global.css';
 import './popup.css';
 import { PopupCard } from './PopupCard';
 import { EXIT_MS, popupDuration, runQueue } from './queue';
+
+document.documentElement.lang = language;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

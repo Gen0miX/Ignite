@@ -1,6 +1,6 @@
 import { useRef, type CSSProperties, type KeyboardEvent } from 'react';
 import type { GameSummary } from '../../api/client';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { GameCard } from '../GameCard/GameCard';
 import { usePrefs } from '../../lib/prefs';
 import { useGridFlip } from '../../lib/useGridFlip';
@@ -56,7 +56,7 @@ export function GameGrid({
   };
 
   return (
-    <div role="grid" aria-label={fr.library.gridLabel} className={styles.grid}>
+    <div role="grid" aria-label={strings.library.gridLabel} className={styles.grid}>
       <div
         role="row"
         className={styles.row}

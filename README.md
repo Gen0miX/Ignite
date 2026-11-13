@@ -164,7 +164,7 @@ Ignite importe le temps enregistré par Steam et chronomètre lui-même les sess
 Pour l'instant, chaque PC a sa propre base. La synchronisation entre PC est prévue.
 
 **L'app est-elle traduite ?**
-Seulement en français pour l'instant. La traduction de l'interface est prévue.
+Oui : français et anglais, au choix dans **Réglages › Général** (par défaut, la langue de Windows).
 
 ## Développement
 

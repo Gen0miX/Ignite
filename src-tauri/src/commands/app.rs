@@ -71,3 +71,16 @@ pub fn app_settings_set(
     result.map_err(|e| AppError::Invalid(format!("autostart: {e}")))?;
     Ok(())
 }
+
+/// UI language chosen in Settings › General (the frontend reloads itself).
+#[tauri::command]
+#[specta::specta]
+pub fn language_set(
+    app: AppHandle,
+    db: tauri::State<'_, Db>,
+    language: crate::i18n::Language,
+) -> CommandResult<()> {
+    crate::i18n::save(&db.conn(), language)?;
+    tray::apply_language(&app);
+    Ok(())
+}

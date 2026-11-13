@@ -26,7 +26,7 @@
 </p>
 
 > [!NOTE]
-> The app itself is in **French only** for now. Translating the interface is planned.
+> The interface is available in **English and French**: Ignite follows your Windows language, and you can switch in **Settings › General**. The screenshots below show the French interface.
 
 ![Ignite home screen](docs/screenshots/home.jpg)
 
@@ -97,11 +97,11 @@ Playtime per period and per source, play calendar, most played games, streaks, b
 
 **Requirements**: Windows 10 or 11, 64-bit. WebView2 ships with Windows 11; on Windows 10 the installer downloads it if needed.
 
-**Updates**: when a new version is out, Ignite offers it at startup ("Installer et redémarrer"). You can also check in **Réglages › À propos** (Settings › About).
+**Updates**: when a new version is out, Ignite offers it at startup ("Install and restart"). You can also check in **Settings › About**.
 
 ## Getting started
 
-Nothing is required: Ignite works from the first launch. These settings unlock extra features (**Réglages › Comptes et clés**, Settings › Accounts and keys):
+Nothing is required: Ignite works from the first launch. These settings unlock extra features (**Settings › Accounts and keys**):
 
 | Service | What it adds | How to get it |
 |---|---|---|
@@ -125,7 +125,7 @@ Ignite reads what launchers already store on your PC: Steam manifests, the GOG G
 - Sessions that are too short (crash, launched by mistake) are ignored.
 - Playtime already known by launchers (Steam, GOG…) is imported without ever counting the same period twice.
 
-Thresholds are in **Réglages › Succès et suivi** (Settings › Achievements and tracking).
+Thresholds are in **Settings › Achievements and tracking**.
 
 ### Achievements for executable games (Goldberg)
 
@@ -158,7 +158,7 @@ Ignite only connects to services useful for your games: Steam (store, API, image
 No. It relies on them: they must stay installed to launch their games, handle updates and cloud saves.
 
 **A launcher is not detected.**
-Check **Réglages › Sources**: each source shows its status and its last error. You can also add a game by hand ("Ajouter un jeu") or scan a folder.
+Check **Settings › Sources**: each source shows its status and its last error. You can also add a game by hand ("Add a game") or scan a folder.
 
 **I play on two PCs.**
 For now each PC has its own database. Syncing between PCs is planned.

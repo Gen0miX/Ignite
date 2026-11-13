@@ -1,10 +1,10 @@
 import { open } from '@tauri-apps/plugin-dialog';
 import { useCaptureActions, useCaptureFolders } from '../../api/hooks';
 import buttons from '../../components/Button/Button.module.css';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import styles from './SettingsSourcesPage.module.css';
 
-const t = fr.settings.captureFolders;
+const t = strings.settings.captureFolders;
 
 /**
  * Extra capture folders (recorders, a moved Game Bar folder). Read-only:

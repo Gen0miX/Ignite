@@ -1,4 +1,4 @@
-//! Steam achievements: player progress, schema (French names) and global rarity.
+//! Steam achievements: player progress, schema (names in the UI language) and global rarity.
 
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -185,7 +185,7 @@ pub fn fetch_schema(key: &str, appid: u64) -> AppResult<Vec<SchemaEntry>> {
         &[
             ("key", key.into()),
             ("appid", appid.to_string()),
-            ("l", "french".into()),
+            ("l", crate::i18n::steam_language().into()),
         ],
         Some(key),
     )? {
@@ -210,7 +210,7 @@ pub fn fetch(key: &str, steam_id: u64, appid: u64) -> AppResult<Option<Vec<Steam
             ("key", key.into()),
             ("steamid", steam_id.to_string()),
             ("appid", appid.to_string()),
-            ("l", "french".into()),
+            ("l", crate::i18n::steam_language().into()),
         ],
         Some(key),
     )?;
@@ -240,7 +240,7 @@ pub fn fetch(key: &str, steam_id: u64, appid: u64) -> AppResult<Option<Vec<Steam
         &[
             ("key", key.into()),
             ("appid", appid.to_string()),
-            ("l", "french".into()),
+            ("l", crate::i18n::steam_language().into()),
         ],
         Some(key),
     )? {

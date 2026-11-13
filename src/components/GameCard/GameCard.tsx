@@ -1,7 +1,7 @@
 import { forwardRef, type KeyboardEvent, type MouseEvent } from 'react';
 import { Check, CloudDownload, EyeOff, MoreHorizontal, Play } from 'lucide-react';
 import type { GameSummary } from '../../api/client';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { formatPlaytimeShort } from '../../lib/format';
 import { useCardDrag } from '../../lib/gameDrag';
 import { useToasts } from '../Toaster/toasts';
@@ -58,9 +58,9 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
   if (progress) meta.push(`${progress.done}/${progress.total}`);
   const label = [
     game.title,
-    fr.statusSingular[game.status],
-    !game.installed && fr.library.notInstalled,
-    progress && fr.library.progressLabel(progress.kind, progress.done, progress.total),
+    strings.statusSingular[game.status],
+    !game.installed && strings.library.notInstalled,
+    progress && strings.library.progressLabel(progress.kind, progress.done, progress.total),
   ]
     .filter(Boolean)
     .join(', ');
@@ -111,13 +111,13 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
     >
       <div className={`${styles.coverBox} img-host`}>
         <Cover title={game.title} cover={game.cover} header={game.header} />
-        {playing && <span className={styles.playing}>{fr.tracking.inGame}</span>}
+        {playing && <span className={styles.playing}>{strings.tracking.inGame}</span>}
         <span className={styles.corner}>
           <button
             type="button"
             className={styles.more}
             tabIndex={-1}
-            aria-label={fr.actions.menu(game.title)}
+            aria-label={strings.actions.menu(game.title)}
             aria-haspopup="menu"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={openMenuFromButton}
@@ -125,13 +125,13 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
             <MoreHorizontal size={16} aria-hidden="true" />
           </button>
           {game.hidden && (
-            <span className={styles.hiddenMark} title={fr.library.hiddenTitle}>
+            <span className={styles.hiddenMark} title={strings.library.hiddenTitle}>
               <EyeOff size={12} aria-hidden="true" />
             </span>
           )}
           <span
             className={`${styles.status} ${styles[`status_${game.status}`]}`}
-            title={fr.statusSingular[game.status]}
+            title={strings.statusSingular[game.status]}
             aria-hidden="true"
           />
         </span>
@@ -139,7 +139,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
           <span className={styles.badge}>
             {game.sources[0] && <SourceBadge kind={game.sources[0]} overlay />}
             {!game.installed && (
-              <span className={styles.notInstalledMark} title={fr.library.notInstalledTitle}>
+              <span className={styles.notInstalledMark} title={strings.library.notInstalledTitle}>
                 <CloudDownload size={12} aria-hidden="true" />
               </span>
             )}
@@ -159,7 +159,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
           aria-checked={checked}
           tabIndex={-1}
           className={styles.check}
-          aria-label={fr.actions.select(game.title)}
+          aria-label={strings.actions.select(game.title)}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
@@ -173,7 +173,7 @@ export const GameCard = forwardRef<HTMLDivElement, GameCardProps>(function GameC
             type="button"
             className={styles.play}
             tabIndex={-1}
-            aria-label={`${fr.library.play} : ${game.title}`}
+            aria-label={`${strings.library.play} : ${game.title}`}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();

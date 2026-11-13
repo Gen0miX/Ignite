@@ -5,11 +5,11 @@ import { useGameMedia } from '../../api/hooks';
 import { Dialog } from '../../components/Dialog/Dialog';
 import { Skeleton, SkeletonGroup } from '../../components/Skeleton/Skeleton';
 import { SkeletonImage } from '../../components/Skeleton/SkeletonImage';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { usePrefs } from '../../lib/prefs';
 import styles from './MediaSection.module.css';
 
-const t = fr.game;
+const t = strings.game;
 
 /** Steam Store trailers, screenshots and short description of the game. */
 export function MediaSection({ gameId }: { gameId: string }) {

@@ -1,6 +1,6 @@
 import { useRef, type PointerEvent } from 'react';
 import { create } from 'zustand';
-import { fr } from '../i18n/fr';
+import { strings } from '../i18n';
 
 /**
  * Dragging games onto a collection of the sidebar. Pointer events rather
@@ -99,7 +99,7 @@ export function DragGhost() {
         boxShadow: 'var(--shadow-modal)',
       }}
     >
-      {fr.selection.dragCount(drag.ids.length)}
+      {strings.selection.dragCount(drag.ids.length)}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import type { CaptureItem, CaptureSession, CaptureSource } from '../api/client';
+import { locale } from '../i18n';
 
 export type CaptureFilter = 'all' | CaptureSource;
 
@@ -54,11 +55,11 @@ export const filterCaptures = (items: CaptureItem[], filter: CaptureFilter) =>
 export const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path;
 
 /** "29 oct. 2025" */
-export const dayFormat = new Intl.DateTimeFormat('fr-FR', {
+export const dayFormat = new Intl.DateTimeFormat(locale, {
   day: 'numeric',
   month: 'short',
   year: 'numeric',
 });
 
 /** "11:22" */
-export const timeFormat = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
+export const timeFormat = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' });

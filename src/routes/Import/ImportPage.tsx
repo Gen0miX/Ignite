@@ -18,7 +18,7 @@ import buttons from '../../components/Button/Button.module.css';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { SourceBadge, SourceChip } from '../../components/SourceBadge/SourceBadge';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { formatBytes, formatPlaytimeLong } from '../../lib/format';
 import {
   buildDecisions,
@@ -28,7 +28,7 @@ import {
 } from '../../lib/importDecisions';
 import styles from './ImportPage.module.css';
 
-const t = fr.import;
+const t = strings.import;
 type Step = 1 | 2 | 3 | 4;
 
 function Stepper({ step }: { step: Step }) {
@@ -85,7 +85,7 @@ function SourcesStep({
                   onChange={() => onToggle(card.kind)}
                 />
                 <SourceChip kind={card.kind} />
-                <span className={styles.sourceName}>{fr.sources[card.kind]}</span>
+                <span className={styles.sourceName}>{strings.sources[card.kind]}</span>
                 <span className={styles.muted}>
                   {installed ? (card.enabled ? t.alreadySynced : t.notYetImported) : t.notInstalled}
                 </span>
@@ -182,7 +182,7 @@ function DetectedStep({
           <div key={s.kind} className={styles.scannedSource}>
             <SourceChip kind={s.kind} />
             <div>
-              <div className={styles.sourceName}>{fr.sources[s.kind]}</div>
+              <div className={styles.sourceName}>{strings.sources[s.kind]}</div>
               <div className={styles.muted}>
                 {s.status.state === 'error'
                   ? t.scanError
@@ -386,7 +386,7 @@ export function ImportPage() {
     return (
       <PageMain>
         <PageHeader title={t.title} />
-        <EmptyState>{fr.library.backendUnavailable}</EmptyState>
+        <EmptyState>{strings.library.backendUnavailable}</EmptyState>
       </PageMain>
     );
   }

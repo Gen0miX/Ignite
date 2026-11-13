@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, FileText, FolderPlus, ImageIcon, Play, Star, Trash2 } from 'lucide-react';
 import type { BulkUpdate, GameSummary } from '../../api/client';
 import { useBulkUpdate, useLaunchGame } from '../../api/hooks';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { isDeletable } from '../../lib/selection';
 import { toast } from '../Toaster/toasts';
 import { ArtworkPicker } from '../ArtworkPicker/ArtworkPicker';
@@ -11,7 +11,7 @@ import type { MenuItem } from '../Menu/Menu';
 import { CollectionPicker } from './CollectionPicker';
 import { DeleteGamesDialog } from './DeleteGamesDialog';
 
-const t = fr.actions;
+const t = strings.actions;
 
 type Open =
   | { kind: 'images'; game: { id: string; title: string } }
@@ -58,7 +58,7 @@ export function useGameActions() {
       onSelect: () =>
         run(
           { favorite: !g.favorite },
-          (g.favorite ? fr.toast.favoriteRemoved : fr.toast.favoriteAdded)(g.title),
+          (g.favorite ? strings.toast.favoriteRemoved : strings.toast.favoriteAdded)(g.title),
           g.id,
         ),
       separator: true,
@@ -71,7 +71,11 @@ export function useGameActions() {
         <EyeOff size={16} aria-hidden="true" />
       ),
       onSelect: () =>
-        run({ hidden: !g.hidden }, (g.hidden ? fr.toast.unhidden : fr.toast.hidden)(1), g.id),
+        run(
+          { hidden: !g.hidden },
+          (g.hidden ? strings.toast.unhidden : strings.toast.hidden)(1),
+          g.id,
+        ),
     },
     ...(isDeletable(g)
       ? [

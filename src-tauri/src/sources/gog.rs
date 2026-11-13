@@ -163,13 +163,17 @@ fn has_table(conn: &Connection, name: &str) -> AppResult<bool> {
         .is_some())
 }
 
-/// Language ids used for achievement texts: French first, then English.
+/// Language ids used for achievement texts: the UI language first, then English.
 fn language_order(conn: &Connection) -> AppResult<Vec<i64>> {
     if !has_table(conn, "Languages")? {
         return Ok(Vec::new());
     }
     let mut ids = Vec::new();
-    for code in ["fr-FR", "fr", "en-US", "en"] {
+    let codes: &[&str] = match crate::i18n::current() {
+        crate::i18n::Language::Fr => &["fr-FR", "fr", "en-US", "en"],
+        crate::i18n::Language::En => &["en-US", "en"],
+    };
+    for code in codes {
         if let Some(id) = conn
             .query_row("SELECT id FROM Languages WHERE code = ?1", [code], |r| {
                 r.get(0)

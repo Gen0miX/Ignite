@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, X } from 'lucide-react';
 import { commands, isTauri, unwrap, type Collection } from '../../api/client';
-import { fr } from '../../i18n/fr';
+import { genreLabel, strings } from '../../i18n';
 import {
   defaultRow,
   fieldDef,
@@ -16,7 +16,7 @@ import {
 import buttons from '../Button/Button.module.css';
 import styles from './CollectionEditor.module.css';
 
-const t = fr.collections;
+const t = strings.collections;
 const SOURCES = [
   'steam',
   'gog',
@@ -55,7 +55,7 @@ function FacetOptions({ items }: { items: Facet[] }) {
     <>
       {items.map((f) => (
         <option key={f.name} value={f.name}>
-          {t.facetOption(f.name, f.count)}
+          {t.facetOption(genreLabel(f.name), f.count)}
         </option>
       ))}
     </>
@@ -120,8 +120,8 @@ function ValueInput({ row, onChange }: { row: Row; onChange: (r: Row) => void })
         {options.map((o) => (
           <option key={o} value={o}>
             {def.kind === 'source'
-              ? fr.sources[o as (typeof SOURCES)[number]]
-              : fr.statusSingular[o as (typeof STATUSES)[number]]}
+              ? strings.sources[o as (typeof SOURCES)[number]]
+              : strings.statusSingular[o as (typeof STATUSES)[number]]}
           </option>
         ))}
       </select>

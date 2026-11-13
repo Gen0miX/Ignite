@@ -1,5 +1,5 @@
 import type { SourceKind } from '../../api/client';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { SourceIcon } from './SourceIcon';
 import styles from './SourceBadge.module.css';
 
@@ -11,7 +11,7 @@ export function SourceChip({ kind }: { kind: SourceKind }) {
     <span
       className={styles.chip}
       style={{ background: sourceVar(kind) }}
-      title={fr.sources[kind]}
+      title={strings.sources[kind]}
       aria-hidden="true"
     >
       <SourceIcon kind={kind} size={18} />
@@ -28,10 +28,10 @@ export function SourceBadge({ kind, overlay = false }: { kind: SourceKind; overl
     <span
       className={`${styles.badge} ${overlay ? styles.overlay : ''}`}
       style={{ color: sourceVar(kind) }}
-      title={overlay ? fr.sources[kind] : undefined}
+      title={overlay ? strings.sources[kind] : undefined}
     >
       <SourceIcon kind={kind} size={18} />
-      <span className={overlay ? 'visually-hidden' : undefined}>{fr.sources[kind]}</span>
+      <span className={overlay ? 'visually-hidden' : undefined}>{strings.sources[kind]}</span>
     </span>
   );
 }

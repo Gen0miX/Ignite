@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 
 export interface ToastAction {
   label: string;
@@ -79,11 +79,11 @@ export function launchWithUndo(game: { id: string; title: string }, launch: () =
   if (pending.has(game.id)) return;
   pending.add(game.id);
   let cancelled = false;
-  useToasts.getState().show(fr.toast.launching(game.title), [], {
+  useToasts.getState().show(strings.toast.launching(game.title), [], {
     durationMs: LAUNCH_DELAY_MS,
     icon: 'launch',
     action: {
-      label: fr.toast.cancel,
+      label: strings.toast.cancel,
       run: () => {
         cancelled = true;
         pending.delete(game.id);

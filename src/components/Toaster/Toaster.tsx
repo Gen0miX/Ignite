@@ -1,5 +1,5 @@
 import { CheckCircle2, Play, X } from 'lucide-react';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import { useToasts } from './toasts';
 import styles from './Toaster.module.css';
 
@@ -32,7 +32,7 @@ export function Toaster() {
             <button
               type="button"
               className={styles.close}
-              aria-label={fr.toast.close}
+              aria-label={strings.toast.close}
               onClick={() => dismiss(t.id)}
             >
               <X size={16} aria-hidden="true" />

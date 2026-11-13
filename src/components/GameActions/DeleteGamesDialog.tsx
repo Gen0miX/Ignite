@@ -2,10 +2,10 @@ import { useDeleteGames } from '../../api/hooks';
 import buttons from '../Button/Button.module.css';
 import { Dialog } from '../Dialog/Dialog';
 import dialog from '../Dialog/Dialog.module.css';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import styles from './GameActions.module.css';
 
-const t = fr.actions;
+const t = strings.actions;
 
 interface DeleteGamesDialogProps {
   ids: string[];

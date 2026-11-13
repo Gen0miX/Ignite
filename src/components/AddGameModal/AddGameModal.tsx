@@ -5,12 +5,12 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { FileUp, FolderSearch, Gamepad2, Library, X } from 'lucide-react';
 import { commands, unwrap, type ExeInfo } from '../../api/client';
-import { fr } from '../../i18n/fr';
+import { strings } from '../../i18n';
 import buttons from '../Button/Button.module.css';
 import styles from './AddGameModal.module.css';
 import { ScanForm } from './ScanForm';
 
-const t = fr.addGame;
+const t = strings.addGame;
 type TrackChoice = 'auto' | 'file' | 'process';
 
 interface AddGameModalProps {
