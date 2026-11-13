@@ -83,6 +83,6 @@ Le design de référence est la **direction B** : une interface dense et utilita
 | Import | `Multi-Import.dc.html` | `/import` |
 | Fiche jeu | `Multi-Fiche.dc.html`, puis `Fiche-Apercu`, `Fiche-Succes`, `Fiche-Captures`, `Fiche-Visionneuse` (`docs/FICHE-ONGLETS.md`) | `/game/:id/:tab?` |
 | Statistiques | `Multi-Stats.dc.html` | `/stats` |
-| Réglages › Sources | `Multi-Sources.dc.html` | `/settings/sources` |
+| Réglages | `Multi-Sources.dc.html` (cartes) ; catégories à gauche, une à la fois : Général, Sources, Émulateurs, Succès et suivi, Captures, Comptes et clés, Jeux masqués, À propos | `/settings/:section` (`general`, `sources`, `emulators`, `achievements`, `captures`, `accounts`, `hidden`, `about`) |
 | Accueil « Cinéma » | `Main.dc.html` (direction A, sans son en-tête, thème Braise ; voir `docs/HOME-V2.md`) | `/` |
 | (Plus tard) Mode Canapé | `Canape.dc.html` | `/couch` |

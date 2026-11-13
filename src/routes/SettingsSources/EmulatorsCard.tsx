@@ -144,7 +144,7 @@ function EmulatorForm({
   );
 }
 
-function RaAccount({ keyField }: { keyField: React.ReactNode }) {
+export function RaAccount({ keyField }: { keyField: React.ReactNode }) {
   const client = useQueryClient();
   const user = useQuery({ queryKey: ['ra-user'], queryFn: () => commands.raUsernameGet() });
   const [draft, setDraft] = useState<string | null>(null);
@@ -192,8 +192,8 @@ function RaAccount({ keyField }: { keyField: React.ReactNode }) {
   );
 }
 
-/** Settings › Émulateurs: emulator list and RetroAchievements account. */
-export function EmulatorsCard({ keyField }: { keyField: React.ReactNode }) {
+/** Settings › Émulateurs: emulator list (the RetroAchievements account is in Comptes et clés). */
+export function EmulatorsCard() {
   const client = useQueryClient();
   const list = useQuery({ queryKey: ['emulators'], queryFn: () => commands.emulatorsGet() });
   const [editing, setEditing] = useState<{ index: number | null; value: EmulatorConfig } | null>(
@@ -215,10 +215,7 @@ export function EmulatorsCard({ keyField }: { keyField: React.ReactNode }) {
   const emulators = list.data ?? [];
 
   return (
-    <section className={styles.card} aria-labelledby="emulators-title">
-      <h2 id="emulators-title" className="section-label">
-        {t.title}
-      </h2>
+    <section className={styles.card} aria-label={t.title}>
       <p className={styles.muted}>{t.help}</p>
       {emulators.length > 0 && (
         <ul className={styles.emuList}>
@@ -280,7 +277,6 @@ export function EmulatorsCard({ keyField }: { keyField: React.ReactNode }) {
           </button>
         </div>
       )}
-      <RaAccount keyField={keyField} />
     </section>
   );
 }

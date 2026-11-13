@@ -57,9 +57,9 @@ export const fr = {
     title: 'Options de l’émulateur',
     globalTitle: 'Goldberg (jeux exécutables)',
     globalIntro:
-      'Réglages par défaut de Goldberg pour tous tes jeux qui l’utilisent (y compris ceux installés hors d’Ignite). Chaque jeu peut les remplacer depuis sa fiche, onglet Succès.',
+      'Réglages par défaut de Goldberg pour tous tes jeux qui l’utilisent (y compris ceux installés hors d’Ignite). Chaque jeu peut les remplacer depuis sa fiche, onglet Goldberg.',
     gameIntro:
-      'Réglages propres à ce jeu. Ce qui n’est pas modifié ici reprend la valeur globale (Réglages › Sources › Goldberg).',
+      'Réglages propres à ce jeu. Ce qui n’est pas modifié ici reprend la valeur globale (Réglages › Succès et suivi).',
     folder: 'Fichiers',
     inherited: 'global',
     inheritedTitle: 'Valeur globale, pas modifiée pour ce jeu',
@@ -965,7 +965,7 @@ export const fr = {
       backup:
         'Le DLL d’origine est conservé à côté du jeu (suffixe .ignite-original). Supprimer le jeu de la bibliothèque ne le restaure pas.',
       noKey:
-        'Sans clé Steam Web API, le DLL est installé mais les définitions de succès ne peuvent pas être générées : ajoute la clé dans Réglages › Sources.',
+        'Sans clé Steam Web API, le DLL est installé mais les définitions de succès ne peuvent pas être générées : ajoute la clé dans Réglages › Comptes et clés.',
       savesMissing:
         'Le fichier de progression n’apparaît qu’après le premier succès débloqué en jeu.',
       settings: 'Dossier de configuration',
@@ -978,7 +978,7 @@ export const fr = {
         notInstalled: 'Le DLL Steam d’origine n’a pas encore été remplacé.',
         needsAppid: 'Indique l’AppID Steam du jeu.',
         needsSteamKey:
-          'Ajoute une clé Steam Web API dans Réglages › Sources pour générer les succès.',
+          'Ajoute une clé Steam Web API dans Réglages › Comptes et clés pour générer les succès.',
         noDefinitions: 'Les définitions de succès manquent : relance l’installation.',
         noSaves: 'Aucun succès débloqué pour l’instant.',
       },
@@ -1004,7 +1004,7 @@ export const fr = {
     readLess: 'Réduire',
     mediaFromIgdb: 'Une partie des médias vient d’IGDB (description en anglais).',
     mediaIgdbHint:
-      'Ajoute tes identifiants IGDB dans Réglages › Métadonnées pour compléter ce qui manque sur Steam.',
+      'Ajoute tes identifiants IGDB dans Réglages › Comptes et clés pour compléter ce qui manque sur Steam.',
     about: 'À propos',
     trailerPlay: (name: string) => `Lire la bande-annonce : ${name}`,
     trailerPick: (name: string) => `Choisir la bande-annonce : ${name}`,
@@ -1068,6 +1068,29 @@ export const fr = {
   settings: {
     sourcesTitle: 'Réglages',
     sourcesSection: 'Sources',
+    nav: {
+      general: 'Général',
+      sources: 'Sources',
+      emulators: 'Émulateurs',
+      achievements: 'Succès et suivi',
+      captures: 'Captures',
+      accounts: 'Comptes et clés',
+      hidden: 'Jeux masqués',
+      about: 'À propos',
+    },
+    navIntro: {
+      general: 'Affichage, fin de session et comportement de la fenêtre.',
+      sources:
+        "Chaque launcher est facultatif : s'il n'est pas installé, il est simplement ignoré et le reste de l'app fonctionne normalement.",
+      emulators: 'Tes émulateurs et leurs dossiers de ROM.',
+      achievements:
+        'Comment Ignite chronomètre tes sessions, ses notifications de succès et les réglages par défaut de Goldberg.',
+      captures: 'Dossiers de captures en plus de ceux détectés automatiquement.',
+      accounts:
+        'Tes comptes et clés d’API, rangés dans le coffre de Windows (jamais dans la base ni dans les logs).',
+      hidden: 'Ces jeux n’apparaissent pas dans la bibliothèque, l’accueil et les statistiques.',
+      about: 'Version et emplacement des données.',
+    },
     about: 'À propos',
     version: 'Version',
     database: 'Base de données',
@@ -1084,7 +1107,7 @@ export const fr = {
       riotNote:
         'Lancement via le client Riot. Pour League of Legends, seul le processus de la partie est chronométré, pas le client.',
     },
-    trackingTitle: 'Règles de suivi',
+    trackingTitle: 'Suivi du temps',
     hidden: {
       title: 'Jeux masqués',
       intro:
@@ -1097,7 +1120,7 @@ export const fr = {
       count: (n: number) => (n === 1 ? '1 jeu masqué' : `${n} jeux masqués`),
     },
     general: {
-      title: 'Général',
+      title: 'Affichage et sessions',
       showTrailers: 'Afficher la bande-annonce sur les fiches',
       showTrailersHint: 'Les captures et la description restent affichées.',
       endTitle: 'Fin de session',
@@ -1111,7 +1134,7 @@ export const fr = {
       minutesUnit: 'min',
     },
     app: {
-      title: 'Application',
+      title: 'Démarrage et fenêtre',
       closeToTray: 'Garder dans la zone de notification à la fermeture',
       closeToTrayHint:
         'Fermer la fenêtre laisse Ignite tourner, pour continuer à compter ton temps de jeu.',
@@ -1122,6 +1145,8 @@ export const fr = {
       saveError: 'Impossible d’enregistrer ce réglage.',
     },
     tracking: {
+      howItWorks: 'Comment ça marche',
+      notificationsTitle: 'Notifications',
       method: 'Méthode',
       methodValue:
         'Détection du processus du jeu (toutes les 3 s), clavier, souris et manette pour l’inactivité',
@@ -1181,7 +1206,7 @@ export const fr = {
         'Facultatif. Ton nom d’utilisateur et ta clé Web API (retroachievements.org › Paramètres). La clé est stockée dans le Gestionnaire d’identification Windows.',
       raUser: "Nom d'utilisateur",
     },
-    metadataTitle: 'Services de métadonnées',
+    metadataTitle: 'Images et informations des jeux',
     sgdb: {
       title: 'SteamGridDB',
       provides: 'Jaquettes, images de fond et logos pour les jeux hors Steam',
@@ -1233,6 +1258,9 @@ export const fr = {
     steam: {
       title: 'Steam',
       provides: 'Bibliothèque · temps de jeu · jaquettes',
+      accountsProvides: 'Compte et clé API : bibliothèque possédée, succès, temps de jeu',
+      accountsLinkReady: 'Compte et clé API configurés dans',
+      accountsLinkMissing: 'Ajoute ta clé Steam Web API (succès, jeux possédés) dans',
       path: 'Dossier Steam',
       notFound:
         "Steam n'a pas été trouvé sur ce PC. Avec une clé API et ton SteamID64, la bibliothèque possédée peut quand même être importée.",
@@ -1306,7 +1334,7 @@ export const fr = {
     missingCovers: (n: number) =>
       `${n} ${n > 1 ? 'jeux importés n’ont' : 'jeu importé n’a'} pas encore de jaquette :`,
     coversHint:
-      'Ouvre la fiche d’un jeu pour choisir sa jaquette sur SteamGridDB (clé à saisir dans Réglages › Sources).',
+      'Ouvre la fiche d’un jeu pour choisir sa jaquette sur SteamGridDB (clé à saisir dans Réglages › Comptes et clés).',
     openSheet: 'Ouvrir la fiche',
     doneTitle: 'Import terminé',
     doneSummary: (added: number, merged: number, skipped: number) =>

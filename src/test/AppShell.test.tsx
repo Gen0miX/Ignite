@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { routes } from '../app/routes';
@@ -42,7 +42,7 @@ describe('app shell', () => {
 
     await user.click(screen.getByRole('link', { name: /Réglages/ }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Réglages' })).toBeVisible();
-    expect(router.state.location.pathname).toBe('/settings/sources');
+    expect(router.state.location.pathname).toBe('/settings/general');
     // The library panel only shows on library screens.
     expect(screen.queryByRole('link', { name: /Installés/ })).not.toBeInTheDocument();
 
@@ -65,5 +65,28 @@ describe('app shell', () => {
   it('shows that the backend is unavailable outside Tauri', async () => {
     renderAt('/settings/sources');
     expect((await screen.findAllByText(/Backend indisponible/))[0]).toBeVisible();
+  });
+
+  it('shows the settings one category at a time', async () => {
+    const user = userEvent.setup();
+    const router = renderAt('/settings/general');
+    const nav = await screen.findByRole('navigation', { name: 'Réglages' });
+    for (const name of ['Général', 'Sources', 'Succès et suivi', 'Comptes et clés', 'À propos'])
+      expect(within(nav).getByRole('link', { name })).toBeVisible();
+    expect(within(nav).getByRole('link', { name: 'Général' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(screen.getByRole('heading', { level: 2, name: 'Général' })).toBeVisible();
+
+    await user.click(within(nav).getByRole('link', { name: 'À propos' }));
+    expect(router.state.location.pathname).toBe('/settings/about');
+    expect(screen.getByRole('heading', { level: 2, name: 'À propos' })).toBeVisible();
+  });
+
+  it('sends an unknown settings page to Général', async () => {
+    const router = renderAt('/settings/nope');
+    await screen.findByRole('navigation', { name: 'Réglages' });
+    expect(router.state.location.pathname).toBe('/settings/general');
   });
 });

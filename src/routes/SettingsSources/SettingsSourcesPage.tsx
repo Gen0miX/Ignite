@@ -1,5 +1,16 @@
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate, NavLink, useParams } from 'react-router-dom';
+import {
+  Camera,
+  EyeOff,
+  Gamepad2,
+  Info,
+  KeyRound,
+  Library,
+  SlidersHorizontal,
+  Trophy,
+  type LucideIcon,
+} from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   commands,
@@ -36,10 +47,9 @@ import { Switch } from '../../components/Switch/Switch';
 import { fr } from '../../i18n/fr';
 import { formatLastPlayed } from '../../lib/format';
 import { usePrefs, type RecapMode } from '../../lib/prefs';
-import { scrollToSection } from '../../lib/scrollToSection';
 import styles from './SettingsSourcesPage.module.css';
 import { CaptureFoldersCard } from './CaptureFoldersCard';
-import { EmulatorsCard } from './EmulatorsCard';
+import { EmulatorsCard, RaAccount } from './EmulatorsCard';
 
 const t = fr.settings;
 
@@ -64,7 +74,7 @@ function SteamCard({ card }: { card: SourceCard }) {
       <header className={styles.cardHeader}>
         <SourceChip kind="steam" />
         <div className={styles.cardTitle}>
-          <h2 id="source-steam">{t.steam.title}</h2>
+          <h3 id="source-steam">{t.steam.title}</h3>
           <span className={styles.muted}>{t.steam.provides}</span>
         </div>
         <StatusPill status={card.status} />
@@ -94,8 +104,14 @@ function SteamCard({ card }: { card: SourceCard }) {
         </p>
       ))}
 
-      {settings.data && <SteamAccount key={settings.data.steamId ?? 'none'} />}
-      {settings.data && <SteamApiKey present={settings.data.apiKeyPresent} />}
+      {settings.data && (
+        <p className={styles.muted}>
+          {settings.data.apiKeyPresent ? t.steam.accountsLinkReady : t.steam.accountsLinkMissing}{' '}
+          <Link to="/settings/accounts" className={styles.inlineLink}>
+            {t.nav.accounts}
+          </Link>
+        </p>
+      )}
 
       <div>
         <button
@@ -145,7 +161,7 @@ function GenericSourceCard({ card }: { card: SourceCard }) {
       <header className={styles.cardHeader}>
         <SourceChip kind={card.kind} />
         <div className={styles.cardTitle}>
-          <h2 id={`source-${card.kind}`}>{name}</h2>
+          <h3 id={`source-${card.kind}`}>{name}</h3>
           {info && <span className={styles.muted}>{info.provides}</span>}
         </div>
         <StatusPill status={card.status} />
@@ -402,17 +418,9 @@ function TrackingCard() {
     choices.includes(v) ? choices : [...choices, v].sort((a, b) => a - b);
   return (
     <section className={styles.card} aria-labelledby="tracking-title">
-      <h2 id="tracking-title" className="section-label">
+      <h3 id="tracking-title" className="section-label">
         {t.trackingTitle}
-      </h2>
-      <dl className={styles.details}>
-        <dt>{tt.method}</dt>
-        <dd>{tt.methodValue}</dd>
-        <dt>{tt.duplicates}</dt>
-        <dd>{tt.duplicatesValue}</dd>
-        <dt>{tt.history}</dt>
-        <dd>{tt.historyValue}</dd>
-      </dl>
+      </h3>
       <div className={styles.field}>
         <label className={styles.label} htmlFor="min-session">
           {tt.minSession}
@@ -449,6 +457,37 @@ function TrackingCard() {
         </select>
         <span className={styles.muted}>{tt.idleHint}</span>
       </div>
+      <details className={styles.howItWorks}>
+        <summary>{tt.howItWorks}</summary>
+        <dl className={styles.details}>
+          <dt>{tt.method}</dt>
+          <dd>{tt.methodValue}</dd>
+          <dt>{tt.duplicates}</dt>
+          <dd>{tt.duplicatesValue}</dd>
+          <dt>{tt.history}</dt>
+          <dd>{tt.historyValue}</dd>
+        </dl>
+      </details>
+      {save.isError && (
+        <p role="alert" className={styles.errorText}>
+          {tt.saveError}
+        </p>
+      )}
+    </section>
+  );
+}
+
+/** Ignite's own success notifications (popup in the corner of the screen). */
+function NotificationsCard() {
+  const { data } = useTrackingSettings();
+  const save = useSetTrackingSettings();
+  if (!data) return null;
+  const tt = t.tracking;
+  return (
+    <section className={styles.card} aria-labelledby="notifications-title">
+      <h3 id="notifications-title" className="section-label">
+        {tt.notificationsTitle}
+      </h3>
       <div className={styles.cardHeader}>
         <div className={styles.cardTitle}>
           <span className={styles.label}>{tt.toasts}</span>
@@ -479,9 +518,9 @@ function GeneralCard() {
   const tg = t.general;
   return (
     <section className={styles.card} aria-labelledby="general-title">
-      <h2 id="general-title" className="section-label">
+      <h3 id="general-title" className="section-label">
         {tg.title}
-      </h2>
+      </h3>
       <div className={styles.cardHeader}>
         <div className={styles.cardTitle}>
           <span className={styles.label}>{tg.showTrailers}</span>
@@ -545,9 +584,9 @@ function AppCard() {
   ];
   return (
     <section className={styles.card} aria-labelledby="app-title">
-      <h2 id="app-title" className="section-label">
+      <h3 id="app-title" className="section-label">
         {ta.title}
-      </h2>
+      </h3>
       {rows.map((r) => (
         <div key={r.key} className={styles.cardHeader}>
           <div className={styles.cardTitle}>
@@ -582,15 +621,7 @@ function HiddenGamesCard() {
   const games = list.data ?? [];
   const unhide = (ids: string[]) => bulk.mutate({ ids, update: { hidden: false } });
   return (
-    <section className={styles.card} aria-labelledby="hidden-title">
-      <div className={styles.cardHeader}>
-        <div className={styles.cardTitle}>
-          <h2 id="hidden-title" className="section-label">
-            {th.title}
-          </h2>
-          <span className={styles.muted}>{th.intro}</span>
-        </div>
-      </div>
+    <section className={styles.card} aria-label={th.title}>
       {games.length === 0 ? (
         <p className={styles.muted}>{list.isLoading ? t.loading : th.empty}</p>
       ) : (
@@ -637,9 +668,9 @@ function HiddenGamesCard() {
 function MetadataCard() {
   return (
     <section className={styles.card} aria-labelledby="metadata-title">
-      <h2 id="metadata-title" className="section-label">
+      <h3 id="metadata-title" className="section-label">
         {t.metadataTitle}
-      </h2>
+      </h3>
       <div className={styles.field}>
         <span className={styles.label} id="sgdb-label">
           {t.sgdb.title}
@@ -694,10 +725,7 @@ function AboutCard() {
   }
 
   return (
-    <section className={styles.card} aria-labelledby="settings-about">
-      <h2 id="settings-about" className="section-label">
-        {t.about}
-      </h2>
+    <section className={styles.card} aria-label={t.about}>
       {body}
     </section>
   );
@@ -707,74 +735,160 @@ function AboutCard() {
 function GoldbergCard() {
   return (
     <section className={styles.card} aria-labelledby="goldberg-title">
-      <h2 id="goldberg-title" className="section-label">
+      <h3 id="goldberg-title" className="section-label">
         {fr.goldbergOptions.globalTitle}
-      </h2>
+      </h3>
       <GoldbergOptions />
     </section>
   );
 }
 
-const TOC: [string, string][] = [
-  ['general-title', t.general.title],
-  ['settings-sources', t.sourcesSection],
-  ['emulators-title', t.emulators.title],
-  ['tracking-title', t.trackingTitle],
-  ['goldberg-title', fr.goldbergOptions.globalTitle],
-  ['app-title', t.app.title],
-  ['hidden-title', t.hidden.title],
-  ['metadata-title', t.metadataTitle],
-  ['settings-about', t.about],
+/** Steam account and Web API key (achievements, playtime, store data). */
+function SteamAccountCard() {
+  const settings = useSteamSettings();
+  if (!settings.data) return null;
+  return (
+    <section className={styles.card} aria-labelledby="steam-account-title">
+      <header className={styles.cardHeader}>
+        <SourceChip kind="steam" />
+        <div className={styles.cardTitle}>
+          <h3 id="steam-account-title">{t.steam.title}</h3>
+          <span className={styles.muted}>{t.steam.accountsProvides}</span>
+        </div>
+      </header>
+      <SteamAccount key={settings.data.steamId ?? 'none'} />
+      <SteamApiKey present={settings.data.apiKeyPresent} />
+    </section>
+  );
+}
+
+function RetroAchievementsCard() {
+  return (
+    <section className={styles.card} aria-labelledby="ra-account-title">
+      <h3 id="ra-account-title" className="section-label">
+        RetroAchievements
+      </h3>
+      <RaAccount
+        keyField={<SecretKeyField kind="retroachievements_api_key" labelId="ra-label" />}
+      />
+    </section>
+  );
+}
+
+type SectionId =
+  | 'general'
+  | 'sources'
+  | 'emulators'
+  | 'achievements'
+  | 'captures'
+  | 'accounts'
+  | 'hidden'
+  | 'about';
+
+const SECTIONS: { id: SectionId; icon: LucideIcon; backend: boolean }[] = [
+  { id: 'general', icon: SlidersHorizontal, backend: false },
+  { id: 'sources', icon: Library, backend: true },
+  { id: 'emulators', icon: Gamepad2, backend: true },
+  { id: 'achievements', icon: Trophy, backend: true },
+  { id: 'captures', icon: Camera, backend: true },
+  { id: 'accounts', icon: KeyRound, backend: true },
+  { id: 'hidden', icon: EyeOff, backend: true },
+  { id: 'about', icon: Info, backend: false },
 ];
 
-export function SettingsSourcesPage() {
+function SourcesSection() {
   const sources = useSourcesStatus();
+  return (
+    <>
+      {sources.data?.map((card) =>
+        card.kind === 'steam' ? (
+          <SteamCard key={card.kind} card={card} />
+        ) : (
+          <GenericSourceCard key={card.kind} card={card} />
+        ),
+      )}
+      <p className={styles.muted}>{t.otherSources}</p>
+    </>
+  );
+}
+
+function SectionBody({ id }: { id: SectionId }) {
+  switch (id) {
+    case 'general':
+      return (
+        <>
+          <GeneralCard />
+          {isTauri() && <AppCard />}
+        </>
+      );
+    case 'sources':
+      return <SourcesSection />;
+    case 'emulators':
+      return <EmulatorsCard />;
+    case 'achievements':
+      return (
+        <>
+          <TrackingCard />
+          <NotificationsCard />
+          <GoldbergCard />
+        </>
+      );
+    case 'captures':
+      return <CaptureFoldersCard />;
+    case 'accounts':
+      return (
+        <>
+          <SteamAccountCard />
+          <RetroAchievementsCard />
+          <MetadataCard />
+        </>
+      );
+    case 'hidden':
+      return <HiddenGamesCard />;
+    case 'about':
+      return <AboutCard />;
+  }
+}
+
+/** Réglages: categories on the left, one category at a time (`/settings/:section`). */
+export function SettingsPage() {
+  const { section } = useParams();
+  const current = SECTIONS.find((s) => s.id === section);
+  if (!current) return <Navigate to="/settings/general" replace />;
+  const info = t.nav;
   return (
     <PageMain>
       <PageHeader title={t.sourcesTitle} />
-      <nav className={styles.toc} aria-label={t.sourcesTitle}>
-        {TOC.map(([id, label]) => (
-          <a
-            key={id}
-            href={`#${id}`}
-            onClick={(e) => {
-              e.preventDefault();
-              scrollToSection(id);
-            }}
-          >
-            {label}
-          </a>
-        ))}
-      </nav>
-      <GeneralCard />
-      <h2 id="settings-sources" className="section-label">
-        {t.sourcesSection}
-      </h2>
-      <p className={styles.intro}>{t.optionalNote}</p>
-      {isTauri() ? (
-        sources.data?.map((card) =>
-          card.kind === 'steam' ? (
-            <SteamCard key={card.kind} card={card} />
+      <div className={styles.layout}>
+        <nav className={styles.nav} aria-label={t.sourcesTitle}>
+          <ul>
+            {SECTIONS.map(({ id, icon: Icon }) => (
+              <li key={id}>
+                <NavLink
+                  to={`/settings/${id}`}
+                  className={({ isActive }) =>
+                    `${styles.navLink} ${isActive ? styles.navActive : ''}`
+                  }
+                >
+                  <Icon size={16} aria-hidden="true" />
+                  {info[id]}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <div className={styles.content}>
+          <header className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>{info[current.id]}</h2>
+            <p className={styles.muted}>{t.navIntro[current.id]}</p>
+          </header>
+          {current.backend && !isTauri() ? (
+            <EmptyState>{t.backendUnavailable}</EmptyState>
           ) : (
-            <GenericSourceCard key={card.kind} card={card} />
-          ),
-        )
-      ) : (
-        <EmptyState>{t.backendUnavailable}</EmptyState>
-      )}
-      <p className={styles.muted}>{t.otherSources}</p>
-      {isTauri() && (
-        <EmulatorsCard
-          keyField={<SecretKeyField kind="retroachievements_api_key" labelId="ra-label" />}
-        />
-      )}
-      {isTauri() && <CaptureFoldersCard />}
-      {isTauri() && <TrackingCard />}
-      {isTauri() && <GoldbergCard />}
-      {isTauri() && <AppCard />}
-      {isTauri() && <HiddenGamesCard />}
-      {isTauri() && <MetadataCard />}
-      <AboutCard />
+            <SectionBody key={current.id} id={current.id} />
+          )}
+        </div>
+      </div>
     </PageMain>
   );
 }

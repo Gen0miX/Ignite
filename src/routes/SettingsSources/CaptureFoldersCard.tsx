@@ -20,10 +20,7 @@ export function CaptureFoldersCard() {
   };
 
   return (
-    <section className={styles.card} aria-labelledby="capture-folders-title">
-      <h2 id="capture-folders-title" className="section-label">
-        {t.title}
-      </h2>
+    <section className={styles.card} aria-label={t.title}>
       <p className={styles.muted}>{t.help}</p>
       {folders.length > 0 && (
         <ul className={styles.emuList}>

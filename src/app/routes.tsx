@@ -4,7 +4,7 @@ import { HomePage } from '../routes/Home/HomePage';
 import { LibraryPage } from '../routes/Library/LibraryPage';
 import { GameDetailPage } from '../routes/GameDetail/GameDetailPage';
 import { StatsPage } from '../routes/Stats/StatsPage';
-import { SettingsSourcesPage } from '../routes/SettingsSources/SettingsSourcesPage';
+import { SettingsPage } from '../routes/SettingsSources/SettingsSourcesPage';
 import { ImportPage } from '../routes/Import/ImportPage';
 import { NotFoundPage } from '../routes/NotFound/NotFoundPage';
 import { CouchPage } from '../routes/Couch/CouchPage';
@@ -21,8 +21,8 @@ export const routes: RouteObject[] = [
       { path: 'library', element: <LibraryPage /> },
       { path: 'game/:id/:tab?', element: <GameDetailPage /> },
       { path: 'stats', element: <StatsPage /> },
-      { path: 'settings', element: <Navigate to="/settings/sources" replace /> },
-      { path: 'settings/sources', element: <SettingsSourcesPage /> },
+      { path: 'settings', element: <Navigate to="/settings/general" replace /> },
+      { path: 'settings/:section', element: <SettingsPage /> },
       { path: 'import', element: <ImportPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],

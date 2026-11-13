@@ -55,7 +55,7 @@ export function TimeToBeatCard({
       {view?.igdbKeysMissing && !best && (
         <p className={styles.hint}>
           {t.keysMissing}{' '}
-          <Link to="/settings/sources#metadata-title" className={styles.link}>
+          <Link to="/settings/accounts" className={styles.link}>
             {t.openSettings}
           </Link>
         </p>

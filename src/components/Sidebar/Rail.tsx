@@ -70,7 +70,7 @@ export function Rail() {
         <RailNowPlaying />
         <RailLink to="/import" label={fr.nav.import} icon={Download} match={starts('/import')} />
         <RailLink
-          to="/settings/sources"
+          to="/settings/general"
           label={fr.nav.settings}
           icon={Settings}
           match={starts('/settings')}

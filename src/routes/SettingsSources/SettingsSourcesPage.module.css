@@ -25,7 +25,8 @@
   flex-direction: column;
 }
 
-.cardTitle h2 {
+.cardTitle h2,
+.cardTitle h3 {
   font-size: var(--text-lg);
   font-weight: 600;
 }
@@ -231,4 +232,117 @@
 
 .hiddenActions > span {
   margin-right: auto;
+}
+
+/* Two columns: categories on the left, one category on the right. */
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 720px);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.nav {
+  position: sticky;
+  top: var(--space-4);
+}
+
+.nav ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--h-control);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-2);
+  font-size: var(--text-md);
+  text-decoration: none;
+  transition:
+    background var(--transition),
+    color var(--transition);
+}
+
+.navLink:hover {
+  background: var(--color-field);
+  color: var(--color-text);
+}
+
+.navLink:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.navLink svg {
+  color: var(--color-muted);
+}
+
+.navActive {
+  background: var(--color-active);
+  color: var(--color-text);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.navActive svg {
+  color: var(--color-accent-ink);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.sectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.sectionTitle {
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+.inlineLink {
+  color: var(--color-accent-ink);
+}
+
+.inlineLink:hover {
+  text-decoration: underline;
+}
+
+.howItWorks summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--h-control-sm);
+  color: var(--color-muted);
+  font-size: var(--text-base);
+  cursor: pointer;
+}
+
+.howItWorks summary:hover {
+  color: var(--color-text);
+}
+
+.howItWorks[open] summary {
+  margin-bottom: var(--space-2);
+}
+
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: var(--space-6);
+  }
 }

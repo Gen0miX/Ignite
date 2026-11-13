@@ -301,7 +301,7 @@ export function AddGameModal({ mode, onMode, onClose }: AddGameModalProps) {
                 icon={<Gamepad2 size={22} />}
                 title={t.emulator}
                 body={t.emulatorBody}
-                onClick={() => navigate('/settings/sources#emulators-title')}
+                onClick={() => navigate('/settings/emulators')}
               />
             </div>
           ) : mode === 'scan' ? (

@@ -103,7 +103,7 @@ export function ArtworkPicker({ gameId, title, onClose }: ArtworkPickerProps) {
   } else if (data.state === 'needsKey') {
     body = (
       <p className={styles.muted}>
-        {t.needsKey} <Link to="/settings/sources">{t.openSettings}</Link>
+        {t.needsKey} <Link to="/settings/accounts">{t.openSettings}</Link>
       </p>
     );
   } else if (data.state === 'noMatch' || data.options[slot].length === 0) {
