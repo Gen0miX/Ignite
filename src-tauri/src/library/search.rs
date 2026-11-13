@@ -70,6 +70,25 @@ fn status_value(v: &str) -> Option<&'static str> {
     })
 }
 
+/// Genre or player mode as stored (French names, see `metadata::genres`):
+/// accepts the English names shown in the English UI and short forms.
+fn genre_value(v: &str) -> String {
+    let canonical = match fold(v).as_str() {
+        "solo" | "single-player" | "singleplayer" | "single" => "Solo",
+        "multijoueur" | "multi" | "multiplayer" => "Multijoueur",
+        "cooperation" | "coop" | "co-op" | "cooperative" => "Coopération",
+        "ecran-partage" | "split-screen" | "splitscreen" => "Écran partagé",
+        "tactics" | "tactique" => "Tactique",
+        "platformer" | "plateforme" | "plates-formes" => "Plateforme",
+        "card-&-board" | "cartes-&-plateau" => "Cartes & plateau",
+        _ => {
+            return crate::metadata::genres::normalize_genre(v)
+                .unwrap_or_else(|| v.trim().to_string())
+        }
+    };
+    canonical.to_string()
+}
+
 fn bool_value(v: &str) -> Option<bool> {
     match fold(v).as_str() {
         "oui" | "yes" | "true" | "1" | "o" | "y" => Some(true),
@@ -116,8 +135,10 @@ fn filter(key: &str, value: &str) -> Option<Rule> {
             Some(cond(Field::Source, Op::In, json!([source_value(value)?])))
         }
         "tag" | "tags" => text(Field::Tag),
-        "genre" | "genres" => text(Field::Genre),
-        "mode" | "joueurs" | "players" => text(Field::Mode),
+        "genre" | "genres" => Some(cond(Field::Genre, Op::In, json!([genre_value(value)]))),
+        "mode" | "joueurs" | "players" => {
+            Some(cond(Field::Mode, Op::In, json!([genre_value(value)])))
+        }
         "statut" | "status" => Some(cond(Field::Status, Op::In, json!([status_value(value)?]))),
         "heures" | "h" | "hours" | "temps" => {
             let (op, v) = numeric(value, 60.0)?;
@@ -250,6 +271,32 @@ mod tests {
         assert!(hit("src:galaxy installe:oui"));
         assert!(hit("genre:rpg joueurs:solo"));
         assert!(!hit("statut:en-cours"));
+    }
+
+    #[test]
+    fn genres_and_modes_in_both_languages() {
+        let coop = |q: &str| {
+            let f = Facts {
+                genres: vec!["Aventure".into(), "Stratégie".into()],
+                modes: vec!["Coopération".into(), "Écran partagé".into()],
+                ..facts()
+            };
+            parse(q).rule.matches(&f, Utc::now())
+        };
+        assert!(coop("genre:adventure"));
+        assert!(coop("genre:Aventure"));
+        assert!(coop("genre:strategie"));
+        assert!(coop("genre:strategy"));
+        assert!(coop("players:coop"));
+        assert!(coop("joueurs:co-op"));
+        assert!(coop("joueurs:cooperation"));
+        assert!(coop(r#"players:"split screen""#));
+        assert!(coop("genre:coop")); // a genre rule also matches modes
+        assert!(!coop("players:multi"));
+        assert!(hit("players:single-player genre:role-playing"));
+        // Unknown names are kept as typed.
+        assert!(hit("genre:RPG"));
+        assert!(!hit("genre:roguelike"));
     }
 
     #[test]

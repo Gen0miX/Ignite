@@ -12,6 +12,7 @@ Toutes les évolutions notables d'Ignite. Format inspiré de [Keep a Changelog](
 - Réglages rangés par catégories (Général, Sources, Émulateurs, Succès et suivi, Captures, Comptes et clés, Jeux masqués, À propos), une à la fois. Toutes les clés d'API sont réunies dans « Comptes et clés ».
 
 ### Corrigé
+- Recherche : `genre:` et `joueurs:` acceptent les noms anglais et les formes courtes (`genre:adventure`, `players:coop`, `joueurs:multi`…). Avant, `joueurs:coop` ne trouvait pas les jeux en « Coopération ».
 - Collections intelligentes : une règle « Genre » trouve aussi les modes de jeu (« Multijoueur », « Coopération »…). L'éditeur propose les genres et modes présents dans la bibliothèque au lieu d'un champ libre.
 
 ## [1.4.1] - 2026-11-09
