@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, X } from 'lucide-react';
-import { commands, unwrap, type Collection } from '../../api/client';
+import { commands, isTauri, unwrap, type Collection } from '../../api/client';
 import { fr } from '../../i18n/fr';
 import {
   defaultRow,
@@ -39,9 +39,64 @@ interface CollectionEditorProps {
   onClose: (saved?: Collection) => void;
 }
 
+type Facet = { name: string; count: number };
+
+/** Genres and player modes present in the library (same query as the filter chips). */
+function useFacets() {
+  return useQuery({
+    queryKey: ['facets'],
+    queryFn: () => unwrap(commands.facets()),
+    enabled: isTauri(),
+  });
+}
+
+function FacetOptions({ items }: { items: Facet[] }) {
+  return (
+    <>
+      {items.map((f) => (
+        <option key={f.name} value={f.name}>
+          {t.facetOption(f.name, f.count)}
+        </option>
+      ))}
+    </>
+  );
+}
+
 function ValueInput({ row, onChange }: { row: Row; onChange: (r: Row) => void }) {
   const def = fieldDef(row.field);
   const label = t.valueLabel;
+  const facets = useFacets().data;
+  // Genre and players: pick a value that exists in the library. A genre rule
+  // also matches player modes, so both lists are offered there.
+  if ((row.field === 'genre' || row.field === 'mode') && facets) {
+    const genres = row.field === 'genre' ? facets.genres : [];
+    const modes = facets.modes;
+    const known = [...genres, ...modes].some((f) => f.name === row.value);
+    return (
+      <select
+        aria-label={label}
+        value={row.value}
+        onChange={(e) => onChange({ ...row, value: e.target.value })}
+      >
+        <option value="" disabled>
+          {t.pickValue}
+        </option>
+        {row.value && !known && <option value={row.value}>{row.value}</option>}
+        {row.field === 'genre' ? (
+          <>
+            <optgroup label={t.genresGroup}>
+              <FacetOptions items={genres} />
+            </optgroup>
+            <optgroup label={t.modesGroup}>
+              <FacetOptions items={modes} />
+            </optgroup>
+          </>
+        ) : (
+          <FacetOptions items={modes} />
+        )}
+      </select>
+    );
+  }
   if (def.kind === 'bool') {
     return (
       <select

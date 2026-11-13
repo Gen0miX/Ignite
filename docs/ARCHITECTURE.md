@@ -229,7 +229,7 @@ Pour chaque `game_source` :
 ]}
 ```
 
-Champs : `title`, `tag`, `genre`, `source`, `installed`, `status`, `favorite`, `playtime_minutes`, `avg_session_minutes`, `last_played`, `achievement_percent`, `hltb_main_minutes`, `added_at`. Opérateurs : `eq`, `neq`, `in`, `lt`, `gt`, `between`, `older_than_days`, `newer_than_days`, `contains`. Groupes `all` / `any` imbriqués.
+Champs : `title`, `tag`, `genre` (compare aussi les modes de jeu : on cherche souvent « multijoueur » ou « coop » comme un genre), `mode`, `source`, `installed`, `status`, `favorite`, `playtime_minutes`, `avg_session_minutes`, `last_played`, `achievement_percent`, `hltb_main_minutes`, `added_at`. Opérateurs : `eq`, `neq`, `in`, `lt`, `gt`, `between`, `older_than_days`, `newer_than_days`, `contains`. Groupes `all` / `any` imbriqués.
 
 La **barre de recherche** reprend les mêmes champs : `source:gog heures:>20 tag:souls statut:todo texte`. Un seul parseur sert aux deux (recherche et règles), avec des tests unitaires.
 

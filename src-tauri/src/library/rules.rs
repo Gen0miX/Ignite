@@ -190,7 +190,12 @@ fn eval_condition(c: &Condition, f: &Facts, now: DateTime<Utc>) -> Option<bool> 
             }
         }
         Field::Tag => set_matches(&f.tags, c.op, &c.value),
-        Field::Genre => set_matches(&f.genres, c.op, &c.value),
+        // Player modes count as genres too: people look for "multijoueur" or
+        // "coop" as a genre, and the two lists share no name.
+        Field::Genre => {
+            let both: Vec<String> = f.genres.iter().chain(&f.modes).cloned().collect();
+            set_matches(&both, c.op, &c.value)
+        }
         Field::Mode => set_matches(&f.modes, c.op, &c.value),
         Field::Source => set_matches(&f.sources, c.op, &c.value),
         Field::Status => set_matches(std::slice::from_ref(&f.status), c.op, &c.value),
@@ -400,5 +405,24 @@ mod tests {
             assert!(r.validate().is_err(), "{bad}");
         }
         assert!(Rule::parse(r#"{"field": "nope", "op": "eq"}"#).is_err());
+    }
+
+    #[test]
+    fn genre_also_matches_player_modes() {
+        let f = Facts {
+            genres: vec!["Action".into()],
+            modes: vec!["Multijoueur".into(), "Coopération".into()],
+            ..Default::default()
+        };
+        let g = |op: &str, v: &str| rule(json!({"field": "genre", "op": op, "value": [v]}));
+        assert!(g("in", "multijoueur").matches(&f, now()));
+        assert!(g("in", "Cooperation").matches(&f, now()));
+        assert!(g("in", "Action").matches(&f, now()));
+        assert!(!g("neq", "Multijoueur").matches(&f, now()));
+        assert!(!g("in", "RPG").matches(&f, now()));
+        // A mode condition still only looks at modes.
+        assert!(
+            !rule(json!({"field": "mode", "op": "in", "value": ["Action"]})).matches(&f, now())
+        );
     }
 }
