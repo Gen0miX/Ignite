@@ -2,7 +2,7 @@
 
 Toutes les évolutions notables d'Ignite. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions selon [SemVer](https://semver.org/lang/fr/).
 
-## [Non publié]
+## [1.5.1] - 2026-11-25
 
 ### Corrigé
 - Fin de session détectée en quelques secondes : surveillance chaque seconde pendant une partie, délai de grâce réduit une fois le jeu bien lancé, et les rapports de plantage ou navigateurs intégrés restés ouverts dans le dossier du jeu ne prolongent plus la session. Le récap s'ouvre sans attendre l'analyse des captures.

@@ -1,7 +1,7 @@
 {
   "name": "ludotheque",
   "private": true,
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Ignite: tous tes jeux PC au même endroit",
   "license": "MIT",
   "repository": "github:Gen0miX/ignite",
