@@ -24,6 +24,8 @@ pub const SESSION_STARTED_EVENT: &str = "session-started";
 pub const SESSION_ENDED_EVENT: &str = "session-ended";
 
 const POLL: Duration = Duration::from_secs(3);
+/// While a game runs: its end is noticed within a second or two.
+const POLL_PLAYING: Duration = Duration::from_secs(1);
 const RELOAD: Duration = Duration::from_secs(30);
 const LOCK_FILE: &str = "tracker.lock";
 const LOCK_RETRY: Duration = Duration::from_secs(10);
@@ -319,7 +321,11 @@ fn run(app: AppHandle) {
             })
             .collect();
 
-        std::thread::sleep(POLL);
+        std::thread::sleep(if tracker.active().next().is_some() {
+            POLL_PLAYING
+        } else {
+            POLL
+        });
     }
 
     // Closing the app: write what is open.

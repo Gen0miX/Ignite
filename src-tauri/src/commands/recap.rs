@@ -410,21 +410,21 @@ pub fn session_written(app: &AppHandle, session_id: &str, game_id: &str) {
     if has_achievements {
         set_syncing(session_id, true);
     }
-    // Captures taken during the session show in the recap.
-    super::captures::scan_now(app);
+    // The recap opens at once; captures (folder scan, can take a while) and
+    // achievements are filled in by a refresh, off the tracker thread.
     let _ = app.emit(RECAP_READY_EVENT, payload.clone());
-    if !has_achievements {
-        return;
-    }
     let app = app.clone();
     let session_id = session_id.to_string();
     let game_id = game_id.to_string();
     std::thread::spawn(move || {
-        if let Err(e) = super::achievements::refresh(&app, &game_id) {
-            tracing::warn!(error = ?e, "recap: achievements resync failed");
+        super::captures::scan_now(&app);
+        if has_achievements {
+            if let Err(e) = super::achievements::refresh(&app, &game_id) {
+                tracing::warn!(error = ?e, "recap: achievements resync failed");
+            }
+            super::achievements::fetch_icons_now(&app, &game_id);
+            set_syncing(&session_id, false);
         }
-        super::achievements::fetch_icons_now(&app, &game_id);
-        set_syncing(&session_id, false);
         let _ = app.emit(RECAP_UPDATED_EVENT, payload);
     });
 }

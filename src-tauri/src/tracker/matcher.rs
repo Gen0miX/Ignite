@@ -41,8 +41,9 @@ pub fn matchers_for(
 ) -> Vec<ProcessMatcher> {
     if let Some(json) = explicit_json {
         match serde_json::from_str::<Vec<ProcessMatcher>>(json) {
-            Ok(list) if !list.is_empty() => return list,
-            Ok(_) => {}
+            // `[]`: deliberately not tracked (the only known executable is a
+            // shared launcher), so no default is derived.
+            Ok(list) => return list,
             Err(e) => tracing::warn!(error = %e, "invalid process_matchers JSON, using defaults"),
         }
     }
@@ -64,6 +65,21 @@ fn norm(path: &str) -> String {
         .to_lowercase()
 }
 
+/// Helpers shipped in game folders that can outlive the game (crash
+/// reporters, embedded browsers): a folder match ignores them, so closing the
+/// game ends the session right away. An explicit path or name still counts.
+fn lingering_helper(name: &str) -> bool {
+    let n = name.to_lowercase();
+    let n = n.trim_end_matches(".exe");
+    n.contains("crashhandler")
+        || n.contains("crashreport")
+        || n.contains("crashpad")
+        || n.contains("bugsplat")
+        || n.contains("webhelper")
+        || n == "qtwebengineprocess"
+        || n == "cefsharp.browsersubprocess"
+}
+
 /// Score of `matcher` for `process`; `None` when it does not match.
 /// Higher is better: exact path > prefix (longer is better) > name.
 fn score(matcher: &ProcessMatcher, process: &ProcessInfo) -> Option<usize> {
@@ -76,7 +92,7 @@ fn score(matcher: &ProcessMatcher, process: &ProcessInfo) -> Option<usize> {
             let exe = norm(process.exe_path.as_deref()?);
             let prefix = norm(prefix);
             // Guard against drive roots or empty prefixes matching everything.
-            if prefix.len() < 4 {
+            if prefix.len() < 4 || lingering_helper(&process.name) {
                 return None;
             }
             exe.strip_prefix(&prefix)
@@ -157,6 +173,46 @@ mod tests {
             source_id: format!("src-{game}"),
             matchers,
         }
+    }
+
+    #[test]
+    fn folder_matches_skip_helpers_that_outlive_the_game() {
+        let watch = vec![entry(
+            "ue",
+            vec![ProcessMatcher::PathPrefix(r"C:\Games\UE".into())],
+        )];
+        for helper in [
+            "CrashReportClient.exe",
+            "UnityCrashHandler64.exe",
+            "EpicWebHelper.exe",
+            "crashpad_handler.exe",
+        ] {
+            let path = format!(r"C:\Games\UE\Engine\{helper}");
+            let p = proc(helper, Some(&path));
+            assert!(running_games(&watch, &[p], None).is_empty(), "{helper}");
+        }
+        let game = proc(
+            "UE-Win64-Shipping.exe",
+            Some(r"C:\Games\UE\UE-Win64-Shipping.exe"),
+        );
+        assert_eq!(running_games(&watch, &[game], None).len(), 1);
+        // Named explicitly: still tracked.
+        let named = vec![entry(
+            "x",
+            vec![ProcessMatcher::Exe("EpicWebHelper.exe".into())],
+        )];
+        let p = proc("EpicWebHelper.exe", None);
+        assert_eq!(running_games(&named, &[p], None).len(), 1);
+    }
+
+    #[test]
+    fn an_explicit_empty_list_means_not_tracked() {
+        assert!(matchers_for(
+            Some("[]"),
+            Some(r"C:\Riot Games\X"),
+            Some(r"C:\Riot Games\Riot Client\RiotClientServices.exe")
+        )
+        .is_empty());
     }
 
     #[test]

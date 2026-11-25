@@ -12,9 +12,13 @@ pub struct TrackerConfig {
     pub min_session_secs: i64,
     /// No keyboard / mouse / gamepad input for this long = idle.
     pub idle_threshold_secs: i64,
-    /// A game is over once its processes are gone for this long
-    /// (launchers often restart a child process).
+    /// A game is over once its processes are gone for this long, during the
+    /// first `startup_secs` (launchers often hand over to a child process).
     pub grace_secs: i64,
+    /// Past the start-up phase, a closed game is over after this short delay,
+    /// so the recap shows right after quitting.
+    pub settled_grace_secs: i64,
+    pub startup_secs: i64,
     /// How often an ongoing session is written, to survive a crash.
     pub heartbeat_secs: i64,
 }
@@ -25,6 +29,8 @@ impl Default for TrackerConfig {
             min_session_secs: 120,
             idle_threshold_secs: 15 * 60,
             grace_secs: 10,
+            settled_grace_secs: 4,
+            startup_secs: 180,
             heartbeat_secs: 60,
         }
     }
@@ -166,12 +172,17 @@ impl SessionTracker {
             }
         }
 
+        let config = self.config;
         let gone: Vec<String> = self
             .active
             .iter()
             .filter(|(id, s)| {
-                !running.iter().any(|(g, _)| g == *id)
-                    && (now - s.last_seen).num_seconds() > self.config.grace_secs
+                let grace = if (s.last_seen - s.started_at).num_seconds() >= config.startup_secs {
+                    config.settled_grace_secs
+                } else {
+                    config.grace_secs
+                };
+                !running.iter().any(|(g, _)| g == *id) && (now - s.last_seen).num_seconds() > grace
             })
             .map(|(id, _)| id.clone())
             .collect();
@@ -254,10 +265,10 @@ mod tests {
             .count();
         assert_eq!(beats, 8); // every 60 s over ~10 min, from the 2 min minimum on
 
-        // Process gone: still active within the grace period...
-        assert!(tr.tick(t(606), &[], 0).is_empty());
-        // ...ended after it, with the last time it was seen as end.
-        let events = tr.tick(t(612), &[], 0);
+        // Process gone: still active for a few seconds...
+        assert!(tr.tick(t(600), &[], 0).is_empty());
+        // ...ended right after (settled session), with the last time it was seen as end.
+        let events = tr.tick(t(603), &[], 0);
         let (s, keep) = ended(&events).unwrap();
         assert!(keep);
         assert_eq!(s.last_seen, t(597));
@@ -301,13 +312,29 @@ mod tests {
     #[test]
     fn a_process_restart_within_the_grace_period_keeps_one_session() {
         let mut tr = tracker();
-        play(&mut tr, 0, 300, |_| 0);
-        assert!(tr.tick(t(303), &[], 0).is_empty()); // launcher swaps process
-        let events = play(&mut tr, 306, 400, |_| 0);
+        play(&mut tr, 0, 60, |_| 0);
+        // Launcher hands over to the game: 9 s without a process.
+        assert!(tr.tick(t(63), &[], 0).is_empty());
+        assert!(tr.tick(t(66), &[], 0).is_empty());
+        let events = play(&mut tr, 66, 400, |_| 0);
         assert!(events
             .iter()
             .all(|e| !matches!(e, TrackerEvent::Started(_))));
         assert_eq!(tr.active().next().unwrap().session_id, "s1");
+    }
+
+    #[test]
+    fn a_closed_game_ends_within_seconds_once_settled() {
+        let mut tr = tracker();
+        // Polled every second while a game runs.
+        for s in 0..=600 {
+            tr.tick(t(s), &hades(), 0);
+        }
+        assert!(tr.tick(t(604), &[], 0).is_empty());
+        let events = tr.tick(t(605), &[], 0);
+        let (s, keep) = ended(&events).unwrap();
+        assert!(keep);
+        assert_eq!(s.last_seen, t(600));
     }
 
     #[test]
@@ -363,9 +390,9 @@ mod tests {
             2
         );
         tr.tick(t(200), &both, 0);
-        // b stops: still within the grace period at 205, ended at 211.
-        assert!(ended(&tr.tick(t(205), &both[..1], 0)).is_none());
-        let e = tr.tick(t(211), &both[..1], 0);
+        // b stops: still counted at 203, ended at 205 (settled session).
+        assert!(ended(&tr.tick(t(203), &both[..1], 0)).is_none());
+        let e = tr.tick(t(205), &both[..1], 0);
         let (s, _) = ended(&e).unwrap();
         assert_eq!(s.game_id, "b");
         assert_eq!(tr.active().count(), 1);

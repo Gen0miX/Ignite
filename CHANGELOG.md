@@ -2,6 +2,12 @@
 
 Toutes les évolutions notables d'Ignite. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions selon [SemVer](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Corrigé
+- Fin de session détectée en quelques secondes : surveillance chaque seconde pendant une partie, délai de grâce réduit une fois le jeu bien lancé, et les rapports de plantage ou navigateurs intégrés restés ouverts dans le dossier du jeu ne prolongent plus la session. Le récap s'ouvre sans attendre l'analyse des captures.
+- Riot : ouvrir le client Riot ne démarre plus une session Teamfight Tactics. TFT (client autonome) et 2XKO sont suivis par leur processus de jeu.
+
 ## [1.5.0] - 2026-11-13
 
 ### Ajouté

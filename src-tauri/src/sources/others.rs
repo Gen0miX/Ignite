@@ -38,8 +38,10 @@ fn riot_matchers(product: &str) -> Vec<ProcessMatcher> {
         "league_of_legends" => exe("League of Legends.exe"),
         "valorant" => exe("VALORANT-Win64-Shipping.exe"),
         "bacon" => exe("LoR.exe"),
-        // Teamfight Tactics runs inside League of Legends' game process.
-        "teamfighttactics" => Vec::new(),
+        // Standalone client (Teamfight Tactics\Live\TFT\Binaries\Win64).
+        // TFT played from the League client counts as League of Legends.
+        "teamfighttactics" => exe("TFTClient-Win64-Shipping.exe"),
+        "lion" => exe("Lion-Win64-Shipping.exe"), // 2XKO
         _ => Vec::new(),
     }
 }
@@ -54,11 +56,14 @@ pub fn riot_games(entries: &[UninstallEntry], client: Option<&str>) -> Vec<Detec
             }
             let install = existing_dir(e.install_location.as_deref());
             let mut matchers = riot_matchers(&product);
-            if matchers.is_empty() && product != "teamfighttactics" {
+            if matchers.is_empty() {
                 if let Some(dir) = &install {
                     matchers.push(ProcessMatcher::PathPrefix(dir.clone()));
                 }
             }
+            // Never fall back on the executable: it is the shared Riot client,
+            // which would count lobby time (or another Riot game) as this one.
+            let process_matchers = Some(matchers_json(&matchers).unwrap_or_else(|| "[]".into()));
             Some(DetectedGame {
                 external_id: format!("{product}.{patchline}"),
                 title: e.display_name.trim().to_string(),
@@ -68,7 +73,7 @@ pub fn riot_games(entries: &[UninstallEntry], client: Option<&str>) -> Vec<Detec
                 launch_args: Some(format!(
                     "--launch-product={product} --launch-patchline={patchline}"
                 )),
-                process_matchers: matchers_json(&matchers),
+                process_matchers,
                 ..Default::default()
             })
         })
@@ -663,13 +668,38 @@ mod tests {
             lol.process_matchers.as_deref(),
             Some(r#"[{"exe":"League of Legends.exe"}]"#)
         );
-        // Unknown product: its folder.
-        assert!(games[1]
-            .process_matchers
-            .as_deref()
-            .unwrap()
-            .contains("path_prefix"));
-        assert_eq!(games[2].process_matchers, None);
+        // 2XKO and the standalone TFT client: their game process, never the
+        // Riot client (exe_path), which used to start a TFT session.
+        assert_eq!(
+            games[1].process_matchers.as_deref(),
+            Some(r#"[{"exe":"Lion-Win64-Shipping.exe"}]"#)
+        );
+        assert_eq!(
+            games[2].process_matchers.as_deref(),
+            Some(r#"[{"exe":"TFTClient-Win64-Shipping.exe"}]"#)
+        );
+        for g in &games {
+            let m = crate::tracker::matcher::matchers_for(
+                g.process_matchers.as_deref(),
+                g.install_path.as_deref(),
+                g.exe_path.as_deref(),
+            );
+            assert!(
+                !m.iter().any(|m| matches!(m, ProcessMatcher::ExePath(_))),
+                "{}",
+                g.title
+            );
+        }
+    }
+
+    #[test]
+    fn unknown_riot_game_without_folder_is_not_tracked() {
+        let e = entry("Riot Game newgame.live", "New Game", "Riot Games, Inc");
+        let games = riot_games(
+            &[e],
+            Some(r"C:\Riot Games\Riot Client\RiotClientServices.exe"),
+        );
+        assert_eq!(games[0].process_matchers.as_deref(), Some("[]"));
     }
 
     #[test]
